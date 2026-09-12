@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knoti Galerie</title>
+<style>
+  :root {
+    --bg: #faf9f7;
+    --card-bg: #ffffff;
+    --text: #222222;
+    --muted: #666666;
+    --accent: #2f6f4f;
+    --border: #e2e0db;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  header {
+    padding: 2.5rem 1.5rem 1.5rem;
+    text-align: center;
+  }
+  header h1 {
+    margin: 0 0 0.4rem;
+    font-size: 1.8rem;
+  }
+  header p {
+    margin: 0;
+    color: var(--muted);
+  }
+  header a {
+    color: var(--accent);
+  }
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 1.5rem 3rem;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.5rem;
+  }
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .card img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    display: block;
+    background: #eee;
+  }
+  .card-body {
+    padding: 1rem 1.1rem 1.2rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .card-body h2 {
+    font-size: 1.05rem;
+    margin: 0 0 0.4rem;
+  }
+  .card-body p {
+    margin: 0 0 0.6rem;
+    color: var(--muted);
+    font-size: 0.92rem;
+    flex: 1;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    padding-top: 0.5rem;
+    margin-top: auto;
+  }
+  footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Knoti Galerie</h1>
+  <p>Mit Knoti entstandene Projekte aus Workshops und Lehrveranstaltungen &middot; <a href="index.html">zurück zum Werkzeug</a></p>
+</header>
+
+<main>
+  <div class="grid">
+
+    <!--
+      EIN BEISPIEL HINZUFÜGEN:
+      1. Neuen Unterordner "beispiele/projektname/" anlegen und dort das Foto hochladen.
+      2. Diesen ganzen <div class="card"> ... </div> Block kopieren und einfügen.
+      3. Im kopierten Block anpassen:
+         - src="..."   -> Pfad zum Foto, z.B. beispiele/projekt2/foto.jpg
+         - alt="..."   -> kurze Bildbeschreibung
+         - <h2>...</h2> -> Titel des Projekts
+         - <p>...</p>   -> kurze Beschreibung (ein bis drei Sätze)
+         - Zeile in .meta -> z.B. Kontext und Datum
+      Sonst muss nichts verändert werden, kein Programmieren nötig.
+    -->
+    <div class="card">
+      <img src="beispiele/projekt1/foto.jpg" alt="Beschreibung des ersten Beispielprojekts">
+      <div class="card-body">
+        <h2>Titel des Projekts</h2>
+        <p>Kurze Beschreibung: was wurde gebaut, mit welchem Knoti-Modus, was war die Aufgabenstellung.</p>
+        <div class="meta">Workshop / Lehrveranstaltung &middot; Monat Jahr</div>
+      </div>
+    </div>
+
+    <!-- Zweites Beispiel als Platzhalter, einfach ersetzen oder löschen -->
+    <div class="card">
+      <img src="beispiele/projekt2/foto.jpg" alt="Beschreibung des zweiten Beispielprojekts">
+      <div class="card-body">
+        <h2>Titel des zweiten Projekts</h2>
+        <p>Kurze Beschreibung des zweiten Projekts.</p>
+        <div class="meta">Workshop / Lehrveranstaltung &middot; Monat Jahr</div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  &copy; 2026 Peter Hausegger &middot; KNOTI &middot; CC BY-SA 4.0
+</footer>
+
+</body>
+</html>
