@@ -273,6 +273,9 @@
         <button id="btnPresetFile" class="ghost" style="flex:1;font-size:11px;padding:4px 6px;">Speichern</button>
         <button id="btnPresetLoad" class="ghost" style="flex:1;font-size:11px;padding:4px 6px;">Laden</button>
       </div>
+      <div style="display:flex;gap:5px;margin-top:5px;">
+        <button id="btnPresetLink" class="ghost" style="flex:1;font-size:11px;padding:4px 6px;">Als Link teilen</button>
+      </div>
       <input type="file" id="presetFile" accept=".json,application/json" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:6px;">
         <span id="presetInfo" style="font-size:10px;color:var(--muted);line-height:1.5;"></span>
@@ -1337,7 +1340,7 @@ function toggleHelp(btn){
 // Programmversion. Sie steht in der Fusszeile, auf jedem Export und in der
 // Einstellungsdatei - bei einer Rueckmeldung ist damit sofort klar, welche
 // Fassung gemeint ist.
-const KNOTI_VERSION='290';
+const KNOTI_VERSION='291';
 let PX_PER_MM=4;
 let BODY_PX=4;      // eigener Zoom fuer die 3D-Koerperzeichnung
 const state={};
@@ -6814,6 +6817,45 @@ function buildStaebeSVG(forExport){
     const p=presetsLesen(); delete p[name]; presetsSchreiben(p);
     presetListe(); sel.value=''; presetHinweis(`„${name}“ gelöscht.`);
   });
+  // --- Einstellung als Link teilen --------------------------------------
+  // Derselbe Zustand wie in der .knoti.json wandert komprimiert in die
+  // Adresse. Wer den Link oeffnet, sieht genau diese Einstellung.
+  const linkB64=(bytes)=>{
+    let s=''; for(const b of bytes) s+=String.fromCharCode(b);
+    return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  };
+  k('btnPresetLink', async ()=>{
+    const EN=(typeof curLang!=='undefined'&&curLang==='en');
+    try{
+      const roh=new TextEncoder().encode(JSON.stringify(einstellungLesen()));
+      let txt;
+      if(typeof CompressionStream==='function'){
+        const cs=new CompressionStream('deflate-raw');
+        const buf=await new Response(new Blob([roh]).stream().pipeThrough(cs)).arrayBuffer();
+        txt='z'+linkB64(new Uint8Array(buf));
+      } else {
+        txt='r'+linkB64(roh);
+      }
+      const url=location.origin+location.pathname+location.search+'#e='+txt;
+      let kopiert=false;
+      try{ await navigator.clipboard.writeText(url); kopiert=true; }catch(e){}
+      if(!kopiert){
+        const f=document.createElement('textarea');
+        f.value=url; f.style.position='fixed'; f.style.opacity='0';
+        document.body.appendChild(f); f.select();
+        try{ kopiert=document.execCommand('copy'); }catch(e){}
+        f.remove();
+      }
+      history.replaceState(null,'','#e='+txt);
+      presetHinweis(kopiert
+        ? (EN?'Link copied. Anyone who opens it gets exactly these settings.'
+             :'Link kopiert. Wer ihn öffnet, bekommt genau diese Einstellung.')
+        : (EN?'The link is in the address bar now, copy it from there.'
+             :'Der Link steht jetzt in der Adresszeile, von dort kopieren.'));
+    }catch(e){
+      presetHinweis(EN?'Link could not be created.':'Link konnte nicht erzeugt werden.');
+    }
+  });
   k('btnPresetFile', ()=>{
     const st=einstellungLesen();
     const basis=(typeof exportBaseName==='function'?exportBaseName():'knoti').slice(0,60);
@@ -7264,8 +7306,12 @@ function updateStepsAndJoin(){
   // bleibt (frueher nur im Klick-Handler von "ohne Streben" gesetzt).
   if($('nLen')) $('nLen').disabled = armAusKante;
   if($('len'))  $('len').disabled  = armAusKante;
-  // "Abstand Staebe" ist ohne Staebe gegenstandslos.
-  const gapOK = !direct && !ball && !coneSub && mode!=='cone' && mode!=='ball3d';
+  // "Abstand Knicklinie" nur dort ausblenden, wo er sich aus etwas anderem
+  // ergibt: im KOERPERMODUS ohne Streben folgt er aus Kantenlaenge und
+  // Stossart. Im Einzelmodus gibt es keine Kantenlaenge, dort bleibt der
+  // Abstand frei einstellbar - auch ohne Streben (gleiche Begruendung wie
+  // bei der Armlaenge weiter oben).
+  const gapOK = !(direct && inBody) && !ball && !coneSub && mode!=='cone' && mode!=='ball3d';
   if($('grpGap')) $('grpGap').style.display = gapOK?'block':'none';
   // Bei Ueberlappung werden Lochverteilung und 1. Loch berechnet -> sperren.
   // Beim Knotenpunkt gibt es keine Lochverteilung; der Kegel behaelt sie (Löcher).
@@ -8929,6 +8975,7 @@ if(window.ResizeObserver){
 // ====================== Sprache DE / EN ======================
 const I18N = {
   'Beispiele ansehen':'View examples',
+  'Als Link teilen':'Share as link',
   'Einzeladapter':'Single adapter','Körper':'Body','Stern':'Star','Kegel':'Cone','3D-Knoten':'3D node',
   'Kragendicke ':'Collar thickness ','Armlänge ':'Arm length ',
   'echte mm':'real mm','auf Kantenlänge':'to edge length','Verbindersatz':'Connector set',
@@ -9094,7 +9141,7 @@ function applyLang(lang){
       }
     }
   };
-  document.querySelectorAll('label, .viewbar-label, .sect-txt, .subsect, .zoomlab, .seg button, option, .legend div, .copyright, #dlAdapter,#dlCut,#dlStaebe,#dlBauplan,#dlStl,#gapTouch,#ballDepthTouch,#btnPresetSave,#btnPresetDel,#btnPresetFile,#btnPresetLoad,#btnMerkenAuf,.stl-i18n').forEach(translateNode);
+  document.querySelectorAll('label, .viewbar-label, .sect-txt, .subsect, .zoomlab, .seg button, option, .legend div, .copyright, #dlAdapter,#dlCut,#dlStaebe,#dlBauplan,#dlStl,#gapTouch,#ballDepthTouch,#btnPresetSave,#btnPresetDel,#btnPresetFile,#btnPresetLoad,#btnPresetLink,#btnMerkenAuf,.stl-i18n').forEach(translateNode);
   document.querySelectorAll('.help-text').forEach(h=>{
     const k=h.getAttribute('data-i18n');
     if(!HELP_DE[k]) HELP_DE[k]=h.textContent.trim();
@@ -9189,3 +9236,35 @@ render();
 </script>
 </body>
 </html>
+
+<script>
+// Wurde ein geteilter Einstellungs-Link geoeffnet? Dann Zustand daraus setzen.
+window.addEventListener('load', async ()=>{
+  const h=location.hash||'';
+  if(h.indexOf('#e=')!==0) return;
+  const txt=h.slice(3);
+  try{
+    const roh=atob(txt.slice(1).replace(/-/g,'+').replace(/_/g,'/'));
+    const bytes=new Uint8Array(roh.length);
+    for(let i=0;i<roh.length;i++) bytes[i]=roh.charCodeAt(i);
+    let json;
+    if(txt[0]==='z'){
+      const ds=new DecompressionStream('deflate-raw');
+      const buf=await new Response(new Blob([bytes]).stream().pipeThrough(ds)).arrayBuffer();
+      json=new TextDecoder().decode(buf);
+    } else {
+      json=new TextDecoder().decode(bytes);
+    }
+    const st=JSON.parse(json);
+    if(!st || st.werkzeug!=='KNOTI') throw new Error('fremd');
+    if(einstellungSetzen(st)===false) throw new Error('unbrauchbar');
+    if(typeof verlaufMerken==='function') verlaufMerken();
+    if(typeof render==='function') render();
+    const EN=(typeof curLang!=='undefined'&&curLang==='en');
+    presetHinweis(EN?'Settings loaded from the shared link.'
+                    :'Einstellung aus dem geteilten Link geladen.');
+  }catch(e){
+    presetHinweis('Der geteilte Link konnte nicht gelesen werden.');
+  }
+});
+</script>
