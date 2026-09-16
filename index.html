@@ -765,11 +765,12 @@
       <input type="range" id="tilt" min="0" max="60" value="20" step="0.1">
       <div class="help-text" data-i18n="help_double">
         Doppel-Adapter: Die Strebe wird zwischen eine innere und eine äußere Platte
-        geklemmt. Die Streben stehen schräg (Stabneigung), dadurch liegt die äußere
-        Platte weiter außen als die innere. Der Abstand der beiden Platten
-        (senkrecht) entspricht automatisch der Materialstärke Streben (oben
-        unter Konstruktion eingestellt). „beide“ legt innen- und Außenplatte
-        nebeneinander zum Ausschneiden.
+        geklemmt. Beide Platten haben überall denselben Abstand zueinander: bei
+        Hakenverbindung die Strebenbreite (die Strebe steht hochkant), sonst die
+        Materialstärke Streben. Weil die Streben schräg stehen (Stabneigung),
+        liegt die Knicklinie der äußeren Platte weiter außen als die der inneren,
+        und zwar um Abstand mal tan(halbe Stabneigung). „beide“ legt Innen- und
+        Außenplatte nebeneinander zum Ausschneiden.
       </div>
     </div>
   </div>
@@ -1340,7 +1341,7 @@ function toggleHelp(btn){
 // Programmversion. Sie steht in der Fusszeile, auf jedem Export und in der
 // Einstellungsdatei - bei einer Rueckmeldung ist damit sofort klar, welche
 // Fassung gemeint ist.
-const KNOTI_VERSION='291';
+const KNOTI_VERSION='296';
 let PX_PER_MM=4;
 let BODY_PX=4;      // eigener Zoom fuer die 3D-Koerperzeichnung
 const state={};
@@ -1390,7 +1391,11 @@ function readState(){
   // unabhaengigen Regler ("Verbinderabstand"). Der stand nicht in Verbindung
   // zur Materialstaerke und blieb dadurch praktisch wirkungslos/verwirrend.
   // Jetzt entspricht er direkt der Strebendicke - wie im Hilfetext beschrieben.
-  state.plate=matArme();
+  // ABER: bei HAKEN steht die Strebe hochkant, dann zaehlt ihre BREITE, nicht
+  // ihre Dicke. Genau das liefert schalenAbstand(), das die Kegelschalen schon
+  // benutzen. Der Stern rechnete weiter mit der Dicke - dadurch waren Innen-
+  // und Aussenschale bei Hakenverbindung praktisch deckungsgleich.
+  state.plate=(typeof schalenAbstand==='function') ? schalenAbstand() : matArme();
   state.center=Math.min(12, Math.max(0, sync('center','nCenter',lastSrc)));
   if(+$('nCenter').value>12){ $('nCenter').value=12; }
   state.stab=sync('stab','nStab',lastSrc);
@@ -2370,7 +2375,25 @@ function strebenBreite(){
 // bei HAKEN steht sie hochkant - dann zaehlt ihre BREITE. Frueher galt immer
 // die Dicke, dadurch klemmte die hochkant stehende Strebe nicht.
 function schalenAbstand(){
-  return hakenAn() ? strebenBreite() : matArme();
+  // Zwischen den beiden Platten steckt die Strebe: flach liegend zaehlt ihre
+  // Dicke, bei HAKEN steht sie hochkant, dann ihre Breite. Gerechnet wird mit
+  // den MITTELFLAECHEN der Platten, denn der Zuschnitt beschreibt das Blech
+  // ohne Dicke. Jede Platte liegt mit ihrer halben Materialstaerke neben der
+  // Flaeche, die die Strebe beruehrt - zusammen also eine volle Verbinder-
+  // staerke zusaetzlich. Nur so sind die beiden anliegenden Flaechen wirklich
+  // genau ein Strebenmass voneinander entfernt.
+  const strebe = hakenAn() ? strebenBreite() : matArme();
+  return strebe + matThick();
+}
+// Musterversatz der AUSSENSCHALE beim KEGEL. Zwei parallele Kegelflaechen im
+// senkrechten Abstand d unterscheiden sich in der Abwicklung nicht um d,
+// sondern um d*cot(phi), mit sin(phi) = Sektor/360. Beim flachen Teller
+// (Sektor 360) ist der Versatz null, beim spitzen Kegel waechst er stark an.
+function kegelVersatz(gap, sektor){
+  if(!(gap>0) || !(sektor>0) || sektor>=359.9) return 0;
+  const phi=Math.asin(Math.min(0.999, sektor/360));
+  const t=Math.tan(phi);
+  return (t>1e-6) ? gap/t : 0;
 }
 function matArme(){
   const v=(typeof sync==='function' && $('matArm')) ? sync('matArm','nMatArm',lastSrc) : 3;
@@ -2414,17 +2437,22 @@ function coneSectorGroup(cg, Ruse, dx, label, forExport, isOuter){
   const {rin, sector, overlap, overLeft, overRight, startAng, endAng, stabAngles, holeD, holeFromEdge, hd, coneGap, foldFace, Rinner, weldFold, weldW, foldW, armHalf, waistPct, waistFillet}=cg;
   const deg2rad=d=>d*Math.PI/180;
   const pol=(r,deg)=>[r*Math.cos(deg2rad(deg)), r*Math.sin(deg2rad(deg))];
-  // Loch-Radien: in BEIDEN Schalen am selben absoluten Radius, damit die
-  // Loecher beim Zusammenstecken fluchten. Referenz ist die innere Schale
-  // (Rinner), NICHT die jeweilige Aussenkante Ruse. Sonst l"agen die aeusseren
-  // Loecher um coneGap zu weit aussen.
-  const radii = holeFromEdge.map(d=> Rinner - d);
+  // Loch-Radien. Innen- und Aussenschale sind Parallelflaechen; in der
+  // Abwicklung ist die aeussere deshalb das gleiche Muster, dessen Radien
+  // ALLE um denselben Betrag V groesser sind. Genau dann liegt jedes Loch der
+  // Aussenschale senkrecht ueber seinem Gegenstueck. Frueher standen die
+  // Loecher beider Schalen auf demselben absoluten Radius (V=0) - gedacht als
+  // "fluchten", tatsaechlich um V daneben.
+  const V = isOuter ? (Ruse - Rinner) : 0;
+  const radii = holeFromEdge.map(d=> Rinner - d + V);
   const zoneLen = Rinner - rin;
   const rGreen = Ruse - zoneLen;
   // Standard-Innenkante (ohne Falz):
-  let baseInner = rin;
-  if(isOuter && !foldFace) baseInner = rGreen;
-  if(isOuter && foldFace)  baseInner = Math.max(rGreen - coneGap, 1);
+  // Innenkante, Knickflaeche, Falzlinie und Falznaht haengen alle an baseInner.
+  // Mit dem einheitlichen Versatz (rGreen = rin + V) passen sie damit ueber
+  // ihren Gegenstuecken. Frueher zog die Aussenschale bei Knickflaeche zusaetz-
+  // lich den Schalenabstand ab und lag dadurch als einzige Kante daneben.
+  let baseInner = isOuter ? rGreen : rin;
   const weldLineR = baseInner;
   let innerEdge = baseInner;
   // Beim Steckfalz bekommt die AUSSEN-Schale keinen durchgehenden Falzring,
@@ -2976,7 +3004,7 @@ function buildConeSVG(cg, forExport){
   if(isDouble){
     const coneGap=cg.coneGap;
     const Rin=cg.Rinner;
-    const Rout=Rin + coneGap;
+    const Rout=Rin + kegelVersatz(coneGap, cg.sector);
     const cellW=2*Math.max(Rin,Rout)+12;
     const totalW=2*cellW;
     // Bei eigenen Armlaengen kann ein Arm weiter hinausragen als R.
@@ -3041,7 +3069,7 @@ function gapForTouching(ang){
   // ineinander laufen. Deshalb den halben Versatz aufschlagen.
   const bs=document.querySelector('#buildSeg .on');
   if(bs && bs.dataset.v==='double' && state.tilt>0){
-    const dr=state.plate/Math.tan((90-state.tilt)*Math.PI/180);
+    const dr=state.plate*Math.tan(state.tilt*Math.PI/360);
     if(isFinite(dr) && dr>0) rEndTouch += dr/2;
   }
   return rEndTouch * 2*Math.sin(half);
@@ -3073,15 +3101,24 @@ function eigeneArmLaengen(){
   }
   return out;
 }
+// Zusatzmass fuer die AUSSENSCHALE der Doppel-Bauart. Innen- und Aussenschale
+// sind Parallelflaechen im festen Abstand d. Dadurch liegt bei der aeusseren
+// nicht nur die Knicklinie um dr weiter aussen, sondern JEDES Merkmal auf dem
+// Arm: der Fusspunkt des Lots von einem Innenloch trifft die Aussenflaeche um
+// dr weiter vom dortigen Knick entfernt. Gaebe man beiden Schalen dieselben
+// Abstaende, laegen Loecher und Schlitze im zusammengebauten Zustand um dr
+// versetzt und ein durchgehender Stab oder Haken passte nicht. Der Arm wird um
+// denselben Betrag laenger, damit beide Schalen am Strebenende buendig sind.
+let schalenVersatz=0;
 function armLenAt(i){
   const L=state.lens;
-  if(Array.isArray(L) && L.length && isFinite(L[i%L.length])) return L[i%L.length];
-  return state.len;
+  const basis=(Array.isArray(L) && L.length && isFinite(L[i%L.length])) ? L[i%L.length] : state.len;
+  return basis + schalenVersatz;
 }
 function armLenMax(){
   const L=state.lens;
-  if(Array.isArray(L) && L.length) return Math.max(...L.filter(isFinite));
-  return state.len;
+  const basis=(Array.isArray(L) && L.length) ? Math.max(...L.filter(isFinite)) : state.len;
+  return basis + schalenVersatz;
 }
 // Armlaenge fuer einen WINKEL (die Kontur sortiert die Winkel um).
 function armLenForAng(a, ang){
@@ -3092,7 +3129,7 @@ function armLenForAng(a, ang){
     const d=Math.min(Math.abs(ang[i]-a), 360-Math.abs(ang[i]-a));
     if(d<bd){ bd=d; bi=i; }
   }
-  return isFinite(L[bi]) ? L[bi] : state.len;
+  return (isFinite(L[bi]) ? L[bi] : state.len) + schalenVersatz;
 }
 function buildUnion(ang,rEnd){
   const hw=state.wid/2;
@@ -3356,6 +3393,20 @@ function hakenAn(){ return lockAktiv('haken'); }
 // Hoehe des Hakens quer zur Strebenachse (= Schlitzbreite im Verbinder).
 // Doppel-Bauart: Strebe wird zwischen zwei Platten geklemmt.
 function bauartDoppel(){
+  // Doppelschale gibt es an DREI Stellen: beim Stern ueber die Bauart
+  // (#buildSeg), beim Kegel im Einzelmodus ueber #coneLayerSeg und im
+  // Koerpermodus ueber #bConeLayerSeg. Die Funktion kannte nur den Stern -
+  // dadurch bekam die Strebe beim Doppelkegel nur an EINER Kante Haken,
+  // obwohl sie zwischen zwei Platten steht und in beide eingehaengt wird.
+  const istKoerper = (typeof mode!=='undefined' && mode==='body');
+  const typ = istKoerper
+    ? (document.querySelector('#bodyAdapterSeg .on')||{dataset:{}}).dataset.v
+    : (document.querySelector('#typeSeg .on')||{dataset:{}}).dataset.v;
+  if(typ==='cone'){
+    const lay = istKoerper ? document.querySelector('#bConeLayerSeg .on')
+                           : document.querySelector('#coneLayerSeg .on');
+    return !!(lay && lay.dataset.v==='two');
+  }
   const b=document.querySelector('#buildSeg .on');
   return !!(b && b.dataset.v==='double');
 }
@@ -3486,13 +3537,17 @@ function buildConnector(ang, rEnd){
   }));
   const holes=[];
   const slots=[];
+  // Versatz der Aussenschale: die Lochverteilung wird mit der BASIS-Armlaenge
+  // gerechnet (sonst verteilte sie sich anders statt nur zu wandern) und das
+  // Ergebnis anschliessend um FO nach aussen geschoben.
+  const FO=schalenVersatz||0;
   const dists=holeDistances(state.len);   // Bezug fuer alles Gemeinsame
   // Bohrungen nur, wenn die Verbindungsart "Löcher" gewählt ist.
   // Jeder Arm rechnet mit SEINER Laenge, damit die Loecher bei ungleichen
   // Kanten auf jedem Arm richtig sitzen.
   if(loecherAn()){
-    ang.forEach((a,ai)=>{ holeDistances(armLenAt(ai), undefined, armStartAt(ai)).forEach(d=>{
-      const r=rEnd+d;                     // Abstand von der Knicklinie nach aussen
+    ang.forEach((a,ai)=>{ holeDistances(armLenAt(ai)-FO, undefined, armStartAt(ai)).forEach(d=>{
+      const r=rEnd+FO+d;                  // Abstand von der Knicklinie nach aussen
       holes.push(rot(0,r,a-90));
     }); });
   }
@@ -3502,8 +3557,8 @@ function buildConnector(ang, rEnd){
     const t=(typeof matThick==='function')?matThick():3;
     const halb=splintBreite(state.wid)/2;
     holes.length=0;
-    ang.forEach((a,ai)=>{ holeDistances(armLenAt(ai), undefined, armStartAt(ai)).forEach(d=>{
-      const r=rEnd+d;
+    ang.forEach((a,ai)=>{ holeDistances(armLenAt(ai)-FO, undefined, armStartAt(ai)).forEach(d=>{
+      const r=rEnd+FO+d;
       slots.push([ rot(-halb, r-t/2, a-90), rot( halb, r-t/2, a-90),
                    rot( halb, r+t/2, a-90), rot(-halb, r+t/2, a-90) ]);
     }); });
@@ -3524,11 +3579,11 @@ function buildConnector(ang, rEnd){
     const jsH=document.querySelector('#joinSeg .on');
     const ueberlappendH = jsH && jsH.dataset.v==='direct' && jmH && jmH.dataset.v==='overlap';
     ang.forEach((a,ai)=>{
-      const LA=armLenAt(ai);
+      const LA=armLenAt(ai)-FO;
       const sl=hakenLaengeEff(LA);
       const vs=ueberlappendH ? 0 : hakenVersatz(sl)*sR;
       hakenPositionen(LA, n, ueberlappendH, armStartAt(ai)).forEach(d=>{
-        const rM=rEnd+d+vs;
+        const rM=rEnd+FO+d+vs;
         const rA=rM+sl/2, rI=rM-sl/2;
         slots.push([ rot(-w, rI, a-90), rot( w, rI, a-90),
                      rot( w, rA, a-90), rot(-w, rA, a-90) ]);
@@ -3544,7 +3599,7 @@ function buildConnector(ang, rEnd){
     const js=document.querySelector('#joinSeg .on');
     const ueberlappend = js && js.dataset.v==='direct' && jm && jm.dataset.v==='overlap';
     ang.forEach((a,ai)=>{
-      const LA=armLenAt(ai);
+      const LA=armLenAt(ai)-FO;
       const dA=holeDistances(LA, undefined, armStartAt(ai));
       let d0=Math.max(LA - zapfenAbstandEff(), 2);     // Abstand vom Armende
       // Bei UEBERLAPPENDEN Armen ist die Schlitzlage nicht frei waehlbar: Arm A
@@ -3558,7 +3613,7 @@ function buildConnector(ang, rEnd){
         const frei=x=> dA.every(d=>Math.abs(d-x) > (holeR(state.hd)+t/2+1.2));
         if(!frei(d0) && typeof window!=='undefined') window.__zapfenKollision=true;
       }
-      const r=rEnd+d0;
+      const r=rEnd+FO+d0;
       slots.push([ rot(-halb, r-t/2, a-90), rot( halb, r-t/2, a-90),
                    rot( halb, r+t/2, a-90), rot(-halb, r+t/2, a-90) ]);
     });
@@ -3577,11 +3632,16 @@ function buildGeometry(){
   const rEnd=computeREnd(ang);
   const isDouble = document.querySelector('#buildSeg .on') && document.querySelector('#buildSeg .on').dataset.v==='double';
   if(isDouble){
-    const tiltRad=(90-state.tilt)*Math.PI/180;
-    const dr = state.tilt>0 ? state.plate/Math.tan(tiltRad) : 0;
+    // Die beiden Schalen liegen ueberall im gleichen Abstand (Strebenbreite bei
+    // Haken, sonst Strebendicke). Zwei solche Parallelflaechen haben ihre
+    // Knicklinie NICHT an derselben Stelle: bei einem Knickwinkel tilt wandert
+    // sie um Abstand * tan(tilt/2) nach aussen - dieselbe Beziehung wie beim
+    // Biegen von Blech. Frueher stand hier Abstand / tan(90-tilt), das war
+    // weder die eine noch die andere Bauweise.
+    const dr = state.tilt>0 ? state.plate*Math.tan(state.tilt*Math.PI/360) : 0;
     const rOuter=rEnd+dr/2;
     const rInner=Math.max(rEnd-dr/2, state.wid*0.3);
-    const cOuter=buildConnector(ang, rOuter);
+    schalenVersatz=dr; const cOuter=buildConnector(ang, rOuter); schalenVersatz=0;
     const cInner=buildConnector(ang, rInner);
     const labels=ang.map((a,i)=>({p:rot(0,cOuter.outer-3,a-90),a,t:'S'+(i+1)}));
     // Lagen-Auswahl: beide / nur innen / nur außen
@@ -5462,7 +5522,12 @@ function bodyAdapterSheet(forExport){
     };
 
     // Zelle: bei Doppellage zwei Sektoren (innen + aussen) nebeneinander.
-    const Rout = R + coneGap;
+    // Fuer die BLATTAUFTEILUNG reicht eine Reserve: der groesste Versatz, der
+    // bei irgendeinem Knoten auftritt (kleinster Sektor = spitzester Kegel).
+    const sektorMin = body.nodes.length
+      ? Math.min(...body.nodes.map(nd=>360-(nd.defekt||0)))
+      : 360;
+    const Rout = R + kegelVersatz(coneGap, sektorMin);
     // Bei ungleichen Kanten ragen einzelne Arme weiter hinaus als R. Die
     // Kachel muss den groessten vorkommenden Armradius aufnehmen, sonst
     // ueberlappen sich die Verbinder auf dem Blatt.
@@ -5573,8 +5638,11 @@ function bodyAdapterSheet(forExport){
       let w,h,ox,oy;
       if(isDouble){
         const dx=(cellR+5);
-        g+=coneSectorGroup(cg, R,    -dx, 'innen', forExport, false);
-        g+=coneSectorGroup(cg, Rout,  dx, 'außen', forExport, true);
+        // Jeder Knoten hat seinen eigenen Sektor, also auch seinen eigenen
+        // Versatz. Rout oben ist nur die Platzreserve fuer die Kachel.
+        const RoutN = R + kegelVersatz(coneGap, cg.sector);
+        g+=coneSectorGroup(cg, R,     -dx, 'innen', forExport, false);
+        g+=coneSectorGroup(cg, RoutN,  dx, 'außen', forExport, true);
         g+=beschriftung(-dx);
         w=cellW-8; h=2*cellR+8; ox=-w/2; oy=-h/2;
       } else {
@@ -5636,15 +5704,17 @@ function bodyAdapterSheet(forExport){
     // Laenge, die zu SEINER Kante gehoert.
     state.lens = armLengthsForNode(nd, rEnd);
     if(isDouble){
-      const tiltRad=(90-nd.tilt)*Math.PI/180;
-      const dr = nd.tilt>0 ? state.plate/Math.tan(tiltRad) : 0;
+      // Parallelflaechen: Knicklinie wandert um Abstand * tan(Neigung/2).
+      const dr = nd.tilt>0 ? state.plate*Math.tan(nd.tilt*Math.PI/360) : 0;
       const lm=starLayerMode();
       if(lm!=='outer'){
         const cInner=buildConnector(ang, Math.max(rEnd-dr/2, state.wid*0.3));
         tiles.push({...cInner,label:(nd.id||nd.label)+'i',neighbors:nd.neighbors,marken:armMarken(nd),ang,rEnd:cInner.rEnd,sub:'innen'});
       }
       if(lm!=='inner'){
+        schalenVersatz=dr;
         const cOuter=buildConnector(ang, rEnd+dr/2);
+        schalenVersatz=0;
         tiles.push({...cOuter,label:(nd.id||nd.label)+'a',neighbors:nd.neighbors,marken:armMarken(nd),ang,rEnd:cOuter.rEnd,sub:'außen'});
       }
     } else {
@@ -7703,7 +7773,7 @@ function bodyAdapterGeometryList(){
       gi.holes.forEach(h=>geo.holes.push(h));
       if(cg.foldFace) geo.foldCircles.push({cx:0,cy:0,r:R-zoneLen});
       if(isDouble){
-        const Rout=R+cg.coneGap;
+        const Rout=R+kegelVersatz(cg.coneGap, cg.sector);
         const outerSVG=coneSectorGroup(cg, Rout, 0, '', true, true);
         const go=coneShellToGeometry(outerSVG, 0);
         const shift=2*Math.max(R,Rout)+10;
@@ -7857,7 +7927,7 @@ function currentAdapterGeometry(){
     // entlang der pinken Faltlinie bei rGreen = R - zoneLen.
     if(cg.foldFace) out.foldCircles.push({cx:0,cy:0,r:R-zoneLen});
     if(isDouble){
-      const Rout=R+cg.coneGap;
+      const Rout=R+kegelVersatz(cg.coneGap, cg.sector);
       const outerSVG=coneSectorGroup(cg, Rout, 0, '', true, true);
       const go=coneShellToGeometry(outerSVG, 0);
       const shift=2*Math.max(R,Rout)+10;
@@ -9099,7 +9169,7 @@ const I18N = {
   'help_weld':'Connecting tab: an extra inner strip of this width is added to both shells. The previous inner edge becomes the green fold line; the strip is folded over so inner and outer shell can be glued/riveted flat together.',
   'help_gap':'Spacing 0 = the blue fold lines meet at the center (rods converge to a point). Larger spacing pushes the rods apart. The button sets the value so the rods just touch without the fold lines crossing.',
   'help_holespacing':'Fixed spacing: hole centers sit at exactly equal spacing along the arm, measured from the fold line outward. For Lego e.g. 8 mm. If a hole lands beyond the arm length, the arm is too short – increase arm length or reduce spacing.',
-  'help_double':'Double adapter: the rod is clamped between an inner and an outer plate. The rods are tilted, so the outer plate sits further out than the inner. The perpendicular distance between the plates is set automatically by the rod material thickness (above, under Construction). "both" lays inner and outer plate side by side for cutting.',
+  'help_double':'Double adapter: the rod is clamped between an inner and an outer plate. The two plates keep the same distance everywhere: the rod width with hook joints (the rod stands on edge), otherwise the rod material thickness. Because the rods are tilted, the fold line of the outer plate sits further out than the inner one, by distance times tan(half the rod tilt). "both" lays inner and outer plate side by side for cutting.',
   'help_strebbreite':'Width of the rods. It follows the arm width automatically until you set it yourself. With hooks the rod stands on edge in the slot and is its own part - there the link is released, and on a double-layer cone this width is also the gap between the inner and outer shell.',
   'help_kerf':'Compensates for the material width the laser burns away. Outer contours are offset outward by half the value, holes inward, so parts stay dimensionally accurate and rods fit snugly. Typically 0.1–0.2 mm, determine on a test piece. 0 = off.',
   'Anordnung ':'Arrangement ','Raster':'Grid','Autolayout':'Auto layout','Format ':'Format ','Mindestabstand ':'Min. spacing ',
