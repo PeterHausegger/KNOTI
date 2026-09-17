@@ -29,6 +29,8 @@
   .brand{display:inline-flex; align-items:center; gap:9px; color:var(--ink);}
   .applogo{width:29px; height:29px; flex:none; display:block;}
   .sub{font-size:12px; color:var(--muted); margin:0 0 22px;}
+  .projektlink{color:#00873C; font-weight:600; text-decoration:none;}
+  .projektlink:hover{text-decoration:underline;}
   .grp{margin-bottom:18px;}
   label{display:flex; font-size:13px; letter-spacing:0; color:var(--ink);
     margin-bottom:7px; justify-content:flex-start; align-items:center; gap:6px;}
@@ -251,7 +253,7 @@
       <button data-lang="en" style="padding:3px 8px;font-size:11px;">EN</button>
     </span>
   </h1>
-  <p class="sub" id="subtitle">Sternverbinder · 2D</p>
+  <p class="sub" id="subzeile">Inspiration: <a class="projektlink" href="galerie.html" target="_blank" rel="noopener">KNOTI-PROJECTS</a></p>
 
   <div class="grp" id="grpMerken" style="border-bottom:1px solid var(--grid);padding-bottom:8px;margin-bottom:2px;">
     <div style="display:flex;gap:4px;align-items:stretch;">
@@ -1341,7 +1343,7 @@ function toggleHelp(btn){
 // Programmversion. Sie steht in der Fusszeile, auf jedem Export und in der
 // Einstellungsdatei - bei einer Rueckmeldung ist damit sofort klar, welche
 // Fassung gemeint ist.
-const KNOTI_VERSION='298';
+const KNOTI_VERSION='299';
 let PX_PER_MM=4;
 let BODY_PX=4;      // eigener Zoom fuer die 3D-Koerperzeichnung
 const state={};
@@ -7667,7 +7669,7 @@ function applyMode(){
               : mode==='cone'?'Kegelecke · Abwicklung'
               : mode==='ball3d'?'3D-Knoten · Kragen mit Bohrungen'
               : 'Sternverbinder · 2D';
-  $('subtitle').textContent = (typeof curLang!=='undefined' && curLang==='en' && typeof I18N!=='undefined' && I18N[subDE]) ? I18N[subDE] : subDE;
+  { const sub=$('subtitle'); if(sub) sub.textContent = (typeof curLang!=='undefined' && curLang==='en' && typeof I18N!=='undefined' && I18N[subDE]) ? I18N[subDE] : subDE; }
   if(inBody) updateBodyAdapterVis();
   render();
 }
