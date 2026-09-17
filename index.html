@@ -1341,7 +1341,7 @@ function toggleHelp(btn){
 // Programmversion. Sie steht in der Fusszeile, auf jedem Export und in der
 // Einstellungsdatei - bei einer Rueckmeldung ist damit sofort klar, welche
 // Fassung gemeint ist.
-const KNOTI_VERSION='296';
+const KNOTI_VERSION='298';
 let PX_PER_MM=4;
 let BODY_PX=4;      // eigener Zoom fuer die 3D-Koerperzeichnung
 const state={};
@@ -6578,6 +6578,12 @@ function buildStaebeSVG(forExport){
         });
         stellen.sort((x,y)=>x-y);
         const pts=[];
+        // Fase an den vorlaufenden Hakenecken: 45 Grad, Schenkel = halbe
+        // Hakenhoehe. Beim Einfaedeln in den Schlitz stoesst dann keine
+        // scharfe Ecke mehr an, die Strebe laesst sich schraeg einfuehren.
+        // Begrenzt, damit die Fase weder die Nase noch den Spalt auffrisst.
+        const fs = Math.max(0, Math.min(hd/2, hl/2-0.2, (hd-spalt)-0.2));
+        const mitFase = fs>0.2;
         const doppelH = (typeof bauartDoppel==='function') && bauartDoppel();
         const nachAussen0 = (typeof hakenRichtung==='function') && hakenRichtung()==='aussen';
         pts.push([r,0]);
@@ -6589,11 +6595,15 @@ function buildStaebeSVG(forExport){
             // Gleiche Richtung wie unten; die Punktfolge ist nur gespiegelt,
             // weil die Oberkante von links nach rechts durchlaufen wird.
             if(s2>0){
-              pts.push([x, 0], [x, -hd], [x+hl, -hd],
-                       [x+hl, -spalt], [x+nw, -spalt], [x+nw, 0]);
+              if(mitFase) pts.push([x, 0], [x, -hd+fs], [x+fs, -hd], [x+hl-fs, -hd],
+                                   [x+hl, -hd+fs], [x+hl, -spalt], [x+nw, -spalt], [x+nw, 0]);
+              else pts.push([x, 0], [x, -hd], [x+hl, -hd],
+                            [x+hl, -spalt], [x+nw, -spalt], [x+nw, 0]);
             } else {
-              pts.push([x-nw, 0], [x-nw, -spalt], [x-hl, -spalt],
-                       [x-hl, -hd], [x, -hd], [x, 0]);
+              if(mitFase) pts.push([x-nw, 0], [x-nw, -spalt], [x-hl, -spalt], [x-hl, -hd+fs],
+                                   [x-hl+fs, -hd], [x-fs, -hd], [x, -hd+fs], [x, 0]);
+              else pts.push([x-nw, 0], [x-nw, -spalt], [x-hl, -spalt],
+                            [x-hl, -hd], [x, -hd], [x, 0]);
             }
           });
         }
@@ -6612,11 +6622,15 @@ function buildStaebeSVG(forExport){
           // Richtung bei 0 % ohne Wirkung und die Strebe liegt immer gleich.
           const x = x0 - s*hl/2;
           if(s>0){
-            pts.push([x+nw, H], [x+nw, H+spalt], [x+hl, H+spalt],
-                     [x+hl, H+hd], [x, H+hd], [x, H]);
+            if(mitFase) pts.push([x+nw, H], [x+nw, H+spalt], [x+hl, H+spalt], [x+hl, H+hd-fs],
+                                 [x+hl-fs, H+hd], [x+fs, H+hd], [x, H+hd-fs], [x, H]);
+            else pts.push([x+nw, H], [x+nw, H+spalt], [x+hl, H+spalt],
+                          [x+hl, H+hd], [x, H+hd], [x, H]);
           } else {
-            pts.push([x, H], [x, H+hd], [x-hl, H+hd],
-                     [x-hl, H+spalt], [x-nw, H+spalt], [x-nw, H]);
+            if(mitFase) pts.push([x, H], [x, H+hd-fs], [x-fs, H+hd], [x-hl+fs, H+hd],
+                                 [x-hl, H+hd-fs], [x-hl, H+spalt], [x-nw, H+spalt], [x-nw, H]);
+            else pts.push([x, H], [x, H+hd], [x-hl, H+hd],
+                          [x-hl, H+spalt], [x-nw, H+spalt], [x-nw, H]);
           }
         });
         pts.push([r,H],[0,H-r],[0,r]);
@@ -8391,13 +8405,29 @@ function updateLockOpt(){
     if(e && e.tagName==='INPUT' && e.type==='range') e.style.display = ohneStaebe?'none':'';
   });
   // Steckfalz gibt es nur beim Kegel mit Doppellage UND Falz.
-  const lay=document.querySelector('#coneLayerSeg .on')||document.querySelector('#bConeLayerSeg .on');
-  const fold=document.querySelector('#coneFoldSeg .on');
+  // Doppellage und Falz stehen je nach Modus in EIGENEN Umschaltern: im
+  // Einzelmodus #coneLayerSeg / #coneFoldSeg, im Koerpermodus #bConeLayerSeg /
+  // #bConeFoldSeg. Frueher wurde immer zuerst der Einzelmodus-Umschalter
+  // gelesen; der ist im Koerpermodus aber unbeteiligt und stand meist auf
+  // "eine Lage". Dadurch verschwand die Steckfalz-Option im Koerpermodus,
+  // obwohl Doppellage und Falz dort gewaehlt waren.
+  const imKoerper = (mode==='body');
+  const lay  = imKoerper ? document.querySelector('#bConeLayerSeg .on')
+                         : document.querySelector('#coneLayerSeg .on');
+  const fold = imKoerper ? document.querySelector('#bConeFoldSeg .on')
+                         : document.querySelector('#coneFoldSeg .on');
   const doppel=lay && lay.dataset.v==='two';
   const falz=fold && fold.dataset.v==='weld';
   // Steckfalz nur beim Kegel mit Doppellage UND Falz.
   const sb=document.querySelector('#lockSeg button[data-v="steck"]');
-  if(sb) sb.style.display = (istKegel && doppel && falz) ? '' : 'none';
+  if(sb){
+    const moeglich = !!(istKegel && doppel && falz);
+    sb.style.display = moeglich ? '' : 'none';
+    // Bleibt der Steckfalz gewaehlt, waehrend seine Voraussetzungen wegfallen,
+    // zeichnet das Werkzeug weiter Zapfen und Bogenschlitze, die niemand mehr
+    // sieht. Deshalb die Auswahl in dem Fall zuruecknehmen.
+    if(!moeglich && sb.classList.contains('on')) sb.classList.remove('on');
+  }
   // (Sichtbarkeit der Untergruppen siehe unten)
   // Loch-Regler nur, wenn Löcher gewählt sind. Ueber eine Klasse, damit sich
   // das nicht mit der uebrigen Sichtbarkeitslogik beisst.
