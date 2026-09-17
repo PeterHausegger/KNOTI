@@ -1343,7 +1343,7 @@ function toggleHelp(btn){
 // Programmversion. Sie steht in der Fusszeile, auf jedem Export und in der
 // Einstellungsdatei - bei einer Rueckmeldung ist damit sofort klar, welche
 // Fassung gemeint ist.
-const KNOTI_VERSION='299';
+const KNOTI_VERSION='300';
 let PX_PER_MM=4;
 let BODY_PX=4;      // eigener Zoom fuer die 3D-Koerperzeichnung
 const state={};
@@ -2451,10 +2451,18 @@ function coneSectorGroup(cg, Ruse, dx, label, forExport, isOuter){
   const rGreen = Ruse - zoneLen;
   // Standard-Innenkante (ohne Falz):
   // Innenkante, Knickflaeche, Falzlinie und Falznaht haengen alle an baseInner.
-  // Mit dem einheitlichen Versatz (rGreen = rin + V) passen sie damit ueber
-  // ihren Gegenstuecken. Frueher zog die Aussenschale bei Knickflaeche zusaetz-
-  // lich den Schalenabstand ab und lag dadurch als einzige Kante daneben.
-  let baseInner = isOuter ? rGreen : rin;
+  // Bei aktiver Knickflaeche zieht die AUSSENSCHALE zusaetzlich den Schalen-
+  // abstand (coneGap) von rGreen ab. Nur dadurch bekommt sie eine EIGENE, von
+  // rGreen verschiedene Kante: die rGreen-Linie zeichnet foldLine weiter unten
+  // ohnehin (isOuter && foldFace); die zweite Knickflaeche der Aussenschale
+  // entsteht erst durch diesen Versatz zwischen rGreen und baseInner. Ohne ihn
+  // fallen beide Linien auf denselben Radius und die Aussenschale zeigt nur
+  // noch einen Ring statt zwei - genau das Symptom bei "Knickflaeche + Falz".
+  // Die Lochausrichtung (die diesen Versatz einmal ersetzt hatte) besorgt der
+  // Offset V weiter oben schon selbst, unabhaengig von baseInner.
+  let baseInner = rin;
+  if(isOuter && !foldFace) baseInner = rGreen;
+  if(isOuter && foldFace)  baseInner = Math.max(rGreen - coneGap, 1);
   const weldLineR = baseInner;
   let innerEdge = baseInner;
   // Beim Steckfalz bekommt die AUSSEN-Schale keinen durchgehenden Falzring,
@@ -2464,11 +2472,14 @@ function coneSectorGroup(cg, Ruse, dx, label, forExport, isOuter){
     innerEdge = Math.max(baseInner - weldW, 0.5);
   // "mit" + einstellbare Knickflaeche (foldW): die schwarze Innenkante wandert
   // um foldW nach innen, die bisherige Kante wird zur pinken Knicklinie. So
-  // entsteht ein Knickflaechen-Ring wie beim Aussen-Falz.
-  let foldRingR = 0;                     // Radius der pinken Knicklinie (0 = keine)
-  // Die Knickflaeche gilt fuer BEIDE Schalen. Frueher bekam nur die Innen-
-  // schale sie, wodurch der Aussenschale Knicklinie und Mittelloch fehlten.
-  if(!weldFold && foldW>0){
+  // entsteht ein Knickflaechen-Ring wie beim Aussen-Falz. Nur die INNENSCHALE
+  // bekommt diesen Ring: bei der Aussenschale zeichnet foldLine (rGreen) die
+  // sichtbare Grenze schon selbst - ein zweiter Ring auf demselben baseInner
+  // waere nur eine Dublette (siehe blaueLinie-Dedupe unten). So: innen eine
+  // Knickflaeche, aussen ebenfalls eine (bei "mit"); bei "+ Falz" kommt die
+  // zweite Knickflaeche der Aussenschale stattdessen ueber weldLine (unten).
+  let foldRingR = 0;                     // Radius der pinken/blauen Knicklinie (0 = keine)
+  if(!weldFold && foldW>0 && !isOuter){
     foldRingR = baseInner;               // alte Kante -> Knicklinie
     innerEdge = Math.max(baseInner - foldW, 0.5);
   }
@@ -2746,14 +2757,19 @@ function coneSectorGroup(cg, Ruse, dx, label, forExport, isOuter){
     // Auch die in der Ueberlappung wiederholten Arme erfassen, sonst fehlen
     // die Zapfen am Anfang und Ende des Zuschnitts.
     const alle=[...stabAngles, ...stabAngles.map(a0=>a0+sector), ...stabAngles.map(a0=>a0-sector)];
-    // Auch die HALBEN Arme an den Raendern beruecksichtigen: ihr Zapfen wird
-    // auf den Sektor beschnitten und damit halb gezeichnet.
+    // Die AEUSSERSTEN Zapfen an den beiden Nahtkanten wurden bisher auf den
+    // Sektor beschnitten und trotzdem als (dann sehr kurzer) Rest-Zapfen
+    // gezeichnet - von der Nahtkante aus sah das wie von einer roten Linie
+    // durchtrennt aus, und der Stummel haelt im Gegenstueck nicht mehr.
+    // Jetzt zaehlt nur die VOLLE Zapfenbreite: passt sie nicht komplett
+    // zwischen aStart und aEnd, faellt der Zapfen dort ganz weg (die Kontur
+    // bleibt an der Stelle ein einfacher Bogen) statt gekappt zu erscheinen.
     const stellen=alle.filter(a0=>a0>aStart-bw/2 && a0<aEnd+bw/2)
                       .sort((x,y)=>y-x);          // von aEnd nach aStart
     let cur=aEnd;
     stellen.forEach(a0=>{
-      const hi=Math.min(a0+bw/2, aEnd), lo=Math.max(a0-bw/2, aStart);
-      if(hi-lo < 0.4) return;                     // zu schmal, weglassen
+      const hi=a0+bw/2, lo=a0-bw/2;
+      if(lo < aStart-0.01 || hi > aEnd+0.01) return;   // passt nicht komplett -> weglassen
       path+=` A ${f2(innerEdge)} ${f2(innerEdge)} 0 0 0 ${P(innerEdge,hi)}`;
       path+=` L ${P(innerEdge-tiefe, hi)}`;
       path+=` A ${f2(innerEdge-tiefe)} ${f2(innerEdge-tiefe)} 0 0 0 ${P(innerEdge-tiefe, lo)}`;
@@ -2920,20 +2936,24 @@ function coneSectorGroup(cg, Ruse, dx, label, forExport, isOuter){
     for(let i=1;i<=schritte;i++) d+='L '+pol(r, a0+spanne*i/schritte).map(f).join(',')+' ';
     return d;
   };
+  // Jede blaue Knicklinie nur einmal je Radius. Frueher legten zwei Stellen
+  // (Knickflaeche und Falzlinie) bei der Aussenschale denselben Radius
+  // uebereinander: es sah aus wie ein einziger, etwas fetterer Ring, der auf
+  // keinen Regler reagierte.
+  const blauR=[];
+  const blaueLinie=(r)=>{
+    if(!(r>0) || blauR.some(x=>Math.abs(x-r)<0.3)) return '';
+    blauR.push(r);
+    return `<path d="${bogenMitLaschen(r)}" fill="none" stroke="#0000FF" stroke-width="0.6"/>`;
+  };
   let foldLine='';
   // Die Knicklinie bei rGreen ist nur dann eine echte FALTLINIE (magenta), wenn
   // an der Kegelspitze tatsaechlich gefaltet wird (foldFace = "mit" oder "Falz").
   // Bei "ohne" faellt rGreen mit der inneren SCHNITTKANTE zusammen, die schon rot
   // von der Hauptkontur gezeichnet wird -> keine zusaetzliche magenta Linie.
-  if(isOuter && foldFace){
-    const fp=bogenMitLaschen(rGreen);
-    foldLine=`<path d="${fp}" fill="none" stroke="#0000FF" stroke-width="0.6"/>`;
-  }
-  // Pinke Knicklinie der einstellbaren Knickflaeche ("mit").
-  if(foldRingR>innerEdge+0.2){
-    const fp=bogenMitLaschen(foldRingR);
-    foldLine+=`<path d="${fp}" fill="none" stroke="#0000FF" stroke-width="0.6"/>`;
-  }
+  if(isOuter && foldFace) foldLine += blaueLinie(rGreen);
+  // Knicklinie der einstellbaren Knickflaeche ("mit").
+  if(foldRingR>innerEdge+0.2) foldLine += blaueLinie(foldRingR);
   // --- Steckfalz: Bogenschlitze im INNEN-Kegel entlang der rosa Falzlinie,
   // dazu am AUSSEN-Kegel je Arm ein Streifen statt des Falzrings. Die Streifen
   // werden durch die Bogenschlitze gesteckt und halten die beiden Schalen.
@@ -2954,10 +2974,16 @@ function coneSectorGroup(cg, Ruse, dx, label, forExport, isOuter){
       return d+' Z';
     };
     if(!isOuter){
-      // Innen: Bogenschlitze auf der Falzlinie (echte Kreissegmente)
+      // Innen: Bogenschlitze auf der Falzlinie (echte Kreissegmente).
+      // An den beiden Nahtkanten (aStart/aEnd) wurde der Schlitz bisher auf
+      // die Kante gekappt und trotzdem als (dann sehr schmaler) Rest-Schlitz
+      // gezeichnet - das ergab die zwei abgeschnittenen Halb-Schlitze genau
+      // an den Enden des Sektors. Jetzt zaehlt nur die VOLLE Schlitzbreite:
+      // passt sie nicht komplett zwischen aStart und aEnd, faellt der
+      // Schlitz an dieser Stelle ganz weg statt gekappt zu erscheinen.
       stellen.forEach(a0=>{
-        const hi=Math.min(a0+winkel/2, aStart+arcSpan), lo=Math.max(a0-winkel/2, aStart);
-        if(hi-lo < 0.4) return;
+        const hi=a0+winkel/2, lo=a0-winkel/2;
+        if(lo < aStart-0.01 || hi > aStart+arcSpan+0.01) return;
         const mitte=(hi+lo)/2, w2=hi-lo;
         weldTabs+=`<path d="${bogenPfad(weldLineR+tW/2, weldLineR-tW/2, mitte, w2)}"/>`;
       });
@@ -2967,20 +2993,20 @@ function coneSectorGroup(cg, Ruse, dx, label, forExport, isOuter){
   let weldLine='';
   if(weldFold && weldW>0 && weldLineR>innerEdge+0.2){
     // Falzlinie (Grenze Knickflaeche -> Falzstreifen).
-    const wp=bogenMitLaschen(weldLineR);
-    weldLine=`<path d="${wp}" fill="none" stroke="#0000FF" stroke-width="0.6"/>`;
-    // Zweite Knicklinie (Auflage-Grenze) nur bei der EINZELN-Kegelecke
-    // (coneGap==0, keine zweite Schale). Im Doppelmodus zeichnet die aeussere
-    // Schale diese Grenze schon via foldLine; die innere Schale braucht sie
-    // nicht (dort ist es die durchgehende Auflage). So: aussen 2, innen 1.
+    weldLine = blaueLinie(weldLineR);
+    // Zweite Knicklinie (Auflage-Grenze) nur bei der EINZELNEN Kegelecke
+    // (coneGap==0, keine zweite Schale). Im Doppelmodus zeichnet die
+    // AUSSENSCHALE diese Grenze schon selbst: ihr baseInner liegt (siehe oben)
+    // um coneGap unter rGreen, foldLine zeichnet oben die rGreen-Linie, hier
+    // kommt weldLineR dazu - zwei verschiedene Radien, macht zusammen die
+    // zwei Knickflaechen der Aussenschale. Die Innenschale braucht diese
+    // zweite Linie im Doppelmodus nicht, dort ist es die durchgehende
+    // Auflage. So: aussen 2, innen 1.
     const isDoubleShell = coneGap>0.01;
     if(!isOuter && !isDoubleShell){
       const foldW2 = (foldW>0? foldW : weldW);
       const r2 = weldLineR + foldW2;
-      if(foldW2>0 && r2 < Rinner-0.3 && Math.abs(r2-rGreen)>0.3){
-        const wp2=bogenMitLaschen(r2);
-        weldLine+=`<path d="${wp2}" fill="none" stroke="#0000FF" stroke-width="0.6"/>`;
-      }
+      if(foldW2>0 && r2 < Rinner-0.3 && Math.abs(r2-rGreen)>0.3) weldLine += blaueLinie(r2);
     }
   }
   let centerHole='';
@@ -4237,16 +4263,31 @@ function renderBody(){
     // Die Ueberlappung wird jetzt direkt in mm eingestellt. Die Armlaenge und
     // die Lochlage ergeben sich daraus - keine Suche nach passenden Vielfachen
     // des Lochabstands mehr.
-    const half=(edgeLen - 2*rEndRef)/2;
+    const frei=edgeLen - 2*rEndRef;
+    const half=frei/2;
     const ov=armOverlapMM(edgeLen, rEndRef);
-    state.len = Math.max(2, Math.round((half + ov/2)*10)/10);
     const holesN=Math.max(1, state.holes||1);
     if(ov>0.05){
-      // Loecher gleichmaessig IM ueberdeckten Bereich, symmetrisch zur Mitte.
-      const hs=(edgeLen-2*rEndRef-ov)/2 + ov/(holesN+1);
-      const gp=ov/(holesN+1);
-      joinOverlapInfo={overlap:ov, rEnd:rEndRef, edge:edgeLen, gap:gp, hs, holes:holesN, pairs:holesN};
+      // Lochabstand: fest eingestellt, sonst aus der Kantenlaenge abgeleitet.
+      // Er haengt bewusst NICHT von der Ueberlappung ab. Frueher war er
+      // ov/(Loecher+1); dadurch wanderten beim Verstellen der Ueberlappung
+      // saemtliche Loecher mit.
+      const gp = (state.holeGap>0) ? state.holeGap
+               : Math.max(2, frei/(2*(holesN+1)));
+      // Die Lochgruppe sitzt mittig auf der Kante. Der Gegenarm traegt die
+      // spiegelbildlich gleiche Gruppe, also fallen alle Loecher zusammen,
+      // egal wie weit sich die Arme ueberdecken.
+      const hs = Math.max(1, frei/2 - (holesN-1)*gp/2);
+      const rand = Math.max(2, gp*0.4);           // Rand hinter dem letzten Loch
+      // So weit muessen sich die Arme mindestens ueberdecken, damit alle
+      // Loecher auf beiden Armen liegen. Stellt man weniger ein, baut das
+      // Werkzeug dieses Mindestmass - der Infotext nennt dann den echten Wert.
+      const ovMin = (holesN-1)*gp + 2*rand;
+      const ovEff = Math.max(ov, ovMin);
+      state.len = Math.max(2, Math.round((half + ovEff/2)*10)/10);
+      joinOverlapInfo={overlap:ovEff, rEnd:rEndRef, edge:edgeLen, gap:gp, hs, holes:holesN, pairs:holesN};
     } else {
+      state.len = Math.max(2, Math.round(half*10)/10);
       joinOverlapInfo={overlap:0, rEnd:rEndRef, edge:edgeLen};
     }
     if($('nLen')) $('nLen').value=state.len;
@@ -5446,12 +5487,22 @@ function armLengthsForNode(nd, rEnd){
     const frei=kante-2*rEnd;                   // freie Strecke zwischen den Knoten
     const ov=armOverlapMM(kante, rEnd);        // Ueberdeckung in mm
     if(ov>0.05) uebAktiv=true;
-    // Jeder Arm reicht bis zur Mitte plus die halbe Ueberdeckung.
-    lens.push(Math.max(2, Math.round((frei/2 + ov/2)*10)/10));
-    // Loecher gleichmaessig IM UEBERDECKTEN Bereich verteilen. Der Bereich
-    // reicht von (frei-ov)/2 bis (frei+ov)/2, gemessen ab der Knicklinie.
-    starts.push(ov>0.05 ? ((frei-ov)/2 + ov/(nL+1)) : undefined);
-    if(ov>0.05) state.ovStep = ov/(nL+1);      // gleiche Abstaende im Bereich
+    // Lochabstand: fest eingestellt, sonst aus der Kantenlaenge abgeleitet.
+    // Wichtig: er haengt NICHT von der Ueberdeckung ab, sonst wandern beim
+    // Verstellen der Ueberlappung alle Loecher mit.
+    const gap = (state.holeGap>0) ? state.holeGap
+              : Math.max(2, frei/(2*(nL+1)));
+    // Die Lochgruppe sitzt MITTIG auf der Kante. Weil der Gegenarm spiegel-
+    // bildlich dieselbe Gruppe traegt, fallen alle Loecher zusammen - un-
+    // abhaengig davon, wie weit sich die Arme ueberdecken.
+    const hs = Math.max(1, frei/2 - (nL-1)*gap/2);
+    const rand = Math.max(2, gap*0.4);         // Materialrand hinter dem letzten Loch
+    // Mindestueberdeckung, damit alle Loecher auf beiden Armen liegen.
+    const ovMin = (nL-1)*gap + 2*rand;
+    const ovEff = ov>0.05 ? Math.max(ov, ovMin) : 0;
+    lens.push(Math.max(2, Math.round((frei/2 + ovEff/2)*10)/10));
+    starts.push(ov>0.05 ? Math.round(hs*10)/10 : undefined);
+    if(ov>0.05) state.ovStep = gap;
   });
   state.starts = uebAktiv ? starts : null;
   state.ovGap  = uebAktiv ? null : null;
@@ -7301,6 +7352,19 @@ document.querySelectorAll('#bConeLayerSeg button').forEach(b=>b.addEventListener
   document.querySelectorAll('#bConeLayerSeg button').forEach(x=>x.classList.remove('on'));
   b.classList.add('on');
   $('bConeFoldWrap').style.display = 'block';
+  // Der Steckfalz war sehr versteckt: er taucht in der Verbindungsart erst
+  // auf, wenn NEBEN der Doppellage auch "+ Falz" gewaehlt ist - inhaltlich
+  // ist er davon unabhaengig, aber ohne beides gleichzeitig sieht man ihn
+  // nie. Bei "innen+aussen" darum "+ Falz" gleich mitaktivieren, falls die
+  // Knickflaeche dort noch nicht schon steht.
+  if(b.dataset.v==='two'){
+    const weldBtn=document.querySelector('#bConeFoldSeg button[data-v="weld"]');
+    if(weldBtn && !weldBtn.classList.contains('on')){
+      document.querySelectorAll('#bConeFoldSeg button').forEach(x=>x.classList.remove('on'));
+      weldBtn.classList.add('on');
+      $('bConeWeldWrap').style.display='block';
+    }
+  }
   render();
 }));
 document.querySelectorAll('#bConeFoldSeg button').forEach(b=>b.addEventListener('click',()=>{
@@ -7731,6 +7795,19 @@ document.querySelectorAll('#coneLayerSeg button').forEach(b=>b.addEventListener(
   document.querySelectorAll('#coneLayerSeg button').forEach(x=>x.classList.remove('on'));
   b.classList.add('on');
   $('coneFoldWrap').style.display = 'block';
+  // Siehe Koerpermodus (bConeLayerSeg): Steckfalz taucht sonst erst auf,
+  // wenn NEBEN der Doppellage auch "+ Falz" gewaehlt ist. Bei "innen+aussen"
+  // darum "+ Falz" gleich mitaktivieren, falls die Knickflaeche dort noch
+  // nicht schon steht.
+  if(b.dataset.v==='two'){
+    const weldBtn=document.querySelector('#coneFoldSeg button[data-v="weld"]');
+    if(weldBtn && !weldBtn.classList.contains('on')){
+      document.querySelectorAll('#coneFoldSeg button').forEach(x=>x.classList.remove('on'));
+      weldBtn.classList.add('on');
+      $('coneWeldWrap').style.display='block';
+      $('coneFoldWidthWrap').style.display='none';
+    }
+  }
   render();
 }));
 document.querySelectorAll('#coneFoldSeg button').forEach(b=>b.addEventListener('click',()=>{
