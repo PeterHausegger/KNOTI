@@ -14,6 +14,7 @@
     --mono:"Consolas","SF Mono",monospace;
   }
   *{box-sizing:border-box;}
+  [hidden]{display:none !important;}  /* schlaegt .knopf und .leiste, die display setzen */
   body{
     margin:0;background:var(--paper);color:var(--ink);font-family:var(--schrift);
     font-size:15px;line-height:1.55;
@@ -55,6 +56,26 @@
   .meldung.warte{color:var(--muted);}
   .meldung code{font-family:var(--mono);font-size:12.5px;}
 
+  .leiste{
+    display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin-block:4px 18px;
+  }
+  .suchfeld{
+    display:flex;align-items:center;gap:7px;flex:1 1 220px;min-width:180px;max-width:340px;
+    border:1px solid var(--linie);border-radius:9px;background:var(--flaeche);padding:0 11px;
+  }
+  .suchfeld svg{width:15px;height:15px;flex:none;color:var(--muted);}
+  .suchfeld input{
+    border:0;background:transparent;font:inherit;font-size:14px;padding:9px 0;width:100%;color:inherit;
+  }
+  .suchfeld input:focus{outline:none;}
+  .suchfeld:focus-within{border-color:var(--ink);}
+  .filter{
+    font:inherit;font-size:13.5px;color:inherit;border:1px solid var(--linie);border-radius:9px;
+    background:var(--flaeche);padding:9px 10px;cursor:pointer;max-width:200px;
+  }
+  .filter.gesetzt{border-color:var(--ink);font-weight:600;}
+  .leiste .einheit{margin-left:auto;font-size:13px;color:var(--muted);}
+  .kachel .wer{font-size:12.5px;color:var(--muted);margin:-2px 0 4px;}
   .raster{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:18px;}
   .kachel{
     display:flex;flex-direction:column;text-align:left;padding:0;cursor:pointer;
@@ -153,7 +174,7 @@
     border:1px solid var(--linie);border-radius:8px;padding:9px 11px;width:100%;
   }
   textarea{resize:vertical;min-height:80px;}
-  .zweispalt{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .zweispalt{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px;}
   .ablage{
     border:1.5px dashed var(--linie);border-radius:8px;background:var(--paper);
     padding:14px;text-align:center;color:var(--muted);font-size:13px;cursor:pointer;
@@ -161,9 +182,24 @@
   .ablage:hover{border-color:var(--ink);}
   .ablage b{display:block;color:var(--ink);font-weight:600;font-size:14px;margin-bottom:2px;}
   .ablage.gefuellt{border-style:solid;}
-  .liste{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--muted);}
-  .liste div{display:flex;gap:8px;align-items:center;}
-  .liste .name{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ablage.ueber{border-color:var(--knoten);background:#f2f8f4;}
+  .liste{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);}
+  .liste .zeile{
+    display:flex;gap:9px;align-items:center;background:var(--flaeche);
+    border:1px solid var(--linie);border-radius:8px;padding:6px 8px;
+  }
+  .liste .name{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 auto;}
+  .liste img{width:42px;height:42px;object-fit:cover;border-radius:5px;flex:none;background:var(--raster);}
+  .liste .marke{
+    flex:none;font-size:11px;font-weight:600;color:var(--paper);background:var(--knoten);
+    border-radius:20px;padding:2px 8px;
+  }
+  .liste .werkzeug{
+    flex:none;border:1px solid var(--linie);background:var(--paper);border-radius:6px;
+    width:28px;height:28px;line-height:1;cursor:pointer;color:var(--muted);font-size:15px;
+  }
+  .liste .werkzeug:hover{border-color:var(--ink);color:var(--ink);}
+  .liste .werkzeug.weg:hover{border-color:#c0392b;color:#c0392b;}
   .einwilligung{
     display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:var(--muted);
     background:var(--paper);border:1px solid var(--linie);border-radius:8px;padding:12px;
@@ -208,6 +244,27 @@
   </header>
 
   <div id="status" class="meldung warte">…</div>
+
+  <div class="leiste" id="leiste" hidden>
+    <label class="suchfeld" for="suche">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+      <input type="search" id="suche" autocomplete="off">
+    </label>
+    <select class="filter" id="fltMaterial"></select>
+    <select class="filter" id="fltVerfahren"></select>
+    <select class="filter" id="fltVerbindung"></select>
+    <select class="filter" id="sortierung">
+      <option value="neu"></option>
+      <option value="alt"></option>
+      <option value="herz"></option>
+      <option value="titel"></option>
+    </select>
+    <button class="knopf leer" id="filterWeg" hidden></button>
+    <span class="einheit" id="trefferZahl"></span>
+  </div>
+
+  <div class="meldung" id="leerTreffer" hidden></div>
   <div class="raster" id="raster"></div>
 
   <footer>
@@ -261,9 +318,15 @@
     </div>
     <div class="blattkoerper">
       <form id="nForm" style="display:flex;flex-direction:column;gap:14px;">
-        <label class="feld" for="fTitel"><span id="tFTitel">Titel</span>
-          <input type="text" id="fTitel" maxlength="120" required>
-        </label>
+        <div class="zweispalt">
+          <label class="feld" for="fTitel"><span id="tFTitel">Titel</span>
+            <input type="text" id="fTitel" maxlength="120" required>
+          </label>
+          <label class="feld" for="fName"><span id="tFName">Name</span>
+            <span class="leise" id="tFNameHint">freiwillig, erscheint öffentlich beim Beitrag</span>
+            <input type="text" id="fName" maxlength="80">
+          </label>
+        </div>
 
         <div>
           <div class="ablage" id="fBilderFeld">
@@ -292,6 +355,10 @@
           <label class="feld" for="fMaterial"><span id="tFMaterial">Material</span>
             <span class="leise" id="tFFreiwillig1">freiwillig</span>
             <input type="text" id="fMaterial" maxlength="200">
+          </label>
+          <label class="feld" for="fVerfahren"><span id="tFVerfahren">Verfahren</span>
+            <span class="leise" id="tFFreiwillig4">freiwillig</span>
+            <input type="text" id="fVerfahren" maxlength="200" placeholder="Lasercut, 3D-Druck, …">
           </label>
           <label class="feld" for="fVerbindung"><span id="tFVerbindung">Verbindungsart</span>
             <span class="leise" id="tFFreiwillig2">freiwillig</span>
@@ -342,15 +409,24 @@ const TXT = {
     fehler:"Die Beiträge konnten nicht geladen werden.",
     bilder:"Bilder", keinBild:"kein Bild", kommentare:"Kommentare", kommentar:"Kommentar",
     keineKommentare:"Noch keine Kommentare", bauen:"selber bauen", keinLink:"keine Einstellungen hinterlegt",
-    material:"Material", verbindung:"Verbindungsart", eingereicht:"Eingereicht",
+    material:"Material", verfahren:"Verfahren", verbindung:"Verbindungsart", eingereicht:"Eingereicht",
     dateien:"Dateien", herz:"Gefällt mir", herzDa:"Gefällt dir", nameL:"Name", kommentarL:"Kommentar",
     kSenden:"Kommentar abschicken", kHinweis:"Bitte freundlich bleiben.",
     kDanke:"Danke für den Kommentar.",
-    fTitel:"Titel", fBilder:"Bilder auswählen", fBilderHint:"mehrere möglich, das erste wird als Vorschaubild verwendet",
+    fTitel:"Titel", fBilder:"Bilder auswählen", fBilderHint:"mehrere möglich, auch nacheinander. Das erste wird das Kachelbild.",
     fDateien:"Dateien auswählen", fDateienHint:"STL, PDF oder SVG, freiwillig",
     fLink:"Link zu den KNOTI-Einstellungen",
     fLinkHint:"Im Werkzeug auf „Als Link teilen“, dann hier einfügen. Erscheint als Knopf „selber bauen“.",
-    fMaterial:"Material", fVerbindung:"Verbindungsart", frei:"freiwillig",
+    fMaterial:"Material", fVerfahren:"Verfahren", vfPlatz:"Lasercut, 3D-Druck, von Hand …",
+    fName:"Name", fNameHint:"freiwillig, erscheint öffentlich beim Beitrag",
+    entfernen:"entfernen", nachVorne:"eine Stelle nach vorne", kachelbild:"Kachelbild",
+    zuViele:"Höchstens 12 Stück. Die übrigen wurden nicht übernommen.",
+    wer:"Eingereicht von", vonWem:"von",
+    suchePlatz:"Suchen", alleMaterial:"Material: alle", alleVerfahren:"Verfahren: alle",
+    alleVerbindung:"Verbindungsart: alle",
+    sNeu:"Neueste zuerst", sAlt:"Älteste zuerst", sHerz:"Meiste Herzen", sTitel:"Titel A–Z",
+    filterWeg:"Filter zurücksetzen", treffer:"Beiträge", trefferEins:"Beitrag",
+    keineTreffer:"Dazu passt kein Beitrag. Suchbegriff oder Filter ändern.", fVerbindung:"Verbindungsart", frei:"freiwillig",
     fText:"Beschreibung und Anmerkungen", fKontakt:"Kontakt",
     fKontaktHint:"freiwillig. Wird NICHT veröffentlicht und ist nur für Peter Hausegger sichtbar, für Rückfragen.",
     fOk:"Ich bestätige, dass die gezeigten Arbeiten von mir stammen und dass ich die Bilder und Dateien veröffentlichen darf. Sind Personen abgebildet, liegt deren Einwilligung vor.",
@@ -368,15 +444,24 @@ const TXT = {
     fehler:"The entries could not be loaded.",
     bilder:"images", keinBild:"no image", kommentare:"comments", kommentar:"comment",
     keineKommentare:"No comments yet", bauen:"build it yourself", keinLink:"no settings attached",
-    material:"Material", verbindung:"Joint type", eingereicht:"Submitted",
+    material:"Material", verfahren:"Process", verbindung:"Joint type", eingereicht:"Submitted",
     dateien:"Files", herz:"Like", herzDa:"Liked", nameL:"Name", kommentarL:"Comment",
     kSenden:"Post comment", kHinweis:"Please keep it friendly.",
     kDanke:"Thank you for the comment.",
-    fTitel:"Title", fBilder:"Choose images", fBilderHint:"several possible, the first one becomes the tile image",
+    fTitel:"Title", fBilder:"Choose images", fBilderHint:"several possible, also one after another. The first becomes the tile image.",
     fDateien:"Choose files", fDateienHint:"STL, PDF or SVG, optional",
     fLink:"Link to the KNOTI settings",
     fLinkHint:"In the tool press “Share as link”, then paste it here. It appears as the “build it yourself” button.",
-    fMaterial:"Material", fVerbindung:"Joint type", frei:"optional",
+    fMaterial:"Material", fVerfahren:"Process", vfPlatz:"laser cut, 3D print, by hand …",
+    fName:"Name", fNameHint:"optional, shown publicly with the entry",
+    entfernen:"remove", nachVorne:"move one place forward", kachelbild:"tile image",
+    zuViele:"Twelve at most. The remaining ones were not added.",
+    wer:"Submitted by", vonWem:"by",
+    suchePlatz:"Search", alleMaterial:"Material: all", alleVerfahren:"Process: all",
+    alleVerbindung:"Joint type: all",
+    sNeu:"Newest first", sAlt:"Oldest first", sHerz:"Most hearts", sTitel:"Title A–Z",
+    filterWeg:"Clear filters", treffer:"entries", trefferEins:"entry",
+    keineTreffer:"Nothing matches. Try another search term or filter.", fVerbindung:"Joint type", frei:"optional",
     fText:"Description and notes", fKontakt:"Contact",
     fKontaktHint:"optional. It is NOT published and is visible to Peter Hausegger only, for questions.",
     fOk:"I confirm that the work shown is mine and that I may publish these images and files. If people are shown, their consent has been obtained.",
@@ -464,6 +549,7 @@ function verkleinern(datei, maxKante=1600, guete=0.82){
 
 /* ---------- Zustand ---------- */
 let PROJEKTE = [], HERZEN = {}, MEINE = {}, OFFEN = null, BILDNR = 0, LEER = false;
+const FILTER = { q:"", material:"", verfahren:"", verbindung:"", sort:"neu" };
 
 /* ---------- Oberfläche beschriften ---------- */
 function beschrifte(){
@@ -481,10 +567,15 @@ function beschrifte(){
   $("tFLink").textContent = t("fLink");
   $("tFLinkHint").textContent = t("fLinkHint");
   $("tFMaterial").textContent = t("fMaterial");
+  $("tFName").textContent = t("fName");
+  $("tFNameHint").textContent = t("fNameHint");
+  $("tFVerfahren").textContent = t("fVerfahren");
+  $("fVerfahren").placeholder = t("vfPlatz");
   $("tFVerbindung").textContent = t("fVerbindung");
   $("tFFreiwillig1").textContent = t("frei");
   $("tFFreiwillig2").textContent = t("frei");
   $("tFFreiwillig3").textContent = t("frei");
+  $("tFFreiwillig4").textContent = t("frei");
   $("tFText").textContent = t("fText");
   $("tFKontakt").textContent = t("fKontakt");
   $("tFKontaktHint").textContent = t("fKontaktHint");
@@ -497,6 +588,12 @@ function beschrifte(){
   $("tKHinweis").textContent = t("kHinweis");
   $("tDatenschutz").textContent = t("datenschutz");
   document.querySelectorAll("[data-schliessen]").forEach(b=>b.setAttribute("aria-label", t("schliessen")));
+  $("suche").placeholder = t("suchePlatz");
+  $("filterWeg").textContent = t("filterWeg");
+  const so = $("sortierung").options;
+  so[0].textContent=t("sNeu"); so[1].textContent=t("sAlt");
+  so[2].textContent=t("sHerz"); so[3].textContent=t("sTitel");
+  fuelleFilter();
   if(LEER) $("status").textContent = t("keine");
   $("spDe").classList.toggle("an", SPR==="de");
   $("spEn").classList.toggle("an", SPR==="en");
@@ -504,10 +601,60 @@ function beschrifte(){
   if(OFFEN) zeigeDetail(OFFEN);
 }
 
+/* ---------- Suchen, filtern, sortieren ---------- */
+function werte(feld){
+  const m = new Map();                       // Kleinschreibung -> erste Schreibweise
+  PROJEKTE.forEach(p=>{ const v=(p[feld]||"").trim();
+    if(v && !m.has(v.toLowerCase())) m.set(v.toLowerCase(), v); });
+  return [...m.values()].sort((a,b)=>a.localeCompare(b, SPR==="en"?"en":"de"));
+}
+function fuelleFilter(){
+  [["fltMaterial","material","alleMaterial","material"],
+   ["fltVerfahren","verfahren","alleVerfahren","verfahren"],
+   ["fltVerbindung","verbindungsart","alleVerbindung","verbindung"]].forEach(([id,feld,leer,schl])=>{
+    const w = werte(feld), aus = $(id), jetzt = FILTER[schl];
+    aus.innerHTML = `<option value="">${esc(t(leer))}</option>`
+      + w.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join("");
+    aus.value = w.some(v=>v===jetzt) ? jetzt : "";
+    FILTER[schl] = aus.value;
+    aus.hidden = w.length === 0;
+    aus.classList.toggle("gesetzt", !!aus.value);
+  });
+  $("sortierung").value = FILTER.sort;
+  const aktiv = FILTER.q || FILTER.material || FILTER.verfahren || FILTER.verbindung;
+  $("filterWeg").hidden = !aktiv;
+  $("leiste").hidden = PROJEKTE.length < 2;
+}
+function passt(p){
+  if(FILTER.material   && (p.material||"")       !== FILTER.material)   return false;
+  if(FILTER.verfahren  && (p.verfahren||"")      !== FILTER.verfahren)  return false;
+  if(FILTER.verbindung && (p.verbindungsart||"") !== FILTER.verbindung) return false;
+  const q = FILTER.q.trim().toLowerCase();
+  if(!q) return true;
+  const heu = [p.titel,p.name,p.beschreibung,p.material,p.verfahren,p.verbindungsart]
+    .join(" ").toLowerCase();
+  return q.split(/\s+/).every(wort => heu.includes(wort));
+}
+function sichtbare(){
+  const l = PROJEKTE.filter(passt);
+  const zeit = x => new Date(x.erstellt_am).getTime() || 0;
+  if(FILTER.sort==="alt")        l.sort((a,b)=>zeit(a)-zeit(b));
+  else if(FILTER.sort==="herz")  l.sort((a,b)=>(HERZEN[b.id]||0)-(HERZEN[a.id]||0) || zeit(b)-zeit(a));
+  else if(FILTER.sort==="titel") l.sort((a,b)=>String(a.titel).localeCompare(String(b.titel), SPR==="en"?"en":"de"));
+  else                           l.sort((a,b)=>zeit(b)-zeit(a));
+  return l;
+}
+
 /* ---------- Übersicht ---------- */
 function zeichneRaster(){
   const r = $("raster");
-  r.innerHTML = PROJEKTE.map(p=>{
+  const liste = sichtbare();
+  $("trefferZahl").textContent = PROJEKTE.length>1
+    ? `${liste.length} ${liste.length===1? t("trefferEins") : t("treffer")}` : "";
+  const nix = $("leerTreffer");
+  nix.hidden = !(PROJEKTE.length && !liste.length);
+  nix.textContent = t("keineTreffer");
+  r.innerHTML = liste.map(p=>{
     const bild = (p.bilder&&p.bilder.length)
       ? `<img src="${esc(bildAdresse(p.bilder[0]))}" alt="${esc(p.titel)}" loading="lazy">`
       : `<div class="leerbild">${esc(t("keinBild"))}</div>`;
@@ -518,6 +665,7 @@ function zeichneRaster(){
       <div class="bildfeld">${bild}${mehr}</div>
       <div class="kachelkoerper">
         <h2>${esc(p.titel)}</h2>
+        ${p.name ? `<div class="wer">${esc(t("vonWem"))} ${esc(p.name)}</div>` : ""}
         <p>${esc(p.beschreibung||"")}</p>
         <div class="fusszeile">
           <span class="herz">${herzBild(!!MEINE[p.id])} ${anz}</span>
@@ -540,7 +688,9 @@ function zeigeDetail(p){
   $("dTitel").textContent = p.titel;
   $("dText").textContent = p.beschreibung || "";
   const an = [];
+  if(p.name)           an.push([t("wer"), p.name]);
   if(p.material)       an.push([t("material"), p.material]);
+  if(p.verfahren)      an.push([t("verfahren"), p.verfahren]);
   if(p.verbindungsart) an.push([t("verbindung"), p.verbindungsart]);
   an.push([t("eingereicht"), datum(p.erstellt_am)]);
   $("dAngaben").innerHTML = an.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
@@ -605,7 +755,7 @@ async function ladeAlles(){
   const s = $("status");
   s.className = "meldung warte"; s.textContent = t("laden");
   try{
-    const felder = "id,erstellt_am,titel,beschreibung,material,verbindungsart,knoti_link,bilder,dateien,sprache";
+    const felder = "id,erstellt_am,titel,name,beschreibung,material,verfahren,verbindungsart,knoti_link,bilder,dateien,sprache";
     PROJEKTE = await hole(`projekte?select=${felder}&freigegeben=eq.true&order=erstellt_am.desc`);
     try{
       const h = await hole("herzen?select=projekt_id,besucher");
@@ -620,6 +770,7 @@ async function ladeAlles(){
       PROJEKTE.forEach(p=>p.kommentarzahl = zahl[p.id]||0);
     }catch(e){}
     LEER = !PROJEKTE.length;
+    fuelleFilter();
     if(LEER){ s.className="meldung"; s.style.display=""; s.textContent = t("keine"); }
     else { s.style.display = "none"; }
     zeichneRaster();
@@ -631,13 +782,47 @@ async function ladeAlles(){
 
 /* ---------- Einreichen ---------- */
 const gewaehlt = { bilder:[], dateien:[] };
+const HOECHST = 12;
+let vorschauen = [];                      // erzeugte Objekt-Adressen, werden wieder freigegeben
+
+const groesse = (b)=> b >= 1048576
+  ? (b/1048576).toFixed(1)+" MB"
+  : Math.max(1, Math.round(b/1024))+" kB";
 function zeigeAuswahl(){
-  const zeile = (d)=>`<div><span class="name">${esc(d.name)}</span>
-    <span class="einheit">${(d.size/1024/1024).toFixed(1)} MB</span></div>`;
-  $("fBilderListe").innerHTML  = gewaehlt.bilder.map(zeile).join("");
-  $("fDateienListe").innerHTML = gewaehlt.dateien.map(zeile).join("");
+  vorschauen.forEach(u=>{ try{ URL.revokeObjectURL(u); }catch(e){} });
+  vorschauen = [];
+  const zeile = (d, nr, art)=>{
+    const bild = (art==="bilder" && /^image\//.test(d.type) && !/svg/.test(d.type))
+      ? (()=>{ const u=URL.createObjectURL(d); vorschauen.push(u);
+               return `<img src="${u}" alt="">`; })() : "";
+    const ersteMarke = (art==="bilder" && nr===0 && gewaehlt.bilder.length>1)
+      ? `<span class="marke">${esc(t("kachelbild"))}</span>` : "";
+    const hoch = (nr>0)
+      ? `<button type="button" class="werkzeug" data-tu="hoch" data-art="${art}" data-nr="${nr}"
+           title="${esc(t("nachVorne"))}" aria-label="${esc(t("nachVorne"))}">&#8593;</button>` : "";
+    return `<div class="zeile">${bild}
+      <span class="name">${esc(d.name)}</span>${ersteMarke}
+      <span class="einheit">${groesse(d.size)}</span>${hoch}
+      <button type="button" class="werkzeug weg" data-tu="weg" data-art="${art}" data-nr="${nr}"
+        title="${esc(t("entfernen"))}" aria-label="${esc(t("entfernen"))}">&times;</button></div>`;
+  };
+  $("fBilderListe").innerHTML  = gewaehlt.bilder.map((d,i)=>zeile(d,i,"bilder")).join("");
+  $("fDateienListe").innerHTML = gewaehlt.dateien.map((d,i)=>zeile(d,i,"dateien")).join("");
   $("fBilderFeld").classList.toggle("gefuellt", gewaehlt.bilder.length>0);
   $("fDateienFeld").classList.toggle("gefuellt", gewaehlt.dateien.length>0);
+}
+
+// Neue Auswahl ANHAENGEN statt ersetzen, Doppelte erkennen
+function nimmDazu(art, dateien){
+  const liste = gewaehlt[art];
+  let voll = false;
+  Array.from(dateien).forEach(d=>{
+    if(liste.length >= HOECHST){ voll = true; return; }
+    if(liste.some(x=>x.name===d.name && x.size===d.size && x.lastModified===d.lastModified)) return;
+    liste.push(d);
+  });
+  $("nStatus").textContent = voll ? t("zuViele") : "";
+  zeigeAuswahl();
 }
 function saubererName(n){
   return String(n||"datei").normalize("NFKD").replace(/[^\w.\-]+/g,"_").slice(-60);
@@ -668,8 +853,10 @@ async function einreichen(ev){
     await schreibe("projekte", {
       id,
       titel:          $("fTitel").value.trim(),
+      name:           $("fName").value.trim() || null,
       beschreibung:   $("fText").value.trim() || null,
       material:       $("fMaterial").value.trim() || null,
+      verfahren:      $("fVerfahren").value.trim() || null,
       verbindungsart: $("fVerbindung").value.trim() || null,
       knoti_link:     $("fLink").value.trim() || null,
       bilder:         bilderPfade,
@@ -727,15 +914,50 @@ $("kForm").addEventListener("submit", async ev=>{
     $("dKopfKommentare").textContent = e.message;
   }
 });
+$("suche").addEventListener("input", ev=>{
+  FILTER.q = ev.target.value; $("filterWeg").hidden = !(FILTER.q || FILTER.material
+    || FILTER.verfahren || FILTER.verbindung); zeichneRaster();
+});
+[["fltMaterial","material"],["fltVerfahren","verfahren"],["fltVerbindung","verbindung"]]
+  .forEach(([id,schl])=> $(id).addEventListener("change", ev=>{
+    FILTER[schl] = ev.target.value;
+    ev.target.classList.toggle("gesetzt", !!ev.target.value);
+    $("filterWeg").hidden = !(FILTER.q || FILTER.material || FILTER.verfahren || FILTER.verbindung);
+    zeichneRaster();
+  }));
+$("sortierung").addEventListener("change", ev=>{ FILTER.sort = ev.target.value; zeichneRaster(); });
+$("filterWeg").addEventListener("click", ()=>{
+  FILTER.q=""; FILTER.material=""; FILTER.verfahren=""; FILTER.verbindung="";
+  $("suche").value=""; fuelleFilter(); zeichneRaster();
+});
 $("neuAuf").addEventListener("click", ()=>$("neu").classList.add("offen"));
 $("zumWerkzeug").addEventListener("click", ()=>{ window.location.href = WERKZEUG_URL; });
 $("fBilderFeld").addEventListener("click", ()=>$("fBilder").click());
 $("fDateienFeld").addEventListener("click", ()=>$("fDateien").click());
 $("fBilder").addEventListener("change", ev=>{
-  gewaehlt.bilder = Array.from(ev.target.files).slice(0,12); zeigeAuswahl();
+  nimmDazu("bilder", ev.target.files); ev.target.value = "";   // gleiche Datei spaeter erneut waehlbar
 });
 $("fDateien").addEventListener("change", ev=>{
-  gewaehlt.dateien = Array.from(ev.target.files).slice(0,12); zeigeAuswahl();
+  nimmDazu("dateien", ev.target.files); ev.target.value = "";
+});
+[["fBilderListe"],["fDateienListe"]].forEach(([id])=>
+  $(id).addEventListener("click", ev=>{
+    const k = ev.target.closest("button[data-tu]"); if(!k) return;
+    ev.preventDefault();
+    const art = k.dataset.art, nr = Number(k.dataset.nr), l = gewaehlt[art];
+    if(k.dataset.tu==="weg")       l.splice(nr,1);
+    else if(nr>0)                  l.splice(nr-1, 0, l.splice(nr,1)[0]);
+    $("nStatus").textContent = "";
+    zeigeAuswahl();
+  }));
+[["fBilderFeld","bilder"],["fDateienFeld","dateien"]].forEach(([id,art])=>{
+  const feld = $(id);
+  feld.addEventListener("dragover", ev=>{ ev.preventDefault(); feld.classList.add("ueber"); });
+  feld.addEventListener("dragleave", ()=>feld.classList.remove("ueber"));
+  feld.addEventListener("drop", ev=>{
+    ev.preventDefault(); feld.classList.remove("ueber");
+    if(ev.dataTransfer && ev.dataTransfer.files.length) nimmDazu(art, ev.dataTransfer.files);
+  });
 });
 $("nForm").addEventListener("submit", einreichen);
 document.querySelectorAll("[data-schliessen]").forEach(b=>
