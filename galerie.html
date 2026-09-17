@@ -169,12 +169,20 @@
 
   label.feld{display:flex;flex-direction:column;gap:5px;font-size:13.5px;font-weight:600;}
   label.feld .leise{font-weight:400;color:var(--muted);font-size:12.5px;}
+  label.feld .kopf{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+  label.feld input,label.feld textarea{margin-top:auto;}
+  .zeichen{
+    font-weight:600;font-size:11px;letter-spacing:.02em;border-radius:20px;padding:2px 8px;
+    border:1px solid var(--linie);color:var(--muted);background:var(--paper);
+  }
+  .zeichen.offen{border-color:var(--knoten);color:var(--knoten);}
+  .zeichen.still{border-color:var(--kegel);color:var(--kegel);}
   input[type=text],input[type=email],textarea,select{
     font:inherit;font-size:14px;color:var(--ink);background:var(--paper);
     border:1px solid var(--linie);border-radius:8px;padding:9px 11px;width:100%;
   }
   textarea{resize:vertical;min-height:80px;}
-  .zweispalt{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px;}
+  .zweispalt{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px;align-items:end;}
   .ablage{
     border:1.5px dashed var(--linie);border-radius:8px;background:var(--paper);
     padding:14px;text-align:center;color:var(--muted);font-size:13px;cursor:pointer;
@@ -322,8 +330,9 @@
           <label class="feld" for="fTitel"><span id="tFTitel">Titel</span>
             <input type="text" id="fTitel" maxlength="120" required>
           </label>
-          <label class="feld" for="fName"><span id="tFName">Name</span>
-            <span class="leise" id="tFNameHint">freiwillig, erscheint öffentlich beim Beitrag</span>
+          <label class="feld" for="fName">
+            <span class="kopf"><span id="tFName">Name</span>
+              <span class="zeichen offen" id="tFNameHint">öffentlich</span></span>
             <input type="text" id="fName" maxlength="80">
           </label>
         </div>
@@ -371,7 +380,9 @@
           <textarea id="fText" maxlength="3000"></textarea>
         </label>
 
-        <label class="feld" for="fKontakt"><span id="tFKontakt">Kontakt</span>
+        <label class="feld" for="fKontakt">
+          <span class="kopf"><span id="tFKontakt">Kontakt</span>
+            <span class="zeichen still" id="tFKontaktMerk">nicht öffentlich</span></span>
           <span class="leise" id="tFKontaktHint">freiwillig. Wird NICHT veröffentlicht und ist nur für Peter Hausegger sichtbar, für Rückfragen.</span>
           <input type="text" id="fKontakt" maxlength="200">
         </label>
@@ -418,7 +429,7 @@ const TXT = {
     fLink:"Link zu den KNOTI-Einstellungen",
     fLinkHint:"Im Werkzeug auf „Als Link teilen“, dann hier einfügen. Erscheint als Knopf „selber bauen“.",
     fMaterial:"Material", fVerfahren:"Verfahren", vfPlatz:"Lasercut, 3D-Druck, von Hand …",
-    fName:"Name", fNameHint:"freiwillig, erscheint öffentlich beim Beitrag",
+    fName:"Name", fNameHint:"öffentlich", fKontaktMerk:"nicht öffentlich",
     entfernen:"entfernen", nachVorne:"eine Stelle nach vorne", kachelbild:"Kachelbild",
     zuViele:"Höchstens 12 Stück. Die übrigen wurden nicht übernommen.",
     wer:"Eingereicht von", vonWem:"von",
@@ -428,7 +439,7 @@ const TXT = {
     filterWeg:"Filter zurücksetzen", treffer:"Beiträge", trefferEins:"Beitrag",
     keineTreffer:"Dazu passt kein Beitrag. Suchbegriff oder Filter ändern.", fVerbindung:"Verbindungsart", frei:"freiwillig",
     fText:"Beschreibung und Anmerkungen", fKontakt:"Kontakt",
-    fKontaktHint:"freiwillig. Wird NICHT veröffentlicht und ist nur für Peter Hausegger sichtbar, für Rückfragen.",
+    fKontaktHint:"freiwillig, nur für Rückfragen von Peter Hausegger.",
     fOk:"Ich bestätige, dass die gezeigten Arbeiten von mir stammen und dass ich die Bilder und Dateien veröffentlichen darf. Sind Personen abgebildet, liegt deren Einwilligung vor.",
     fModeration:"Dein Beitrag erscheint sofort auf der Wand.",
     senden:"Projekt einreichen", sende:"wird hochgeladen…",
@@ -453,7 +464,7 @@ const TXT = {
     fLink:"Link to the KNOTI settings",
     fLinkHint:"In the tool press “Share as link”, then paste it here. It appears as the “build it yourself” button.",
     fMaterial:"Material", fVerfahren:"Process", vfPlatz:"laser cut, 3D print, by hand …",
-    fName:"Name", fNameHint:"optional, shown publicly with the entry",
+    fName:"Name", fNameHint:"public", fKontaktMerk:"not public",
     entfernen:"remove", nachVorne:"move one place forward", kachelbild:"tile image",
     zuViele:"Twelve at most. The remaining ones were not added.",
     wer:"Submitted by", vonWem:"by",
@@ -463,7 +474,7 @@ const TXT = {
     filterWeg:"Clear filters", treffer:"entries", trefferEins:"entry",
     keineTreffer:"Nothing matches. Try another search term or filter.", fVerbindung:"Joint type", frei:"optional",
     fText:"Description and notes", fKontakt:"Contact",
-    fKontaktHint:"optional. It is NOT published and is visible to Peter Hausegger only, for questions.",
+    fKontaktHint:"optional, only for questions from Peter Hausegger.",
     fOk:"I confirm that the work shown is mine and that I may publish these images and files. If people are shown, their consent has been obtained.",
     fModeration:"Your entry appears on the wall right away.",
     senden:"Submit project", sende:"uploading…",
@@ -569,6 +580,7 @@ function beschrifte(){
   $("tFMaterial").textContent = t("fMaterial");
   $("tFName").textContent = t("fName");
   $("tFNameHint").textContent = t("fNameHint");
+  $("tFKontaktMerk").textContent = t("fKontaktMerk");
   $("tFVerfahren").textContent = t("fVerfahren");
   $("fVerfahren").placeholder = t("vfPlatz");
   $("tFVerbindung").textContent = t("fVerbindung");
