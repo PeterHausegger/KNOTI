@@ -783,6 +783,20 @@
     <label>Anzahl Arme <input class="numfield" type="number" id="nBallArms" min="2" max="24" step="1" value="4"></label>
     <input type="range" id="ballArms" min="2" max="12" value="4" step="1">
   </div>
+  <div class="grp" id="grpBallKonstruktion">
+    <label>Konstruktion <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
+    <div class="seg" id="ballKonstruktionSeg">
+      <button data-v="loch" class="on">Löcher</button>
+      <button data-v="zapfen">Zapfen</button>
+    </div>
+    <div class="help-text" data-i18n="help_ballkonstruktion">
+      Löcher: der Kragen bekommt eine Bohrung, in die eine Strebe (Voll- oder
+      Rundstab) gesteckt wird - bisheriges Verhalten. Zapfen: der Kragen bildet
+      stattdessen einen herausragenden Zapfen, auf den ein Hohlprofil (Rohr
+      oder Formrohr) gesteckt wird. Die Maße darunter (Durchmesser bzw. Breite/
+      Höhe) meinen dann das INNENMASS des Rohrs, nicht mehr die Bohrung.
+    </div>
+  </div>
   <div class="grp" id="grpBallProfil">
     <label>Profil <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
     <div class="seg" id="ballProfilSeg">
@@ -790,19 +804,20 @@
       <button data-v="quadrat">Eckig</button>
     </div>
     <div class="help-text" data-i18n="help_ballprofil">
-      Querschnitt der Streben und damit der Bohrungen. Rund passt zu Rundstäben
-      und Rohren, eckig zu Vierkantleisten. Bei eckig gibst du Breite und Höhe
-      getrennt an, damit auch Flachprofile möglich sind.
+      Querschnitt der Streben und damit der Bohrungen/Zapfen. Rund passt zu
+      Rundstäben und Rundrohren, eckig zu Vierkantleisten und Formrohren. Bei
+      eckig gibst du Breite und Höhe getrennt an, damit auch Flachprofile
+      möglich sind.
     </div>
   </div>
   <div class="grp" id="grpBallRund">
-    <label>Strebendurchmesser <span><input class="numfield" type="number" id="nBallRod" min="1" max="40" step="0.1" value="6"><span class="unit">mm</span></span></label>
+    <label id="lblBallRod">Strebendurchmesser <span><input class="numfield" type="number" id="nBallRod" min="1" max="40" step="0.1" value="6"><span class="unit">mm</span></span></label>
     <input type="range" id="ballRod" min="1" max="30" value="6" step="0.1">
   </div>
   <div class="grp" id="grpBallEckig" style="display:none;">
-    <label>Strebenbreite <span><input class="numfield" type="number" id="nBallW" min="1" max="40" step="0.1" value="6"><span class="unit">mm</span></span></label>
+    <label id="lblBallW">Strebenbreite <span><input class="numfield" type="number" id="nBallW" min="1" max="40" step="0.1" value="6"><span class="unit">mm</span></span></label>
     <input type="range" id="ballW" min="1" max="30" value="6" step="0.1">
-    <label style="margin-top:9px;">Strebenhöhe <span><input class="numfield" type="number" id="nBallH" min="1" max="40" step="0.1" value="6"><span class="unit">mm</span></span></label>
+    <label id="lblBallH" style="margin-top:9px;">Strebenhöhe <span><input class="numfield" type="number" id="nBallH" min="1" max="40" step="0.1" value="6"><span class="unit">mm</span></span></label>
     <input type="range" id="ballH" min="1" max="30" value="6" step="0.1">
     <label style="margin-top:9px;">Verdrehung <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nBallRot" min="-90" max="90" step="1" value="0"><span class="unit">°</span><span class="help-btn" onclick="toggleHelp(this)">?</span></span></label>
     <input type="range" id="ballRot" min="-90" max="90" value="0" step="1">
@@ -822,10 +837,10 @@
     <input type="range" id="ballArmLen" min="4" max="60" value="14" step="0.1">
   </div>
   <div class="grp">
-    <label>Bohrtiefe <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nBallDepth" min="2" max="60" step="0.1" value="10"><span class="unit">mm</span><span class="help-btn" onclick="toggleHelp(this)">?</span></span></label>
+    <label id="lblBallDepth">Bohrtiefe <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nBallDepth" min="2" max="60" step="0.1" value="10"><span class="unit">mm</span><span class="help-btn" onclick="toggleHelp(this)">?</span></span></label>
     <input type="range" id="ballDepth" min="2" max="50" value="10" step="0.1">
     <button id="ballDepthTouch" class="ghost" style="margin-top:6px;font-size:11px;padding:4px 8px;">Streben berühren sich</button>
-    <div class="help-text" data-i18n="help_balldepth">
+    <div class="help-text" id="helpBallDepth" data-i18n="help_balldepth">
       Wie tief die Bohrung für die Strebe in den Kragen reicht (Sackloch). Sollte
       kleiner oder gleich der Armlänge sein, damit ein Boden bleibt.
     </div>
@@ -1188,9 +1203,10 @@
       </div>
       <div class="help-text" data-i18n="help_flatlabel">
         Prägt den Buchstaben des Knotens (A, B, C …) flach in die aufliegende
-        Seite. Die Vertiefung ist nur 0,25 mm tief, kostet also kaum Material
-        und Druckzeit, bleibt bei feiner Auflösung aber gut lesbar. So findest
-        du beim Zusammenbau den richtigen Knoten wieder.
+        Seite. Die Vertiefung ist so flach wie möglich, aber mindestens tief
+        genug, dass sie sauber gedruckt wird und gut lesbar bleibt (kostet
+        kaum Material und Druckzeit). So findest du beim Zusammenbau den
+        richtigen Knoten wieder.
       </div>
     </div>
     <div class="help-text" data-i18n="help_flat">
@@ -1333,6 +1349,10 @@
 
 window.earcut = (window.earcut && window.earcut.default) ? window.earcut.default : (typeof earcut!=="undefined"?earcut:null);
 </script>
+<!-- QR-Code-Generator, Copyright (c) 2009 Kazuhiko Arase, MIT-Lizenz - https://github.com/kazuhikoarase/qrcode-generator (offline, keine externen Aufrufe) -->
+<script>
+var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],f={},c=function(t,r){o=function(t){for(var r=new Array(t),e=0;e<t;e+=1){r[e]=new Array(t);for(var n=0;n<t;n+=1)r[e][n]=null}return r}(i=4*e+17),l(0,0),l(i-7,0),l(0,i-7),s(),h(),d(t,r),e>=7&&v(t),null==a&&(a=p(e,n,u)),w(a,r)},l=function(t,r){for(var e=-1;e<=7;e+=1)if(!(t+e<=-1||i<=t+e))for(var n=-1;n<=7;n+=1)r+n<=-1||i<=r+n||(o[t+e][r+n]=0<=e&&e<=6&&(0==n||6==n)||0<=n&&n<=6&&(0==e||6==e)||2<=e&&e<=4&&2<=n&&n<=4)},h=function(){for(var t=8;t<i-8;t+=1)null==o[t][6]&&(o[t][6]=t%2==0);for(var r=8;r<i-8;r+=1)null==o[6][r]&&(o[6][r]=r%2==0)},s=function(){for(var t=B.getPatternPosition(e),r=0;r<t.length;r+=1)for(var n=0;n<t.length;n+=1){var i=t[r],a=t[n];if(null==o[i][a])for(var u=-2;u<=2;u+=1)for(var f=-2;f<=2;f+=1)o[i+u][a+f]=-2==u||2==u||-2==f||2==f||0==u&&0==f}},v=function(t){for(var r=B.getBCHTypeNumber(e),n=0;n<18;n+=1){var a=!t&&1==(r>>n&1);o[Math.floor(n/3)][n%3+i-8-3]=a}for(n=0;n<18;n+=1){a=!t&&1==(r>>n&1);o[n%3+i-8-3][Math.floor(n/3)]=a}},d=function(t,r){for(var e=n<<3|r,a=B.getBCHTypeInfo(e),u=0;u<15;u+=1){var f=!t&&1==(a>>u&1);u<6?o[u][8]=f:u<8?o[u+1][8]=f:o[i-15+u][8]=f}for(u=0;u<15;u+=1){f=!t&&1==(a>>u&1);u<8?o[8][i-u-1]=f:u<9?o[8][15-u-1+1]=f:o[8][15-u-1]=f}o[i-8][8]=!t},w=function(t,r){for(var e=-1,n=i-1,a=7,u=0,f=B.getMaskFunction(r),c=i-1;c>0;c-=2)for(6==c&&(c-=1);;){for(var g=0;g<2;g+=1)if(null==o[n][c-g]){var l=!1;u<t.length&&(l=1==(t[u]>>>a&1)),f(n,c-g)&&(l=!l),o[n][c-g]=l,-1==(a-=1)&&(u+=1,a=7)}if((n+=e)<0||i<=n){n-=e,e=-e;break}}},p=function(t,r,e){for(var n=A.getRSBlocks(t,r),o=b(),i=0;i<e.length;i+=1){var a=e[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var u=0;for(i=0;i<n.length;i+=1)u+=n[i].dataCount;if(o.getLengthInBits()>8*u)throw"code length overflow. ("+o.getLengthInBits()+">"+8*u+")";for(o.getLengthInBits()+4<=8*u&&o.put(0,4);o.getLengthInBits()%8!=0;)o.putBit(!1);for(;!(o.getLengthInBits()>=8*u||(o.put(236,8),o.getLengthInBits()>=8*u));)o.put(17,8);return function(t,r){for(var e=0,n=0,o=0,i=new Array(r.length),a=new Array(r.length),u=0;u<r.length;u+=1){var f=r[u].dataCount,c=r[u].totalCount-f;n=Math.max(n,f),o=Math.max(o,c),i[u]=new Array(f);for(var g=0;g<i[u].length;g+=1)i[u][g]=255&t.getBuffer()[g+e];e+=f;var l=B.getErrorCorrectPolynomial(c),h=k(i[u],l.getLength()-1).mod(l);for(a[u]=new Array(l.getLength()-1),g=0;g<a[u].length;g+=1){var s=g+h.getLength()-a[u].length;a[u][g]=s>=0?h.getAt(s):0}}var v=0;for(g=0;g<r.length;g+=1)v+=r[g].totalCount;var d=new Array(v),w=0;for(g=0;g<n;g+=1)for(u=0;u<r.length;u+=1)g<i[u].length&&(d[w]=i[u][g],w+=1);for(g=0;g<o;g+=1)for(u=0;u<r.length;u+=1)g<a[u].length&&(d[w]=a[u][g],w+=1);return d}(o,n)};f.addData=function(t,r){var e=null;switch(r=r||"Byte"){case"Numeric":e=M(t);break;case"Alphanumeric":e=x(t);break;case"Byte":e=m(t);break;case"Kanji":e=L(t);break;default:throw"mode:"+r}u.push(e),a=null},f.isDark=function(t,r){if(t<0||i<=t||r<0||i<=r)throw t+","+r;return o[t][r]},f.getModuleCount=function(){return i},f.make=function(){if(e<1){for(var t=1;t<40;t++){for(var r=A.getRSBlocks(t,n),o=b(),i=0;i<u.length;i++){var a=u[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var g=0;for(i=0;i<r.length;i++)g+=r[i].dataCount;if(o.getLengthInBits()<=8*g)break}e=t}c(!1,function(){for(var t=0,r=0,e=0;e<8;e+=1){c(!0,e);var n=B.getLostPoint(f);(0==e||t>n)&&(t=n,r=e)}return r}())},f.createTableTag=function(t,r){t=t||2;var e="";e+='<table style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: "+(r=void 0===r?4*t:r)+"px;",e+='">',e+="<tbody>";for(var n=0;n<f.getModuleCount();n+=1){e+="<tr>";for(var o=0;o<f.getModuleCount();o+=1)e+='<td style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: 0px;",e+=" width: "+t+"px;",e+=" height: "+t+"px;",e+=" background-color: ",e+=f.isDark(n,o)?"#000000":"#ffffff",e+=";",e+='"/>';e+="</tr>"}return e+="</tbody>",e+="</table>"},f.createSvgTag=function(t,r,e,n){var o={};"object"==typeof arguments[0]&&(t=(o=arguments[0]).cellSize,r=o.margin,e=o.alt,n=o.title),t=t||2,r=void 0===r?4*t:r,(e="string"==typeof e?{text:e}:e||{}).text=e.text||null,e.id=e.text?e.id||"qrcode-description":null,(n="string"==typeof n?{text:n}:n||{}).text=n.text||null,n.id=n.text?n.id||"qrcode-title":null;var i,a,u,c,g=f.getModuleCount()*t+2*r,l="";for(c="l"+t+",0 0,"+t+" -"+t+",0 0,-"+t+"z ",l+='<svg version="1.1" xmlns="http://www.w3.org/2000/svg"',l+=o.scalable?"":' width="'+g+'px" height="'+g+'px"',l+=' viewBox="0 0 '+g+" "+g+'" ',l+=' preserveAspectRatio="xMinYMin meet"',l+=n.text||e.text?' role="img" aria-labelledby="'+y([n.id,e.id].join(" ").trim())+'"':"",l+=">",l+=n.text?'<title id="'+y(n.id)+'">'+y(n.text)+"</title>":"",l+=e.text?'<description id="'+y(e.id)+'">'+y(e.text)+"</description>":"",l+='<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>',l+='<path d="',a=0;a<f.getModuleCount();a+=1)for(u=a*t+r,i=0;i<f.getModuleCount();i+=1)f.isDark(a,i)&&(l+="M"+(i*t+r)+","+u+c);return l+='" stroke="transparent" fill="black"/>',l+="</svg>"},f.createDataURL=function(t,r){t=t||2,r=void 0===r?4*t:r;var e=f.getModuleCount()*t+2*r,n=r,o=e-r;return I(e,e,function(r,e){if(n<=r&&r<o&&n<=e&&e<o){var i=Math.floor((r-n)/t),a=Math.floor((e-n)/t);return f.isDark(a,i)?0:1}return 1})},f.createImgTag=function(t,r,e){t=t||2,r=void 0===r?4*t:r;var n=f.getModuleCount()*t+2*r,o="";return o+="<img",o+=' src="',o+=f.createDataURL(t,r),o+='"',o+=' width="',o+=n,o+='"',o+=' height="',o+=n,o+='"',e&&(o+=' alt="',o+=y(e),o+='"'),o+="/>"};var y=function(t){for(var r="",e=0;e<t.length;e+=1){var n=t.charAt(e);switch(n){case"<":r+="&lt;";break;case">":r+="&gt;";break;case"&":r+="&amp;";break;case'"':r+="&quot;";break;default:r+=n}}return r};return f.createASCII=function(t,r){if((t=t||1)<2)return function(t){t=void 0===t?2:t;var r,e,n,o,i,a=1*f.getModuleCount()+2*t,u=t,c=a-t,g={"██":"█","█ ":"▀"," █":"▄","  ":" "},l={"██":"▀","█ ":"▀"," █":" ","  ":" "},h="";for(r=0;r<a;r+=2){for(n=Math.floor((r-u)/1),o=Math.floor((r+1-u)/1),e=0;e<a;e+=1)i="█",u<=e&&e<c&&u<=r&&r<c&&f.isDark(n,Math.floor((e-u)/1))&&(i=" "),u<=e&&e<c&&u<=r+1&&r+1<c&&f.isDark(o,Math.floor((e-u)/1))?i+=" ":i+="█",h+=t<1&&r+1>=c?l[i]:g[i];h+="\n"}return a%2&&t>0?h.substring(0,h.length-a-1)+Array(a+1).join("▀"):h.substring(0,h.length-1)}(r);t-=1,r=void 0===r?2*t:r;var e,n,o,i,a=f.getModuleCount()*t+2*r,u=r,c=a-r,g=Array(t+1).join("██"),l=Array(t+1).join("  "),h="",s="";for(e=0;e<a;e+=1){for(o=Math.floor((e-u)/t),s="",n=0;n<a;n+=1)i=1,u<=n&&n<c&&u<=e&&e<c&&f.isDark(o,Math.floor((n-u)/t))&&(i=0),s+=i?g:l;for(o=0;o<t;o+=1)h+=s+"\n"}return h.substring(0,h.length-1)},f.renderTo2dContext=function(t,r){r=r||2;for(var e=f.getModuleCount(),n=0;n<e;n++)for(var o=0;o<e;o++)t.fillStyle=f.isDark(n,o)?"black":"white",t.fillRect(o*r,n*r,r,r)},f};t.stringToBytes=(t.stringToBytesFuncs={default:function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);r.push(255&n)}return r}}).default,t.createStringToBytes=function(t,r){var e=function(){for(var e=S(t),n=function(){var t=e.read();if(-1==t)throw"eof";return t},o=0,i={};;){var a=e.read();if(-1==a)break;var u=n(),f=n()<<8|n();i[String.fromCharCode(a<<8|u)]=f,o+=1}if(o!=r)throw o+" != "+r;return i}(),n="?".charCodeAt(0);return function(t){for(var r=[],o=0;o<t.length;o+=1){var i=t.charCodeAt(o);if(i<128)r.push(i);else{var a=e[t.charAt(o)];"number"==typeof a?(255&a)==a?r.push(a):(r.push(a>>>8),r.push(255&a)):r.push(n)}}return r}};var r,e,n,o,i,a=1,u=2,f=4,c=8,g={L:1,M:0,Q:3,H:2},l=0,h=1,s=2,v=3,d=4,w=5,p=6,y=7,B=(r=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],e=1335,n=7973,i=function(t){for(var r=0;0!=t;)r+=1,t>>>=1;return r},(o={}).getBCHTypeInfo=function(t){for(var r=t<<10;i(r)-i(e)>=0;)r^=e<<i(r)-i(e);return 21522^(t<<10|r)},o.getBCHTypeNumber=function(t){for(var r=t<<12;i(r)-i(n)>=0;)r^=n<<i(r)-i(n);return t<<12|r},o.getPatternPosition=function(t){return r[t-1]},o.getMaskFunction=function(t){switch(t){case l:return function(t,r){return(t+r)%2==0};case h:return function(t,r){return t%2==0};case s:return function(t,r){return r%3==0};case v:return function(t,r){return(t+r)%3==0};case d:return function(t,r){return(Math.floor(t/2)+Math.floor(r/3))%2==0};case w:return function(t,r){return t*r%2+t*r%3==0};case p:return function(t,r){return(t*r%2+t*r%3)%2==0};case y:return function(t,r){return(t*r%3+(t+r)%2)%2==0};default:throw"bad maskPattern:"+t}},o.getErrorCorrectPolynomial=function(t){for(var r=k([1],0),e=0;e<t;e+=1)r=r.multiply(k([1,C.gexp(e)],0));return r},o.getLengthInBits=function(t,r){if(1<=r&&r<10)switch(t){case a:return 10;case u:return 9;case f:case c:return 8;default:throw"mode:"+t}else if(r<27)switch(t){case a:return 12;case u:return 11;case f:return 16;case c:return 10;default:throw"mode:"+t}else{if(!(r<41))throw"type:"+r;switch(t){case a:return 14;case u:return 13;case f:return 16;case c:return 12;default:throw"mode:"+t}}},o.getLostPoint=function(t){for(var r=t.getModuleCount(),e=0,n=0;n<r;n+=1)for(var o=0;o<r;o+=1){for(var i=0,a=t.isDark(n,o),u=-1;u<=1;u+=1)if(!(n+u<0||r<=n+u))for(var f=-1;f<=1;f+=1)o+f<0||r<=o+f||0==u&&0==f||a==t.isDark(n+u,o+f)&&(i+=1);i>5&&(e+=3+i-5)}for(n=0;n<r-1;n+=1)for(o=0;o<r-1;o+=1){var c=0;t.isDark(n,o)&&(c+=1),t.isDark(n+1,o)&&(c+=1),t.isDark(n,o+1)&&(c+=1),t.isDark(n+1,o+1)&&(c+=1),0!=c&&4!=c||(e+=3)}for(n=0;n<r;n+=1)for(o=0;o<r-6;o+=1)t.isDark(n,o)&&!t.isDark(n,o+1)&&t.isDark(n,o+2)&&t.isDark(n,o+3)&&t.isDark(n,o+4)&&!t.isDark(n,o+5)&&t.isDark(n,o+6)&&(e+=40);for(o=0;o<r;o+=1)for(n=0;n<r-6;n+=1)t.isDark(n,o)&&!t.isDark(n+1,o)&&t.isDark(n+2,o)&&t.isDark(n+3,o)&&t.isDark(n+4,o)&&!t.isDark(n+5,o)&&t.isDark(n+6,o)&&(e+=40);var g=0;for(o=0;o<r;o+=1)for(n=0;n<r;n+=1)t.isDark(n,o)&&(g+=1);return e+=Math.abs(100*g/r/r-50)/5*10},o),C=function(){for(var t=new Array(256),r=new Array(256),e=0;e<8;e+=1)t[e]=1<<e;for(e=8;e<256;e+=1)t[e]=t[e-4]^t[e-5]^t[e-6]^t[e-8];for(e=0;e<255;e+=1)r[t[e]]=e;var n={glog:function(t){if(t<1)throw"glog("+t+")";return r[t]},gexp:function(r){for(;r<0;)r+=255;for(;r>=256;)r-=255;return t[r]}};return n}();function k(t,r){if(void 0===t.length)throw t.length+"/"+r;var e=function(){for(var e=0;e<t.length&&0==t[e];)e+=1;for(var n=new Array(t.length-e+r),o=0;o<t.length-e;o+=1)n[o]=t[o+e];return n}(),n={getAt:function(t){return e[t]},getLength:function(){return e.length},multiply:function(t){for(var r=new Array(n.getLength()+t.getLength()-1),e=0;e<n.getLength();e+=1)for(var o=0;o<t.getLength();o+=1)r[e+o]^=C.gexp(C.glog(n.getAt(e))+C.glog(t.getAt(o)));return k(r,0)},mod:function(t){if(n.getLength()-t.getLength()<0)return n;for(var r=C.glog(n.getAt(0))-C.glog(t.getAt(0)),e=new Array(n.getLength()),o=0;o<n.getLength();o+=1)e[o]=n.getAt(o);for(o=0;o<t.getLength();o+=1)e[o]^=C.gexp(C.glog(t.getAt(o))+r);return k(e,0).mod(t)}};return n}var A=function(){var t=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],r=function(t,r){var e={};return e.totalCount=t,e.dataCount=r,e},e={};return e.getRSBlocks=function(e,n){var o=function(r,e){switch(e){case g.L:return t[4*(r-1)+0];case g.M:return t[4*(r-1)+1];case g.Q:return t[4*(r-1)+2];case g.H:return t[4*(r-1)+3];default:return}}(e,n);if(void 0===o)throw"bad rs block @ typeNumber:"+e+"/errorCorrectionLevel:"+n;for(var i=o.length/3,a=[],u=0;u<i;u+=1)for(var f=o[3*u+0],c=o[3*u+1],l=o[3*u+2],h=0;h<f;h+=1)a.push(r(c,l));return a},e}(),b=function(){var t=[],r=0,e={getBuffer:function(){return t},getAt:function(r){var e=Math.floor(r/8);return 1==(t[e]>>>7-r%8&1)},put:function(t,r){for(var n=0;n<r;n+=1)e.putBit(1==(t>>>r-n-1&1))},getLengthInBits:function(){return r},putBit:function(e){var n=Math.floor(r/8);t.length<=n&&t.push(0),e&&(t[n]|=128>>>r%8),r+=1}};return e},M=function(t){var r=a,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+2<r.length;)t.put(o(r.substring(n,n+3)),10),n+=3;n<r.length&&(r.length-n==1?t.put(o(r.substring(n,n+1)),4):r.length-n==2&&t.put(o(r.substring(n,n+2)),7))}},o=function(t){for(var r=0,e=0;e<t.length;e+=1)r=10*r+i(t.charAt(e));return r},i=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);throw"illegal char :"+t};return n},x=function(t){var r=u,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+1<r.length;)t.put(45*o(r.charAt(n))+o(r.charAt(n+1)),11),n+=2;n<r.length&&t.put(o(r.charAt(n)),6)}},o=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);if("A"<=t&&t<="Z")return t.charCodeAt(0)-"A".charCodeAt(0)+10;switch(t){case" ":return 36;case"$":return 37;case"%":return 38;case"*":return 39;case"+":return 40;case"-":return 41;case".":return 42;case"/":return 43;case":":return 44;default:throw"illegal char :"+t}};return n},m=function(r){var e=f,n=t.stringToBytes(r),o={getMode:function(){return e},getLength:function(t){return n.length},write:function(t){for(var r=0;r<n.length;r+=1)t.put(n[r],8)}};return o},L=function(r){var e=c,n=t.stringToBytesFuncs.SJIS;if(!n)throw"sjis not supported.";!function(){var t=n("友");if(2!=t.length||38726!=(t[0]<<8|t[1]))throw"sjis not supported."}();var o=n(r),i={getMode:function(){return e},getLength:function(t){return~~(o.length/2)},write:function(t){for(var r=o,e=0;e+1<r.length;){var n=(255&r[e])<<8|255&r[e+1];if(33088<=n&&n<=40956)n-=33088;else{if(!(57408<=n&&n<=60351))throw"illegal char at "+(e+1)+"/"+n;n-=49472}n=192*(n>>>8&255)+(255&n),t.put(n,13),e+=2}if(e<r.length)throw"illegal char at "+(e+1)}};return i},D=function(){var t=[],r={writeByte:function(r){t.push(255&r)},writeShort:function(t){r.writeByte(t),r.writeByte(t>>>8)},writeBytes:function(t,e,n){e=e||0,n=n||t.length;for(var o=0;o<n;o+=1)r.writeByte(t[o+e])},writeString:function(t){for(var e=0;e<t.length;e+=1)r.writeByte(t.charCodeAt(e))},toByteArray:function(){return t},toString:function(){var r="";r+="[";for(var e=0;e<t.length;e+=1)e>0&&(r+=","),r+=t[e];return r+="]"}};return r},S=function(t){var r=t,e=0,n=0,o=0,i={read:function(){for(;o<8;){if(e>=r.length){if(0==o)return-1;throw"unexpected end of file./"+o}var t=r.charAt(e);if(e+=1,"="==t)return o=0,-1;t.match(/^\s$/)||(n=n<<6|a(t.charCodeAt(0)),o+=6)}var i=n>>>o-8&255;return o-=8,i}},a=function(t){if(65<=t&&t<=90)return t-65;if(97<=t&&t<=122)return t-97+26;if(48<=t&&t<=57)return t-48+52;if(43==t)return 62;if(47==t)return 63;throw"c:"+t};return i},I=function(t,r,e){for(var n=function(t,r){var e=t,n=r,o=new Array(t*r),i={setPixel:function(t,r,n){o[r*e+t]=n},write:function(t){t.writeString("GIF87a"),t.writeShort(e),t.writeShort(n),t.writeByte(128),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(255),t.writeByte(255),t.writeByte(255),t.writeString(","),t.writeShort(0),t.writeShort(0),t.writeShort(e),t.writeShort(n),t.writeByte(0);var r=a(2);t.writeByte(2);for(var o=0;r.length-o>255;)t.writeByte(255),t.writeBytes(r,o,255),o+=255;t.writeByte(r.length-o),t.writeBytes(r,o,r.length-o),t.writeByte(0),t.writeString(";")}},a=function(t){for(var r=1<<t,e=1+(1<<t),n=t+1,i=u(),a=0;a<r;a+=1)i.add(String.fromCharCode(a));i.add(String.fromCharCode(r)),i.add(String.fromCharCode(e));var f,c,g,l=D(),h=(f=l,c=0,g=0,{write:function(t,r){if(t>>>r!=0)throw"length over";for(;c+r>=8;)f.writeByte(255&(t<<c|g)),r-=8-c,t>>>=8-c,g=0,c=0;g|=t<<c,c+=r},flush:function(){c>0&&f.writeByte(g)}});h.write(r,n);var s=0,v=String.fromCharCode(o[s]);for(s+=1;s<o.length;){var d=String.fromCharCode(o[s]);s+=1,i.contains(v+d)?v+=d:(h.write(i.indexOf(v),n),i.size()<4095&&(i.size()==1<<n&&(n+=1),i.add(v+d)),v=d)}return h.write(i.indexOf(v),n),h.write(e,n),h.flush(),l.toByteArray()},u=function(){var t={},r=0,e={add:function(n){if(e.contains(n))throw"dup key:"+n;t[n]=r,r+=1},size:function(){return r},indexOf:function(r){return t[r]},contains:function(r){return void 0!==t[r]}};return e};return i}(t,r),o=0;o<r;o+=1)for(var i=0;i<t;i+=1)n.setPixel(i,o,e(i,o));var a=D();n.write(a);for(var u=function(){var t=0,r=0,e=0,n="",o={},i=function(t){n+=String.fromCharCode(a(63&t))},a=function(t){if(t<0);else{if(t<26)return 65+t;if(t<52)return t-26+97;if(t<62)return t-52+48;if(62==t)return 43;if(63==t)return 47}throw"n:"+t};return o.writeByte=function(n){for(t=t<<8|255&n,r+=8,e+=1;r>=6;)i(t>>>r-6),r-=6},o.flush=function(){if(r>0&&(i(t<<6-r),t=0,r=0),e%3!=0)for(var o=3-e%3,a=0;a<o;a+=1)n+="="},o.toString=function(){return n},o}(),f=a.toByteArray(),c=0;c<f.length;c+=1)u.writeByte(f[c]);return u.flush(),"data:image/gif;base64,"+u};return t}();qrcode.stringToBytesFuncs["UTF-8"]=function(t){return function(t){for(var r=[],e=0;e<t.length;e++){var n=t.charCodeAt(e);n<128?r.push(n):n<2048?r.push(192|n>>6,128|63&n):n<55296||n>=57344?r.push(224|n>>12,128|n>>6&63,128|63&n):(e++,n=65536+((1023&n)<<10|1023&t.charCodeAt(e)),r.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|63&n))}return r}(t)};
+</script>
 <script>
 const $=id=>document.getElementById(id);
 // Hilfetext ein-/ausklappen (Fragezeichen neben dem Label)
@@ -1343,7 +1363,7 @@ function toggleHelp(btn){
 // Programmversion. Sie steht in der Fusszeile, auf jedem Export und in der
 // Einstellungsdatei - bei einer Rueckmeldung ist damit sofort klar, welche
 // Fassung gemeint ist.
-const KNOTI_VERSION='300';
+const KNOTI_VERSION='308';
 let PX_PER_MM=4;
 let BODY_PX=4;      // eigener Zoom fuer die 3D-Koerperzeichnung
 const state={};
@@ -4105,12 +4125,22 @@ function ballProfil(){
   const b=document.querySelector('#ballProfilSeg .on');
   return b ? b.dataset.v : 'kreis';
 }
+// 'loch' (bisher): Bohrung im Kragen fuer eine Strebe. 'zapfen' (neu): der
+// Kragen bildet stattdessen einen herausragenden Zapfen fuer ein Hohlprofil
+// (Rohr/Formrohr). Alle anderen Masse (Durchmesser/Breite/Hoehe, Tiefe, Profil
+// rund/eckig) werden unveraendert weiterverwendet - nur ihre Bedeutung dreht
+// sich um (Bohrungsmass -> Innenmass des Rohrs).
+function ballKonstruktion(){
+  const b=document.querySelector('#ballKonstruktionSeg .on');
+  return b ? b.dataset.v : 'loch';
+}
 function ballOpts(){
   const eckig = ballProfil()==='quadrat';
   const rW = eckig ? sync('ballW','nBallW',lastSrc) : 0;
   const rH = eckig ? sync('ballH','nBallH',lastSrc) : 0;
   return {
     profil: eckig ? 'quadrat' : 'kreis',
+    konstruktion: ballKonstruktion(),
     rot: eckig ? ((typeof sync==='function' && $('ballRot')) ? sync('ballRot','nBallRot',lastSrc) : 0) : 0,
     rodW: rW, rodH: rH,
     // Fuer Reichweiten und Grenzen zaehlt das groessere Mass.
@@ -4132,7 +4162,7 @@ function renderBall3D(){
   // des eckigen Profils aber deutlich sauberer. Der Export rechnet ohnehin
   // mit 64 bzw. 96, ist also feiner als die Vorschau.
   const tris=buildBallAdapterSTL(dirs, {...o, res:56});
-  const ext=(o.armLen+o.collar+2);
+  const ext=(o.armLen+o.collar+2+(o.konstruktion==='zapfen'?o.depth:0));
   const S=Math.min(9, 320/Math.max(ext,1));
   const g=meshToSVG(tris, S, {base:[128,148,138]});
   const R=ext*S+8;
@@ -4140,10 +4170,16 @@ function renderBall3D(){
   $('svgHost').innerHTML=`<svg id="bodySvg" xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${Math.min(660,2*R).toFixed(0)}" style="max-width:96%;max-height:78vh;">`
     +`<g stroke-linejoin="round">${g}</g></svg>`;
   const EN=(typeof curLang!=='undefined'&&curLang==='en');
-  const bore=o.depth>o.armLen? (EN?' · warning: hole deeper than arm':' · Achtung: Bohrung tiefer als Arm') : '';
+  // Die Warnung "Bohrung tiefer als Arm" gilt nur im Loch-Modus: dort muss ein
+  // Boden im Sackloch bleiben. Beim Zapfen gibt es kein Sackloch - der Zapfen
+  // ragt nur weiter ueber den Kragen hinaus, das ist unkritisch.
+  const bore=(o.konstruktion!=='zapfen' && o.depth>o.armLen)
+    ? (EN?' · warning: hole deeper than arm':' · Achtung: Bohrung tiefer als Arm') : '';
+  const teilDE = o.konstruktion==='zapfen' ? 'Zapfen' : 'Kragen';
+  const teilEN = o.konstruktion==='zapfen' ? 'pegs' : 'collars';
   $('info').textContent = EN
-    ? `3D node · ${dirs.length} collars · rod Ø${o.rodDia.toFixed(1)} mm · wall ${o.collar.toFixed(1)} mm · arm ${o.armLen.toFixed(0)} mm · ${tris.length} triangles${bore}`
-    : `3D-Knoten · ${dirs.length} Kragen · Strebe Ø${o.rodDia.toFixed(1)} mm · Wand ${o.collar.toFixed(1)} mm · Arm ${o.armLen.toFixed(0)} mm · ${tris.length} Dreiecke${bore}`;
+    ? `3D node · ${dirs.length} ${teilEN} · rod Ø${o.rodDia.toFixed(1)} mm · wall ${o.collar.toFixed(1)} mm · arm ${o.armLen.toFixed(0)} mm · ${tris.length} triangles${bore}`
+    : `3D-Knoten · ${dirs.length} ${teilDE} · Strebe Ø${o.rodDia.toFixed(1)} mm · Wand ${o.collar.toFixed(1)} mm · Arm ${o.armLen.toFixed(0)} mm · ${tris.length} Dreiecke${bore}`;
 }
 // Im Koerpermodus mit 3D-Knoten: je Knotentyp ein echtes gerendertes Mesh mit
 // den tatsaechlichen 3D-Stabrichtungen und der Stueckzahl.
@@ -4161,7 +4197,7 @@ function ballNodeSetSVG(body){
   const resSet = nT>24 ? 24 : (nT>12 ? 30 : (nT>6 ? 36 : 44));
   const MAXT=24;
   const zeige=grades.slice(0, MAXT);
-  const ext=(o.armLen+o.collar+2);
+  const ext=(o.armLen+o.collar+2+(o.konstruktion==='zapfen'?o.depth:0));
   const S=Math.min(6, 150/Math.max(ext,1));
   const cell=ext*S*2+26;
   let g=''; let x=0;
@@ -4732,6 +4768,7 @@ function buildBallAdapterSTL(dirs, opts){
   // Bei eckigem Profil braucht jede Armrichtung zwei Basisvektoren quer zur
   // Achse. Der Querschnitt wird dann als Rechteck gerechnet statt als Kreis.
   const eckig = opts.profil==='quadrat';
+  const zapfen = opts.konstruktion==='zapfen';   // true: Zapfen statt Bohrung
   const halbW = eckig ? (opts.rodW||opts.rodDia)/2 : rr;
   const halbH = eckig ? (opts.rodH||opts.rodDia)/2 : rr;
   // Ausrichtung des Profils um die Armachse. Bezug ist die Winkelhalbierende
@@ -4825,15 +4862,19 @@ function buildBallAdapterSTL(dirs, opts){
     // Sicherheitsgrenze: der Schnitt darf keine Bohrung anschneiden. Fuer jeden
     // Arm wird geprueft, wie weit die Sackbohrung in Richtung der Schnittebene
     // reicht; die Ebene bleibt mindestens eine halbe Wandstaerke davor stehen.
+    // Im Zapfen-Modus gibt es keine Bohrung (der Kragen ist dort massiv), also
+    // faellt diese Einschraenkung weg - es bleibt nur die Kernkugel-Grenze.
     let grenze=-1e9;
     const rBohr=rr;
-    dirs.forEach(u=>{
-      const t=u[0]*v[0]+u[1]*v[1]+u[2]*v[2];        // Armrichtung entlang Normale
-      // Bohrung reicht von armLen bis armLen-depth entlang des Arms; ihr Rand
-      // liegt zusaetzlich rBohr seitlich. Massgeblich ist der groesste Wert.
-      const tief = Math.max(t*armLen, t*(armLen-depth));
-      grenze = Math.max(grenze, tief + rBohr*Math.sqrt(Math.max(0,1-t*t)));
-    });
+    if(!zapfen){
+      dirs.forEach(u=>{
+        const t=u[0]*v[0]+u[1]*v[1]+u[2]*v[2];        // Armrichtung entlang Normale
+        // Bohrung reicht von armLen bis armLen-depth entlang des Arms; ihr Rand
+        // liegt zusaetzlich rBohr seitlich. Massgeblich ist der groesste Wert.
+        const tief = Math.max(t*armLen, t*(armLen-depth));
+        grenze = Math.max(grenze, tief + rBohr*Math.sqrt(Math.max(0,1-t*t)));
+      });
+    }
     // Auch der Kern soll nicht durchtrennt werden.
     grenze = Math.max(grenze, -coreR*0.35);
     const minAbstand = Math.max(0.6, collar*0.5);
@@ -4865,21 +4906,44 @@ function buildBallAdapterSTL(dirs, opts){
       const collarSDF = Math.max(radial, capOut, capIn);
       d = smin(d, collarSDF, round);                  // weiche Vereinigung
     }
-    // Bohrungen subtrahieren (Sackloch: von aussen bis armLen-depth)
-    for(let ui=0; ui<dirs.length; ui++){
-      const u=dirs[ui];
-      const t = x*u[0]+y*u[1]+z*u[2];
-      const px=x-t*u[0], py=y-t*u[1], pz=z-t*u[2];
-      const radial = eckig
-        ? boxD(px*basis[ui][0][0]+py*basis[ui][0][1]+pz*basis[ui][0][2],
-               px*basis[ui][1][0]+py*basis[ui][1][1]+pz*basis[ui][1][2],
-               halbW, halbH)
-        : Math.hypot(px,py,pz)-rr;
-      const holeStart = armLen-depth;                 // Sackloch-Boden
-      const capInner = holeStart - t;                 // >0 unter dem Boden
-      const capOuter = t-armLen-1;                    // etwas ueber die Spitze hinaus
-      const cyl = Math.max(radial, capInner, capOuter);
-      d = Math.max(d, -cyl);                          // Subtraktion
+    if(zapfen){
+      // Zapfen: statt einer Bohrung ragt vom Kragen ein Vollkoerper WEITER
+      // NACH AUSSEN (t>armLen), der in ein Hohlprofil (Rohr/Formrohr) gesteckt
+      // wird. Gleiche Masse wie die Bohrung (rr/halbW/halbH, depth als Laenge),
+      // nur als ADDIERTER Zapfen statt als subtrahiertes Sackloch. Ein kleiner
+      // Ueberlapp (0.5mm) ins Kragen-Ende hinein sorgt fuer einen glatten,
+      // nahtlosen Uebergang bei der weichen Vereinigung.
+      for(let ui=0; ui<dirs.length; ui++){
+        const u=dirs[ui];
+        const t = x*u[0]+y*u[1]+z*u[2];
+        const px=x-t*u[0], py=y-t*u[1], pz=z-t*u[2];
+        const radial = eckig
+          ? boxD(px*basis[ui][0][0]+py*basis[ui][0][1]+pz*basis[ui][0][2],
+                 px*basis[ui][1][0]+py*basis[ui][1][1]+pz*basis[ui][1][2],
+                 halbW, halbH)
+          : Math.hypot(px,py,pz)-rr;
+        const capOut = t-(armLen+depth);              // >0 hinter der Zapfenspitze
+        const capIn  = (armLen-0.5)-t;                 // >0 noch vor dem Zapfenbeginn
+        const zapfenSDF = Math.max(radial, capOut, capIn);
+        d = smin(d, zapfenSDF, round*0.6);             // straffere Rundung am duennen Zapfen
+      }
+    } else {
+      // Bohrungen subtrahieren (Sackloch: von aussen bis armLen-depth)
+      for(let ui=0; ui<dirs.length; ui++){
+        const u=dirs[ui];
+        const t = x*u[0]+y*u[1]+z*u[2];
+        const px=x-t*u[0], py=y-t*u[1], pz=z-t*u[2];
+        const radial = eckig
+          ? boxD(px*basis[ui][0][0]+py*basis[ui][0][1]+pz*basis[ui][0][2],
+                 px*basis[ui][1][0]+py*basis[ui][1][1]+pz*basis[ui][1][2],
+                 halbW, halbH)
+          : Math.hypot(px,py,pz)-rr;
+        const holeStart = armLen-depth;                 // Sackloch-Boden
+        const capInner = holeStart - t;                 // >0 unter dem Boden
+        const capOuter = t-armLen-1;                    // etwas ueber die Spitze hinaus
+        const cyl = Math.max(radial, capInner, capOuter);
+        d = Math.max(d, -cyl);                          // Subtraktion
+      }
     }
     // --- Beschriftung eingraviert ---
     if(engrave){
@@ -4911,6 +4975,14 @@ function buildBallAdapterSTL(dirs, opts){
     }
     return d;
   };
+  // Marching-Cubes-Gitterschrittweite wird schon HIER gebraucht (statt erst
+  // weiter unten beim eigentlichen Abtasten): die Gravurtiefe der flach
+  // eingepraegten Beschriftung muss zur tatsaechlichen Gitterweite passen,
+  // sonst kann das Marching-Cubes-Gitter die duenne Rille gar nicht sauber
+  // auflösen (siehe unten bei aufFlaeche).
+  const ext=armLen+collar+2+(zapfen?depth:0);
+  const N = opts.res ? opts.res : Math.max(48, Math.min(96, Math.round(ext*2.2)));
+  const lo=-ext, hi=ext, step=(hi-lo)/N;
   // --- Beschriftung vorbereiten ---
   const engraveChar = opts.label ? String(opts.label).charAt(0).toUpperCase() : '';
   const engrave = !!(engraveChar && ENGRAVE_FONT[engraveChar]);
@@ -4921,9 +4993,14 @@ function buildBallAdapterSTL(dirs, opts){
   // bei feinerer Aufloesung sauber erfasst und nach dem Druck lesbar sind.
   let eN=[0,0,1], eU=[1,0,0], eV=[0,1,0], eDepth=Math.min(1.1, collar*0.55), eHalf=0.75;
   // Beim Flachdruck sitzt der Buchstabe auf der aufliegenden Flaeche und wird
-  // nur flach eingepraegt: gut lesbar, aber ohne nennenswerten Materialverlust.
+  // flach eingepraegt. Die Rille muss dafuer deutlich tiefer sein als die
+  // Marching-Cubes-Gitterweite (step) - sonst faellt sie zwischen zwei
+  // Gitterebenen und wird je nach Position gar nicht oder nur bruchstueckhaft
+  // erfasst, was genau das "schwer lesbar"-Ergebnis verursacht. Mindestens
+  // gut zwei Gitterschritte Tiefe, damit die Rille bei jeder Aufloesung und
+  // Bauteilgroesse sauber im Gitter aufgeloest wird.
   const aufFlaeche = !!(opts.flatLabel && flatAktiv);
-  if(aufFlaeche){ eDepth=0.25; eHalf=0.55; }
+  if(aufFlaeche){ eDepth=Math.max(0.4, step*2.2); eHalf=0.6; }
   const textScale = Math.min(coreR*1.25, rOuter*1.5);  // Buchstabenhoehe
   if(engrave){
     const cand=[];
@@ -4973,11 +5050,26 @@ function buildBallAdapterSTL(dirs, opts){
     return mn;
   };
   // Marching Cubes; Aufloesung feiner fuer glatte, druckbare Oberflaeche.
-  const ext=armLen+collar+2;
-  const N = opts.res ? opts.res : Math.max(48, Math.min(96, Math.round(ext*2.2)));
-  const lo=-ext, hi=ext, step=(hi-lo)/N;
+  // ext/N/lo/hi/step wurden schon weiter oben berechnet (fuer die Gravurtiefe
+  // gebraucht) und werden hier einfach weiterverwendet.
   const tris=[];
-  const grid=(i,j,k)=>sdf(lo+i*step, lo+j*step, lo+k*step);
+  // Gitterwerte EINMAL vorab berechnen statt bei jedem Wuerfel neu: jeder
+  // innere Gitterpunkt ist Eckpunkt von bis zu 8 Wuerfeln und wurde bisher
+  // bis zu 8x neu durch sdf() gerechnet (mehrere trig./Wurzel-Operationen pro
+  // Arm). Das war der groesste Kostenblock beim Zeichnen und machte gerade
+  // die Live-Vorschau bei jedem Regler-Ziehen deutlich spuerbar traege -
+  // dieselben Werte, nur einmal statt bis zu achtmal berechnet.
+  const NP=N+1;
+  const valGrid=new Float64Array(NP*NP*NP);
+  for(let i=0;i<NP;i++){
+    const gx=lo+i*step;
+    for(let j=0;j<NP;j++){
+      const gy=lo+j*step;
+      const base=(i*NP+j)*NP;
+      for(let k=0;k<NP;k++) valGrid[base+k]=sdf(gx, gy, lo+k*step);
+    }
+  }
+  const grid=(i,j,k)=>valGrid[(i*NP+j)*NP+k];
   const {EDGE_TABLE, TRI_TABLE}=mcTables();
   const vlerp=(p1,p2,v1,v2)=>{
     const t=(0-v1)/(v2-v1);
@@ -4985,7 +5077,6 @@ function buildBallAdapterSTL(dirs, opts){
   };
   const corners=[[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]];
   const cornerVal=new Array(8), cornerPos=new Array(8);
-  // Wertecache pro z-Ebene (Performance bei feinem Gitter).
   for(let i=0;i<N;i++)for(let j=0;j<N;j++)for(let k=0;k<N;k++){
     let cubeIndex=0;
     for(let c=0;c<8;c++){
@@ -5077,7 +5168,7 @@ function fragmentBBox(inner){
     return {x:bb.x, y:bb.y, w:bb.width, h:bb.height};
   }catch(e){ return null; }
 }
-function packTiles(tiles, fmtW, fmtH, gap){
+function packTiles(tiles, fmtW, fmtH, gap, forExport){
   const margin=gap;
   const sheetGap=20;                 // Abstand zwischen Blaettern in der Vorschau
   // Die Blattbeschriftung steht AUSSERHALB des Blattes, im Zwischenraum. So
@@ -5110,6 +5201,9 @@ function packTiles(tiles, fmtW, fmtH, gap){
     const oy=kopfBand+s*(fmtH+sheetGap);
     out+=`<rect x="0" y="${oy}" width="${fmtW}" height="${fmtH}" fill="none" stroke="#CBC9C2" stroke-width="0.6" stroke-dasharray="4,3"/>`;
     out+=`<text x="0.5" y="${(oy-1.6).toFixed(1)}" font-size="3.2" fill="#8e44ad">Blatt ${s+1} · ${fmtW}×${fmtH} mm</text>`;
+    // QR-Code (Link zur aktuellen Einstellung) je EINMAL pro Blatt, nicht pro
+    // Teil - dort unten rechts, im selben Zwischenraum wie die Blattbeschriftung.
+    out+=qrEckeSVG(forExport, 0, oy, fmtW, fmtH);
   }
   placed.forEach(pl=>{
     const oy=kopfBand+pl.sheetIdx*(fmtH+sheetGap);
@@ -5175,6 +5269,9 @@ function render(){
   renderIntern();
   // Nach jedem Zeichnen die Hilfslinien nach hinten legen.
   try{ farbebenen(); }catch(e){}
+  // QR-Code (Link zur aktuellen Einstellung) im Hintergrund nachziehen -
+  // gebuendelt, damit ein gezogener Regler nicht dutzendfach neu komprimiert.
+  try{ qrAktualisierenSpaeter(); }catch(e){}
 }
 function renderIntern(){
   readState();
@@ -5297,6 +5394,106 @@ function einstellungLesen(){
   });
   return st;
 }
+
+// ---- QR-Code auf Baupläne/SVGs: Link zu den aktuellen Einstellungen -------
+// Derselbe Gedanke wie "Als Link teilen" oben (Einstellungen komprimiert in
+// die Adresse) - die Kompression/Kodierung ist hier bewusst noch einmal kurz
+// hingeschrieben statt von dort importiert, weil "Als Link teilen" in einer
+// eigenen, nicht global sichtbaren Funktion steckt (IIFE weiter unten).
+// Der QR-Code liegt in der Farbe "#00a3a3" (Tuerkis) - genau die Farbe der
+// bestehenden Ebene "Zusatzinfo/Sonstiges" (sonstige Beschriftung, Laengen
+// etc). Dadurch greift der schon vorhandene Ebenen-Filter (farbenFiltern(),
+// Knopf "Ebenen im Export") automatisch mit: der QR-Code ist ueber genau
+// diesen Schalter aus- und einblendbar, ohne eigene neue Bedienung.
+let __qrURL=null, __qrMatrix=null, __qrTimer=null, __qrBusy=false;
+function qrLinkB64(bytes){
+  let s=''; for(const b of bytes) s+=String.fromCharCode(b);
+  return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+async function qrLinkURL(){
+  const roh=new TextEncoder().encode(JSON.stringify(einstellungLesen()));
+  if(typeof CompressionStream==='function'){
+    const cs=new CompressionStream('deflate-raw');
+    const buf=await new Response(new Blob([roh]).stream().pipeThrough(cs)).arrayBuffer();
+    return location.origin+location.pathname+location.search+'#e=z'+qrLinkB64(new Uint8Array(buf));
+  }
+  return location.origin+location.pathname+location.search+'#e=r'+qrLinkB64(roh);
+}
+// Baut im Hintergrund die QR-Matrix zur aktuellen Einstellung neu. Laeuft
+// asynchron (wegen CompressionStream) und wird per qrAktualisierenSpaeter()
+// gebuendelt aus render() angestossen - die SVG-Bauer selbst bleiben
+// synchron und lesen nur die zuletzt fertige Matrix (__qrMatrix).
+async function qrAktualisieren(){
+  if(__qrBusy || typeof qrcode!=='function') return;
+  __qrBusy=true;
+  try{
+    const url=await qrLinkURL();
+    if(url!==__qrURL || !__qrMatrix){
+      const qr=qrcode(0,'L');
+      qr.addData(url);
+      qr.make();
+      __qrURL=url;
+      __qrMatrix={ n:qr.getModuleCount(), get:(r,c)=>qr.isDark(r,c) };
+    }
+  }catch(e){ /* QR ist nur eine Zugabe - im Fehlerfall bleibt einfach die zuletzt gueltige Matrix stehen */ }
+  __qrBusy=false;
+}
+function qrAktualisierenSpaeter(){
+  clearTimeout(__qrTimer);
+  __qrTimer=setTimeout(qrAktualisieren, 350);
+}
+// Kantenlaenge des QR-Codes in mm. Der QR traegt die VOLLEN Einstellungen
+// (wie "Als Link teilen"), das ergibt je nach Bedienung ein paar hundert bis
+// gut tausend Zeichen und damit einen recht dichten Code (oft 100+ Module).
+// Damit er trotzdem noch scannbar bleibt, richtet sich die Groesse nach der
+// tatsaechlichen Modulzahl (~0.4mm/Modul), gedeckelt auf einen Anteil der
+// Blattgroesse - auf einem kleinen Blatt/Teil wird der Code stattdessen ganz
+// weggelassen statt gequetscht zu werden.
+function qrSizeMM(vbW, vbH){
+  if(!__qrMatrix) return 0;
+  const n=__qrMatrix.n, margin=4, total=n+margin*2;
+  const zielZelle=0.4;    // angestrebte Modulgroesse (mm) - komfortabel scannbar
+  const minZelle=0.25;    // absolute Untergrenze - darunter lieber ganz weglassen als zu fein quetschen
+  const grenze=Math.min(Math.abs(vbW),Math.abs(vbH))*0.30;  // hoechstens ~30% der kleineren Seite
+  const s=Math.min(total*zielZelle, grenze);
+  return (s/total)>=minZelle ? s : 0;
+}
+// Reine QR-Flaeche (ohne Positionierung), in Tuerkis, als <g> mit
+// zeilenweise zusammengefassten Rechtecken (kompakteres SVG als ein Rechteck
+// pro Modul). Ruhezone (margin) von 4 Modulen fuer verlaessliches Scannen.
+function qrGroupSVG(sizeMM){
+  if(!__qrMatrix || !(sizeMM>0)) return '';
+  const n=__qrMatrix.n, margin=4, total=n+margin*2, cell=sizeMM/total;
+  let rects='';
+  for(let r=0;r<n;r++){
+    let c=0;
+    while(c<n){
+      if(__qrMatrix.get(r,c)){
+        let c2=c+1; while(c2<n && __qrMatrix.get(r,c2)) c2++;
+        const x=(margin+c)*cell, y=(margin+r)*cell, w=(c2-c)*cell;
+        rects+=`<rect x="${x.toFixed(3)}" y="${y.toFixed(3)}" width="${w.toFixed(3)}" height="${cell.toFixed(3)}"/>`;
+        c=c2;
+      } else c++;
+    }
+  }
+  return rects ? `<g fill="#00a3a3">${rects}</g>` : '';
+}
+// QR-Code unten rechts in der angegebenen Ansicht (vbX/vbY/vbW/vbH = die
+// Ecke und Groesse des jeweiligen viewBox). bottomClear haelt zusaetzlichen
+// Abstand nach unten (z.B. ueber einer Fusszeile). Liefert '' wenn nicht
+// exportiert wird, das Blatt zu klein ist oder die Matrix noch nicht bereit
+// ist - die Aufrufstellen koennen das Ergebnis daher immer einfach anhaengen.
+function qrEckeSVG(forExport, vbX, vbY, vbW, vbH, bottomClear){
+  if(!forExport) return '';
+  const size=qrSizeMM(vbW, vbH);
+  if(!size) return '';
+  const g=qrGroupSVG(size);
+  if(!g) return '';
+  const rand=Math.max(1, Math.min(vbW,vbH)*0.015);
+  const x=vbX+vbW-size-rand, y=vbY+vbH-size-rand-(bottomClear||0);
+  return `<g transform="translate(${x.toFixed(2)},${y.toFixed(2)})">${g}</g>`;
+}
+
 function einstellungSetzen(st){
   if(!st || (!st.felder && !st.segs)) return false;
   const segsSetzen=()=>{
@@ -5717,7 +5914,7 @@ function bodyAdapterSheet(forExport){
     let svg=''; let maxX=0,maxY=0;
     if(layoutMode()==='nest'){
       const [fw,fh]=currentFormat(); const gap=+$('nGapMin').value||0;
-      const packed=packTiles(parts, fw, fh, gap);
+      const packed=packTiles(parts, fw, fh, gap, forExport);
       svg=packed.svg; maxX=packed.totalW; maxY=packed.totalH;
       if($('layoutInfo')) $('layoutInfo').textContent=`${parts.length} Teile auf ${packed.sheets} Blatt · ${fw}×${fh} mm · Abstand ${gap} mm`;
     } else {
@@ -5822,7 +6019,7 @@ function bodyAdapterSheet(forExport){
   let body_svg=''; let maxX=0,maxY=0;
   if(layoutMode()==='nest'){
     const [fw,fh]=currentFormat(); const gap=+$('nGapMin').value||0;
-    const packed=packTiles(parts, fw, fh, gap);
+    const packed=packTiles(parts, fw, fh, gap, forExport);
     body_svg=packed.svg; maxX=packed.totalW; maxY=packed.totalH;
     if($('layoutInfo')) $('layoutInfo').textContent=`${parts.length} Teile auf ${packed.sheets} Blatt${packed.sheets>1?'':''} · ${fw}×${fh} mm · Abstand ${gap} mm`;
   } else {
@@ -6364,7 +6561,7 @@ function buildBauplanSVG(forExport){
             + `${EN?'Node views (top)':'Knotenansichten (Draufsicht)'} · ${massTxt} · `
             + `${EN?'rod':'Stab'} Ø${o.rodDia.toFixed(1)} mm · `
             + `${EN?'arm':'Arm'} ${o.armLen.toFixed(0)} mm · `
-            + `${EN?'bore depth':'Bohrtiefe'} ${o.depth.toFixed(0)} mm</text>`;
+            + `${o.konstruktion==='zapfen' ? (EN?'peg length':'Zapfenlänge') : (EN?'bore depth':'Bohrtiefe')} ${o.depth.toFixed(0)} mm</text>`;
           pageSVGs.push(border+fuss
             +`<text x="${M}" y="${M+6}" font-size="6" font-weight="bold" fill="#1a2b22">`
             +`${EN?'Node views':'Knotenansichten'} – ${title}`
@@ -6383,7 +6580,8 @@ function buildBauplanSVG(forExport){
   const sizeAttr=forExport?`width="${A4W}mm" height="${totalH}mm"`:`width="${(A4W*2.4).toFixed(0)}"`;
   let pagesG='';
   for(let pi=0;pi<pageCountAll;pi++){
-    pagesG+=`<g transform="translate(0,${A4H*pi})">${pageSVGs[pi]}</g>`;
+    // bottomClear haelt den QR-Code ueber der Fusszeile (Massangaben/Copyright).
+    pagesG+=`<g transform="translate(0,${A4H*pi})">${pageSVGs[pi]}${qrEckeSVG(forExport,0,0,A4W,A4H,13)}</g>`;
   }
   return `<svg id="bauplanSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${A4W} ${totalH}" ${sizeAttr} font-family="Segoe UI Rounded, SF Pro Rounded, Trebuchet MS, Segoe UI, Verdana, sans-serif" style="max-width:70%;max-height:80vh;">
     ${pagesG}
@@ -6884,7 +7082,7 @@ function buildStaebeSVG(forExport){
   if(mode==='body' && layoutMode()==='nest' && teile.length){
     const [fw,fh]=currentFormat();
     const gap=+($('nGapMin')?$('nGapMin').value:0)||0;
-    const packed=packTiles(teile, fw, fh, gap);
+    const packed=packTiles(teile, fw, fh, gap, forExport);
     svg=packed.svg; W=packed.totalW; H=packed.totalH;
     // Die Zeile der Verbinder nicht ueberschreiben, sondern ergaenzen.
     if(!forExport && $('layoutInfo')){
@@ -7731,7 +7929,7 @@ function applyMode(){
   if($('dlStl')) $('dlStl').style.display='inline-block';
   const subDE = mode==='body'?'Körper · Verbindersatz + Schnittliste'
               : mode==='cone'?'Kegelecke · Abwicklung'
-              : mode==='ball3d'?'3D-Knoten · Kragen mit Bohrungen'
+              : mode==='ball3d'?(ballKonstruktion()==='zapfen'?'3D-Knoten · Kragen mit Zapfen':'3D-Knoten · Kragen mit Bohrungen')
               : 'Sternverbinder · 2D';
   { const sub=$('subtitle'); if(sub) sub.textContent = (typeof curLang!=='undefined' && curLang==='en' && typeof I18N!=='undefined' && I18N[subDE]) ? I18N[subDE] : subDE; }
   if(inBody) updateBodyAdapterVis();
@@ -8139,10 +8337,11 @@ function buildEinzelBauplanSVG(){
     const o=ballOpts();
     const dirs=(typeof ballDirections==='function')?ballDirections():[];
     zeilen.push([EN?'Arms':'Arme', dirs.length]);
-    zeilen.push([EN?'Rod Ø':'Strebe Ø', n(o.rodDia)]);
+    zeilen.push([o.konstruktion==='zapfen' ? (EN?'Tube inner Ø':'Rohr-Innen-Ø') : (EN?'Rod Ø':'Strebe Ø'), n(o.rodDia)]);
     zeilen.push([EN?'Collar':'Kragendicke', n(o.collar)]);
     zeilen.push([EN?'Arm length':'Armlänge', n(o.armLen)]);
-    zeilen.push([EN?'Bore depth':'Bohrtiefe', n(o.depth)]);
+    zeilen.push([o.konstruktion==='zapfen' ? (EN?'Peg length':'Zapfenlänge') : (EN?'Bore depth':'Bohrtiefe'), n(o.depth)]);
+    zeilen.push([EN?'Construction':'Konstruktion', o.konstruktion==='zapfen' ? (EN?'pegs (tube)':'Zapfen (Rohr)') : (EN?'holes (rod)':'Löcher (Stab)')]);
     // Winkel zwischen den Armen
     const w=[];
     for(let i=0;i<dirs.length;i++) for(let j=i+1;j<dirs.length;j++){
@@ -8184,7 +8383,7 @@ function buildEinzelBauplanSVG(){
     try{
       const o=ballOpts();
       const dirs=ballDirections();
-      const ext=o.armLen+o.collar+2;
+      const ext=o.armLen+o.collar+2+(o.konstruktion==='zapfen'?o.depth:0);
       // Drei Ansichten muessen nebeneinander in die Blattbreite passen.
       const platz=(A4W-2*M-20)/3;
       const S=Math.min(2.4, (platz-6)/Math.max(2*ext,1));
@@ -8250,8 +8449,11 @@ function buildEinzelBauplanSVG(){
   const fuss=`<text x="${M}" y="${A4H-11}" font-size="2.8" fill="#6b6f63">${massstabTxt}</text>`
     + `<text x="${A4W-M}" y="${A4H-11}" font-size="2.8" text-anchor="end" fill="#9a9e95">`
     + `© 2026 Peter Hausegger · CC BY-SA 4.0</text>`;
+  // QR-Code unten rechts, mit Luft zur Fusszeile darunter. Diese Seite wird
+  // immer direkt gedruckt/exportiert (kein Vorschau-Aufruf ohne forExport).
+  const qrTag=qrEckeSVG(true,0,0,A4W,A4H,13);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${A4W} ${A4H}" width="${A4W}mm" height="${A4H}mm" font-family="Segoe UI Rounded, SF Pro Rounded, Trebuchet MS, Segoe UI, Verdana, sans-serif">
-    ${rahmen}${kopf}${bild}${tabelle}${fuss}</svg>`;
+    ${rahmen}${kopf}${bild}${tabelle}${fuss}${qrTag}</svg>`;
 }
 function openBauplanPrint(svg, name){
   const A4W=210, A4H=297;
@@ -8360,7 +8562,8 @@ async function exportBall3D(){
   let tris=buildBallAdapterSTL(dirs, {...ballOpts(), collar, armLen, depth, res:ballExportRes(), ...flatOpts(), label:'A'});
   tris=rotateTrisFlatDown(tris, window.__lastFlatNormal);
   const blob=trisToSTL(tris);
-  dlBlobNow(blob, `${EN?'ball3d':'kugel3d'}_${dirs.length}${EN?'hole':'loch'}_d${clean(rr*2)}.stl`);
+  const konstruktionsWort = ballKonstruktion()==='zapfen' ? (EN?'peg':'zapfen') : (EN?'hole':'loch');
+  dlBlobNow(blob, `${EN?'ball3d':'kugel3d'}_${dirs.length}${konstruktionsWort}_d${clean(rr*2)}.stl`);
 }
 // Echte 3D-Stabrichtungen eines Koerper-Knotens (normierte Vektoren zu den
 // Nachbarn), damit der 3D-Adapter die tatsaechlichen Winkel abbildet.
@@ -8443,6 +8646,15 @@ function updateFlatWarn(){
   const seg=document.querySelector('#flatSeg .on');
   const aktiv = seg && seg.dataset.v!=='aus';
   w.style.display = (aktiv && window.__flatLimited) ? 'block' : 'none';
+  // Wortlaut passend zum Konstruktionsmodus: im Zapfen-Modus gibt es keine
+  // Bohrung, die der Schnitt oeffnen koennte - dort greift die Grenze (falls
+  // ueberhaupt) erst am Verbindungskern. Direkt gesetzt statt ueber die
+  // generische translateNode-Uebersetzung, wie bei updateBallKonstruktionUI.
+  const EN=(typeof curLang!=='undefined'&&curLang==='en');
+  const zapfen=(typeof ballKonstruktion==='function') && ballKonstruktion()==='zapfen';
+  w.textContent = zapfen
+    ? (EN?'Limited: cutting deeper would cut through the connecting core.':'Begrenzt: tiefer würde der Schnitt den Verbindungskern durchtrennen.')
+    : (EN?'Limited: cutting deeper would open a bore.':'Begrenzt: tiefer würde der Schnitt eine Bohrung öffnen.');
 }
 function updateLockWarn(){
   const w=document.getElementById('lockWarn'); if(!w) return;
@@ -8798,14 +9010,20 @@ function updateBallRodBtns(){
     && document.querySelector('#bodyAdapterSeg .on').dataset.v==='ball3d');
   const js=document.querySelector('#joinSeg .on');
   const ohneStreben = js && js.dataset.v==='direct';
+  // Der Direktadapter ist ein durchgehender Vollstab, der in zwei
+  // gegenueberliegende BOHRUNGEN gesteckt wird - im Zapfen-Modus gibt es
+  // keine Bohrung, in die er passen wuerde (beide Knoten haben stattdessen
+  // einen herausragenden Zapfen). Dafuer gibt es hier keine Entsprechung,
+  // darum bleibt der Export in diesem Fall ausgeblendet.
+  const zapfenModus = (typeof ballKonstruktion==='function') && ballKonstruktion()==='zapfen';
   const zeig=(id,an)=>{ const e=$(id); if(e) e.style.display = an?'':'none'; };
   // Mit Streben: die Streben selbst. Ohne Streben: kurze Adapter, die zwei
   // Knoten direkt verbinden. SVG nur bei eckigem Profil, weil ein Rundstab
   // nicht flach geschnitten werden kann.
   zeig('dlBallRodSvg', istBall && eckig && !ohneStreben);
   zeig('dlBallRodStl', istBall && !ohneStreben && eckig);
-  zeig('dlBallAdSvg',  istBall && eckig && ohneStreben);
-  zeig('dlBallAdStl',  istBall && ohneStreben);
+  zeig('dlBallAdSvg',  istBall && eckig && ohneStreben && !zapfenModus);
+  zeig('dlBallAdStl',  istBall && ohneStreben && !zapfenModus);
 }
 if($('dlBallRodSvg')) $('dlBallRodSvg').addEventListener('click',()=>{
   const svg=ballRodSVG(true);
@@ -8888,6 +9106,39 @@ document.querySelectorAll('#ballProfilSeg button').forEach(b=>b.addEventListener
   if($('grpBallRund'))  $('grpBallRund').style.display  = eckig?'none':'block';
   if($('grpBallEckig')) $('grpBallEckig').style.display = eckig?'block':'none';
   updateBallRodBtns(); render();
+}));
+// Konstruktion: Loecher (bisher) oder Zapfen (neu, fuer Rohre/Formrohre).
+// Aendert nur die Bedeutung/Beschriftung der vorhandenen Masse - keine
+// eigenen neuen Felder, wie gewuenscht "analog zu den bisherigen Einstellungen".
+function updateBallKonstruktionUI(){
+  const EN=(typeof curLang!=='undefined'&&curLang==='en');
+  const zapfen = ballKonstruktion()==='zapfen';
+  const t=(de,en)=>EN?en:de;
+  if($('lblBallRod')) $('lblBallRod').firstChild.textContent = zapfen
+    ? t('Rohr-Innendurchmesser ', 'Tube inner Ø ') : t('Strebendurchmesser ', 'Rod diameter ');
+  if($('lblBallW')) $('lblBallW').firstChild.textContent = zapfen
+    ? t('Rohr-Innenbreite ', 'Tube inner width ') : t('Strebenbreite ', 'Rod width ');
+  if($('lblBallH')) $('lblBallH').firstChild.textContent = zapfen
+    ? t('Rohr-Innenhöhe ', 'Tube inner height ') : t('Strebenhöhe ', 'Rod height ');
+  if($('lblBallDepth')) $('lblBallDepth').firstChild.textContent = zapfen
+    ? t('Zapfenlänge ', 'Peg length ') : t('Bohrtiefe ', 'Hole depth ');
+  if($('helpBallDepth')) $('helpBallDepth').textContent = zapfen
+    ? t('Wie weit der Zapfen über den Kragen hinausragt. Er wird in das Hohlprofil (Rohr/Formrohr) gesteckt.',
+        'How far the peg protrudes beyond the collar. It is inserted into the hollow tube/profile.')
+    : t('Wie tief die Bohrung für die Strebe in den Kragen reicht (Sackloch). Sollte kleiner oder gleich der Armlänge sein, damit ein Boden bleibt.',
+        'How deep the hole for the rod reaches into the collar (blind hole). Should be smaller than or equal to the arm length so a floor remains.');
+  // "Streben beruehren sich" schlaegt eine Tiefe vor, bei der sich BOHRUNGEN
+  // zur Mitte hin treffen wuerden - das passt nur im Loch-Modus. Ein Zapfen
+  // ragt nach aussen, dort gibt es diese Kollision nicht.
+  if($('ballDepthTouch')) $('ballDepthTouch').style.display = zapfen?'none':'';
+}
+document.querySelectorAll('#ballKonstruktionSeg button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#ballKonstruktionSeg button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  updateBallKonstruktionUI();
+  if(typeof updateBallRodBtns==='function') updateBallRodBtns();
+  render();
+  if(typeof updateFlatWarn==='function') updateFlatWarn();
 }));
 document.querySelectorAll('#farbSeg button').forEach(b=>b.addEventListener('click',()=>{
   b.classList.toggle('on');
@@ -9195,6 +9446,7 @@ const I18N = {
   'help_mat':'Thickness of the material you cut from. Needed for the locking tabs: the slot must match the material thickness exactly, otherwise the tab will not hold or will not fit through. Typically 3 mm plywood or 1 mm cardboard.',
   'help_lock':'Holes: plain drilled holes, joined with screws, rivets or glue - works with any material. Tabs: the rod lies flat on the arm, aligned like the star or cone arms. An arrow at the arm end engages a slot in the mating part; the material has to give a little, so rather thin - paper, card, thin plywood. Hooks: the rod stands on edge. A tenon at the rod end carries a nose hanging downwards. It is pushed through the slot and the rod is dropped, so the nose catches behind the plate. Nothing has to bend, so this also suits thicker material such as wood or sheet metal. Cone seam additionally closes the cone.',
   'Begrenzt: tiefer würde der Schnitt eine Bohrung öffnen.':'Limited: cutting deeper would open a bore.',
+  'Begrenzt: tiefer würde der Schnitt den Verbindungskern durchtrennen.':'Limited: cutting deeper would cut through the connecting core.',
   'Druckbett-Fläche ':'Bed contact face ',
   'Zoom Körper':'Zoom structure','Zoom Verbinder und Streben':'Zoom connectors and rods',
   'Blickwinkel':'Camera',
@@ -9245,6 +9497,7 @@ const I18N = {
   
   'help_types2':'2D star: flat star part for laser cutting, folded. Simple and light, good for kits and quick prototyping, but less rigid. For bendable materials like cardboard or thin wood. 2D cone corner: flat part folded into a cone. More rigid, represents spatial angles truly. Limited at saddle points. 3D node: printed body with collars for plugging in the rods. Needs a 3D printer, very stable and the most accurate on angles.',
 '3D-Knoten · Kragen mit Bohrungen':'3D node · collars with holes',
+'3D-Knoten · Kragen mit Zapfen':'3D node · collars with pegs',
   'Verbindertyp ':'Connector type ',
   'help_mode':'Single connector creates one part that you set up freely. Body builds a complete kit for a geometric solid, all connectors and rods at once, one connector per corner.',
   'help_types':'Star: flat part for laser cutting, folded at the fold lines. Simple and fast, but less rigid and only approximates spatial angles. Cone: flat part folded into a cone. More rigid and true to the angles, but harder to fold. Not buildable at saddle points. 3D node: printed body with collars for plugging in the rods. Very stable and accurate on angles, but needs a printer. Edge cases: saddle points (angle sum over 360 degrees) are only reproduced exactly by the 3D node, the tool warns. Angles below about 15 degrees are hard to make with any type. With many rods per corner the 3D node is the most robust.',
@@ -9296,6 +9549,8 @@ const I18N = {
   'Anzahl Nahtzähne':'Number of seam teeth','Anzahl Nahtzähne ':'Number of seam teeth ',
   'Zahnlänge':'Tooth length','Zahnlänge ':'Tooth length ',
   'Profil':'Profile','Rund':'Round','Eckig':'Rectangular',
+  'Konstruktion':'Construction','Löcher':'Holes','Zapfen':'Pegs',
+  'help_ballkonstruktion':'Holes: the collar gets a hole into which a rod (solid or round) is inserted - previous behaviour. Pegs: the collar instead forms a protruding peg onto which a hollow profile (tube or box tube) is pushed. The dimensions below (diameter or width/height) then mean the INNER size of the tube, not the hole any more.',
   'Profil ':'Profile ','Beschriftung ':'Labels ','eingeprägt':'engraved',
   'Anzahl Zapfen ':'Number of tabs ','Ebenen im Export ':'Layers in export ',
   'Verdrehung ':'Rotation ',
@@ -9329,6 +9584,13 @@ function applyLang(lang){
   if(typeof applyMode==='function') applyMode();
 if(typeof updateSectionHeads==='function') updateSectionHeads();
   if(typeof updateTypeColor==='function') updateTypeColor();
+  // Die generische Uebersetzung (translateNode) kennt nur den ERSTEN Text
+  // eines Labels; "Strebendurchmesser"/"Zapfenlänge" usw. werden je nach
+  // Konstruktionsmodus per JS umgeschrieben und muessen darum hier erneut
+  // in der richtigen Sprache gesetzt werden, sonst bleibt z.B. beim Wechsel
+  // nach Englisch der zuletzt gesetzte deutsche Text stehen.
+  if(typeof updateBallKonstruktionUI==='function') updateBallKonstruktionUI();
+  if(typeof updateFlatWarn==='function') updateFlatWarn();
   if(typeof render==='function') render();
 }
 document.querySelectorAll('#langSeg button').forEach(btn=>btn.addEventListener('click',()=>applyLang(btn.dataset.lang)));
