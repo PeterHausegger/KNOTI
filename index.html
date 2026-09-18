@@ -1363,7 +1363,7 @@ function toggleHelp(btn){
 // Programmversion. Sie steht in der Fusszeile, auf jedem Export und in der
 // Einstellungsdatei - bei einer Rueckmeldung ist damit sofort klar, welche
 // Fassung gemeint ist.
-const KNOTI_VERSION='308';
+const KNOTI_VERSION='309';
 let PX_PER_MM=4;
 let BODY_PX=4;      // eigener Zoom fuer die 3D-Koerperzeichnung
 const state={};
@@ -5000,8 +5000,17 @@ function buildBallAdapterSTL(dirs, opts){
   // gut zwei Gitterschritte Tiefe, damit die Rille bei jeder Aufloesung und
   // Bauteilgroesse sauber im Gitter aufgeloest wird.
   const aufFlaeche = !!(opts.flatLabel && flatAktiv);
-  if(aufFlaeche){ eDepth=Math.max(0.4, step*2.2); eHalf=0.6; }
-  const textScale = Math.min(coreR*1.25, rOuter*1.5);  // Buchstabenhoehe
+  // Nicht die Tiefe entscheidet hier ueber Lesbarkeit, sondern die
+  // Strichbreite: ein zu duenner Strich faellt im groben Marching-Cubes-
+  // Gitter zwischen die Gitterpunkte und wird zu einem unleserlichen Fleck
+  // statt einer klaren Linie - egal wie tief er eingeschnitten ist. Deshalb
+  // Strichbreite (eHalf) UND Buchstabengroesse (textScale) beim Flachdruck
+  // deutlich groesser als bei der normalen Gravur, und die Strichbreite wie
+  // schon die Tiefe an die tatsaechliche Gitterweite gekoppelt, damit sie bei
+  // jeder Aufloesung/Bauteilgroesse zuverlaessig als fette, grosse Buchstaben
+  // aufgeloest werden.
+  if(aufFlaeche){ eDepth=Math.max(0.4, step*2.2); eHalf=Math.max(0.9, step*2.0); }
+  const textScale = aufFlaeche ? Math.min(coreR*1.7, rOuter*2.0) : Math.min(coreR*1.25, rOuter*1.5);  // Buchstabenhoehe
   if(engrave){
     const cand=[];
     for(let a=0;a<12;a++)for(let b2=1;b2<6;b2++){
