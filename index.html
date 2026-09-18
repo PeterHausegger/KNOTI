@@ -1363,7 +1363,7 @@ function toggleHelp(btn){
 // Programmversion. Sie steht in der Fusszeile, auf jedem Export und in der
 // Einstellungsdatei - bei einer Rueckmeldung ist damit sofort klar, welche
 // Fassung gemeint ist.
-const KNOTI_VERSION='309';
+const KNOTI_VERSION='310';
 let PX_PER_MM=4;
 let BODY_PX=4;      // eigener Zoom fuer die 3D-Koerperzeichnung
 const state={};
@@ -4945,22 +4945,29 @@ function buildBallAdapterSTL(dirs, opts){
         d = Math.max(d, -cyl);                          // Subtraktion
       }
     }
-    // --- Beschriftung eingraviert ---
-    if(engrave){
+    // --- Beschriftung eingraviert (nur die NICHT-flache Variante: direkt in
+    // die gewoelbte Kragen-/Kernoberflaeche graviert). Die flach eingepraegte
+    // Beschriftung (aufFlaeche) wird bewusst NICHT hier, sondern erst in
+    // sdf() NACH dem Flachschnitt aufgetragen - siehe Begruendung dort. ---
+    if(engrave && !aufFlaeche){
       // Abstand zum Buchstaben (in der lokalen Ebene projiziert), als Rille
       // subtrahiert: d = max(d, -(engraveDepth - distToText)) auf der Oberflaeche.
       const t = x*eN[0]+y*eN[1]+z*eN[2];              // Tiefe entlang Blickrichtung
-      // Auf der flachen Seite ist die Oberflaeche die Schnittebene selbst.
-      const surf = aufFlaeche ? flatOff : coreR;
+      const surf = coreR;
       if(t>surf-eDepth-0.6){
         // Punkt in Textebene projizieren (eU, eV Basis)
         const lx = (x*eU[0]+y*eU[1]+z*eU[2]);
         const ly = (x*eV[0]+y*eV[1]+z*eV[2]);
         const dist = textDist(lx, ly);                // Abstand zu den Strichen
         if(dist < eHalf){
-          // innerhalb der Strichbreite -> Material bis eDepth entfernen
-          const groove = (t-(surf-eDepth));           // >0 = zu tief, herausschneiden
-          d = Math.max(d, -groove);                    // Rille
+          // innerhalb der Strichbreite -> Material von der Oberflaeche bis
+          // eDepth entfernen. groove ist >0 genau im Bereich, der leer werden
+          // soll (von surf bis surf-eDepth) - darum OHNE Vorzeichenwechsel in
+          // den max() geben (ein fruehes "-groove" hier war ein Vorzeichen-
+          // fehler: die Rille landete dadurch als geschlossener Hohlraum ein
+          // Stueck UNTER der Oberflaeche statt offen AUF ihr).
+          const groove = (t-(surf-eDepth));           // >0 = im auszuhoehlenden Bereich
+          d = Math.max(d, groove);                     // Rille
         }
       }
     }
@@ -4972,6 +4979,31 @@ function buildBallAdapterSTL(dirs, opts){
     if(flatAktiv){
       const tn = x*flatN[0]+y*flatN[1]+z*flatN[2];    // Abstand entlang Normale
       d = Math.max(d, tn-flatOff);                    // Anschnitt an der Ebene
+      // Flach eingepraegte Beschriftung: ERST HIER, NACHDEM der Anschnitt
+      // angewendet wurde, damit "d" in der Naehe von t=flatOff wirklich die
+      // Distanz zur sichtbaren Schnittflaeche ist (d ≈ tn-flatOff) und nicht
+      // die der ungeschnittenen Rohform (die bei t=flatOff meist noch tief
+      // im Material liegt, weit weg vom naechsten rohen Rand).
+      if(engrave && aufFlaeche){
+        const surf = flatOff;
+        if(tn>surf-eDepth-0.6){
+          const lx = (x*eU[0]+y*eU[1]+z*eU[2]);
+          const ly = (x*eV[0]+y*eV[1]+z*eV[2]);
+          const dist = textDist(lx, ly);
+          if(dist < eHalf){
+            // groove ist >0 genau im Bereich, der leer werden soll (von surf
+            // bis surf-eDepth) - OHNE Vorzeichenwechsel in max() geben. Das
+            // frueher hier stehende "-groove" war ein Vorzeichenfehler: die
+            // Rille landete dadurch als geschlossener Hohlraum ein Stueck
+            // UNTER der Oberflaeche statt offen AUF ihr (per Sichtprobe am
+            // echten Netz bestaetigt: mit "-groove" mehrere verschachtelte
+            // Oberflaechen, mit "groove" eine einzige, von aussen sichtbare,
+            // saubere Vertiefung bis genau zur Solltiefe eDepth).
+            const groove = (tn-(surf-eDepth));
+            d = Math.max(d, groove);
+          }
+        }
+      }
     }
     return d;
   };
