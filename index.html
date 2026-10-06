@@ -590,7 +590,7 @@
   <div class="sect" data-sect="kegel"><span class="stepno"></span><span class="sect-txt">Form</span><span class="chev">▾</span></div>
     <div id="bodyConeControls" style="display:none;">
       <div class="grp">
-        <label>Außenradius <span><input class="numfield" type="number" id="nBConeR" min="15" max="300" step="0.1" value="45"><span class="unit">mm</span></span></label>
+        <label>Armlänge <span><input class="numfield" type="number" id="nBConeR" min="15" max="300" step="0.1" value="45"><span class="unit">mm</span></span></label>
         <input type="range" id="bConeR" min="20" max="200" value="45" step="0.1">
       </div>
       <div class="grp">
@@ -654,7 +654,7 @@
       <input type="text" id="coneCustomAngles" value="60,60,60,60,60">
     </div>
     <div class="grp">
-      <label>Außenradius <span><input class="numfield" type="number" id="nConeR" min="15" max="300" step="0.1" value="45"><span class="unit">mm</span></span></label>
+      <label>Armlänge <span><input class="numfield" type="number" id="nConeR" min="15" max="300" step="0.1" value="45"><span class="unit">mm</span></span></label>
       <input type="range" id="coneR" min="20" max="200" value="45" step="0.1">
     </div>
     <div class="grp">
@@ -1349,10 +1349,6 @@
 
 window.earcut = (window.earcut && window.earcut.default) ? window.earcut.default : (typeof earcut!=="undefined"?earcut:null);
 </script>
-<!-- QR-Code-Generator, Copyright (c) 2009 Kazuhiko Arase, MIT-Lizenz - https://github.com/kazuhikoarase/qrcode-generator (offline, keine externen Aufrufe) -->
-<script>
-var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],f={},c=function(t,r){o=function(t){for(var r=new Array(t),e=0;e<t;e+=1){r[e]=new Array(t);for(var n=0;n<t;n+=1)r[e][n]=null}return r}(i=4*e+17),l(0,0),l(i-7,0),l(0,i-7),s(),h(),d(t,r),e>=7&&v(t),null==a&&(a=p(e,n,u)),w(a,r)},l=function(t,r){for(var e=-1;e<=7;e+=1)if(!(t+e<=-1||i<=t+e))for(var n=-1;n<=7;n+=1)r+n<=-1||i<=r+n||(o[t+e][r+n]=0<=e&&e<=6&&(0==n||6==n)||0<=n&&n<=6&&(0==e||6==e)||2<=e&&e<=4&&2<=n&&n<=4)},h=function(){for(var t=8;t<i-8;t+=1)null==o[t][6]&&(o[t][6]=t%2==0);for(var r=8;r<i-8;r+=1)null==o[6][r]&&(o[6][r]=r%2==0)},s=function(){for(var t=B.getPatternPosition(e),r=0;r<t.length;r+=1)for(var n=0;n<t.length;n+=1){var i=t[r],a=t[n];if(null==o[i][a])for(var u=-2;u<=2;u+=1)for(var f=-2;f<=2;f+=1)o[i+u][a+f]=-2==u||2==u||-2==f||2==f||0==u&&0==f}},v=function(t){for(var r=B.getBCHTypeNumber(e),n=0;n<18;n+=1){var a=!t&&1==(r>>n&1);o[Math.floor(n/3)][n%3+i-8-3]=a}for(n=0;n<18;n+=1){a=!t&&1==(r>>n&1);o[n%3+i-8-3][Math.floor(n/3)]=a}},d=function(t,r){for(var e=n<<3|r,a=B.getBCHTypeInfo(e),u=0;u<15;u+=1){var f=!t&&1==(a>>u&1);u<6?o[u][8]=f:u<8?o[u+1][8]=f:o[i-15+u][8]=f}for(u=0;u<15;u+=1){f=!t&&1==(a>>u&1);u<8?o[8][i-u-1]=f:u<9?o[8][15-u-1+1]=f:o[8][15-u-1]=f}o[i-8][8]=!t},w=function(t,r){for(var e=-1,n=i-1,a=7,u=0,f=B.getMaskFunction(r),c=i-1;c>0;c-=2)for(6==c&&(c-=1);;){for(var g=0;g<2;g+=1)if(null==o[n][c-g]){var l=!1;u<t.length&&(l=1==(t[u]>>>a&1)),f(n,c-g)&&(l=!l),o[n][c-g]=l,-1==(a-=1)&&(u+=1,a=7)}if((n+=e)<0||i<=n){n-=e,e=-e;break}}},p=function(t,r,e){for(var n=A.getRSBlocks(t,r),o=b(),i=0;i<e.length;i+=1){var a=e[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var u=0;for(i=0;i<n.length;i+=1)u+=n[i].dataCount;if(o.getLengthInBits()>8*u)throw"code length overflow. ("+o.getLengthInBits()+">"+8*u+")";for(o.getLengthInBits()+4<=8*u&&o.put(0,4);o.getLengthInBits()%8!=0;)o.putBit(!1);for(;!(o.getLengthInBits()>=8*u||(o.put(236,8),o.getLengthInBits()>=8*u));)o.put(17,8);return function(t,r){for(var e=0,n=0,o=0,i=new Array(r.length),a=new Array(r.length),u=0;u<r.length;u+=1){var f=r[u].dataCount,c=r[u].totalCount-f;n=Math.max(n,f),o=Math.max(o,c),i[u]=new Array(f);for(var g=0;g<i[u].length;g+=1)i[u][g]=255&t.getBuffer()[g+e];e+=f;var l=B.getErrorCorrectPolynomial(c),h=k(i[u],l.getLength()-1).mod(l);for(a[u]=new Array(l.getLength()-1),g=0;g<a[u].length;g+=1){var s=g+h.getLength()-a[u].length;a[u][g]=s>=0?h.getAt(s):0}}var v=0;for(g=0;g<r.length;g+=1)v+=r[g].totalCount;var d=new Array(v),w=0;for(g=0;g<n;g+=1)for(u=0;u<r.length;u+=1)g<i[u].length&&(d[w]=i[u][g],w+=1);for(g=0;g<o;g+=1)for(u=0;u<r.length;u+=1)g<a[u].length&&(d[w]=a[u][g],w+=1);return d}(o,n)};f.addData=function(t,r){var e=null;switch(r=r||"Byte"){case"Numeric":e=M(t);break;case"Alphanumeric":e=x(t);break;case"Byte":e=m(t);break;case"Kanji":e=L(t);break;default:throw"mode:"+r}u.push(e),a=null},f.isDark=function(t,r){if(t<0||i<=t||r<0||i<=r)throw t+","+r;return o[t][r]},f.getModuleCount=function(){return i},f.make=function(){if(e<1){for(var t=1;t<40;t++){for(var r=A.getRSBlocks(t,n),o=b(),i=0;i<u.length;i++){var a=u[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var g=0;for(i=0;i<r.length;i++)g+=r[i].dataCount;if(o.getLengthInBits()<=8*g)break}e=t}c(!1,function(){for(var t=0,r=0,e=0;e<8;e+=1){c(!0,e);var n=B.getLostPoint(f);(0==e||t>n)&&(t=n,r=e)}return r}())},f.createTableTag=function(t,r){t=t||2;var e="";e+='<table style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: "+(r=void 0===r?4*t:r)+"px;",e+='">',e+="<tbody>";for(var n=0;n<f.getModuleCount();n+=1){e+="<tr>";for(var o=0;o<f.getModuleCount();o+=1)e+='<td style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: 0px;",e+=" width: "+t+"px;",e+=" height: "+t+"px;",e+=" background-color: ",e+=f.isDark(n,o)?"#000000":"#ffffff",e+=";",e+='"/>';e+="</tr>"}return e+="</tbody>",e+="</table>"},f.createSvgTag=function(t,r,e,n){var o={};"object"==typeof arguments[0]&&(t=(o=arguments[0]).cellSize,r=o.margin,e=o.alt,n=o.title),t=t||2,r=void 0===r?4*t:r,(e="string"==typeof e?{text:e}:e||{}).text=e.text||null,e.id=e.text?e.id||"qrcode-description":null,(n="string"==typeof n?{text:n}:n||{}).text=n.text||null,n.id=n.text?n.id||"qrcode-title":null;var i,a,u,c,g=f.getModuleCount()*t+2*r,l="";for(c="l"+t+",0 0,"+t+" -"+t+",0 0,-"+t+"z ",l+='<svg version="1.1" xmlns="http://www.w3.org/2000/svg"',l+=o.scalable?"":' width="'+g+'px" height="'+g+'px"',l+=' viewBox="0 0 '+g+" "+g+'" ',l+=' preserveAspectRatio="xMinYMin meet"',l+=n.text||e.text?' role="img" aria-labelledby="'+y([n.id,e.id].join(" ").trim())+'"':"",l+=">",l+=n.text?'<title id="'+y(n.id)+'">'+y(n.text)+"</title>":"",l+=e.text?'<description id="'+y(e.id)+'">'+y(e.text)+"</description>":"",l+='<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>',l+='<path d="',a=0;a<f.getModuleCount();a+=1)for(u=a*t+r,i=0;i<f.getModuleCount();i+=1)f.isDark(a,i)&&(l+="M"+(i*t+r)+","+u+c);return l+='" stroke="transparent" fill="black"/>',l+="</svg>"},f.createDataURL=function(t,r){t=t||2,r=void 0===r?4*t:r;var e=f.getModuleCount()*t+2*r,n=r,o=e-r;return I(e,e,function(r,e){if(n<=r&&r<o&&n<=e&&e<o){var i=Math.floor((r-n)/t),a=Math.floor((e-n)/t);return f.isDark(a,i)?0:1}return 1})},f.createImgTag=function(t,r,e){t=t||2,r=void 0===r?4*t:r;var n=f.getModuleCount()*t+2*r,o="";return o+="<img",o+=' src="',o+=f.createDataURL(t,r),o+='"',o+=' width="',o+=n,o+='"',o+=' height="',o+=n,o+='"',e&&(o+=' alt="',o+=y(e),o+='"'),o+="/>"};var y=function(t){for(var r="",e=0;e<t.length;e+=1){var n=t.charAt(e);switch(n){case"<":r+="&lt;";break;case">":r+="&gt;";break;case"&":r+="&amp;";break;case'"':r+="&quot;";break;default:r+=n}}return r};return f.createASCII=function(t,r){if((t=t||1)<2)return function(t){t=void 0===t?2:t;var r,e,n,o,i,a=1*f.getModuleCount()+2*t,u=t,c=a-t,g={"██":"█","█ ":"▀"," █":"▄","  ":" "},l={"██":"▀","█ ":"▀"," █":" ","  ":" "},h="";for(r=0;r<a;r+=2){for(n=Math.floor((r-u)/1),o=Math.floor((r+1-u)/1),e=0;e<a;e+=1)i="█",u<=e&&e<c&&u<=r&&r<c&&f.isDark(n,Math.floor((e-u)/1))&&(i=" "),u<=e&&e<c&&u<=r+1&&r+1<c&&f.isDark(o,Math.floor((e-u)/1))?i+=" ":i+="█",h+=t<1&&r+1>=c?l[i]:g[i];h+="\n"}return a%2&&t>0?h.substring(0,h.length-a-1)+Array(a+1).join("▀"):h.substring(0,h.length-1)}(r);t-=1,r=void 0===r?2*t:r;var e,n,o,i,a=f.getModuleCount()*t+2*r,u=r,c=a-r,g=Array(t+1).join("██"),l=Array(t+1).join("  "),h="",s="";for(e=0;e<a;e+=1){for(o=Math.floor((e-u)/t),s="",n=0;n<a;n+=1)i=1,u<=n&&n<c&&u<=e&&e<c&&f.isDark(o,Math.floor((n-u)/t))&&(i=0),s+=i?g:l;for(o=0;o<t;o+=1)h+=s+"\n"}return h.substring(0,h.length-1)},f.renderTo2dContext=function(t,r){r=r||2;for(var e=f.getModuleCount(),n=0;n<e;n++)for(var o=0;o<e;o++)t.fillStyle=f.isDark(n,o)?"black":"white",t.fillRect(o*r,n*r,r,r)},f};t.stringToBytes=(t.stringToBytesFuncs={default:function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);r.push(255&n)}return r}}).default,t.createStringToBytes=function(t,r){var e=function(){for(var e=S(t),n=function(){var t=e.read();if(-1==t)throw"eof";return t},o=0,i={};;){var a=e.read();if(-1==a)break;var u=n(),f=n()<<8|n();i[String.fromCharCode(a<<8|u)]=f,o+=1}if(o!=r)throw o+" != "+r;return i}(),n="?".charCodeAt(0);return function(t){for(var r=[],o=0;o<t.length;o+=1){var i=t.charCodeAt(o);if(i<128)r.push(i);else{var a=e[t.charAt(o)];"number"==typeof a?(255&a)==a?r.push(a):(r.push(a>>>8),r.push(255&a)):r.push(n)}}return r}};var r,e,n,o,i,a=1,u=2,f=4,c=8,g={L:1,M:0,Q:3,H:2},l=0,h=1,s=2,v=3,d=4,w=5,p=6,y=7,B=(r=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],e=1335,n=7973,i=function(t){for(var r=0;0!=t;)r+=1,t>>>=1;return r},(o={}).getBCHTypeInfo=function(t){for(var r=t<<10;i(r)-i(e)>=0;)r^=e<<i(r)-i(e);return 21522^(t<<10|r)},o.getBCHTypeNumber=function(t){for(var r=t<<12;i(r)-i(n)>=0;)r^=n<<i(r)-i(n);return t<<12|r},o.getPatternPosition=function(t){return r[t-1]},o.getMaskFunction=function(t){switch(t){case l:return function(t,r){return(t+r)%2==0};case h:return function(t,r){return t%2==0};case s:return function(t,r){return r%3==0};case v:return function(t,r){return(t+r)%3==0};case d:return function(t,r){return(Math.floor(t/2)+Math.floor(r/3))%2==0};case w:return function(t,r){return t*r%2+t*r%3==0};case p:return function(t,r){return(t*r%2+t*r%3)%2==0};case y:return function(t,r){return(t*r%3+(t+r)%2)%2==0};default:throw"bad maskPattern:"+t}},o.getErrorCorrectPolynomial=function(t){for(var r=k([1],0),e=0;e<t;e+=1)r=r.multiply(k([1,C.gexp(e)],0));return r},o.getLengthInBits=function(t,r){if(1<=r&&r<10)switch(t){case a:return 10;case u:return 9;case f:case c:return 8;default:throw"mode:"+t}else if(r<27)switch(t){case a:return 12;case u:return 11;case f:return 16;case c:return 10;default:throw"mode:"+t}else{if(!(r<41))throw"type:"+r;switch(t){case a:return 14;case u:return 13;case f:return 16;case c:return 12;default:throw"mode:"+t}}},o.getLostPoint=function(t){for(var r=t.getModuleCount(),e=0,n=0;n<r;n+=1)for(var o=0;o<r;o+=1){for(var i=0,a=t.isDark(n,o),u=-1;u<=1;u+=1)if(!(n+u<0||r<=n+u))for(var f=-1;f<=1;f+=1)o+f<0||r<=o+f||0==u&&0==f||a==t.isDark(n+u,o+f)&&(i+=1);i>5&&(e+=3+i-5)}for(n=0;n<r-1;n+=1)for(o=0;o<r-1;o+=1){var c=0;t.isDark(n,o)&&(c+=1),t.isDark(n+1,o)&&(c+=1),t.isDark(n,o+1)&&(c+=1),t.isDark(n+1,o+1)&&(c+=1),0!=c&&4!=c||(e+=3)}for(n=0;n<r;n+=1)for(o=0;o<r-6;o+=1)t.isDark(n,o)&&!t.isDark(n,o+1)&&t.isDark(n,o+2)&&t.isDark(n,o+3)&&t.isDark(n,o+4)&&!t.isDark(n,o+5)&&t.isDark(n,o+6)&&(e+=40);for(o=0;o<r;o+=1)for(n=0;n<r-6;n+=1)t.isDark(n,o)&&!t.isDark(n+1,o)&&t.isDark(n+2,o)&&t.isDark(n+3,o)&&t.isDark(n+4,o)&&!t.isDark(n+5,o)&&t.isDark(n+6,o)&&(e+=40);var g=0;for(o=0;o<r;o+=1)for(n=0;n<r;n+=1)t.isDark(n,o)&&(g+=1);return e+=Math.abs(100*g/r/r-50)/5*10},o),C=function(){for(var t=new Array(256),r=new Array(256),e=0;e<8;e+=1)t[e]=1<<e;for(e=8;e<256;e+=1)t[e]=t[e-4]^t[e-5]^t[e-6]^t[e-8];for(e=0;e<255;e+=1)r[t[e]]=e;var n={glog:function(t){if(t<1)throw"glog("+t+")";return r[t]},gexp:function(r){for(;r<0;)r+=255;for(;r>=256;)r-=255;return t[r]}};return n}();function k(t,r){if(void 0===t.length)throw t.length+"/"+r;var e=function(){for(var e=0;e<t.length&&0==t[e];)e+=1;for(var n=new Array(t.length-e+r),o=0;o<t.length-e;o+=1)n[o]=t[o+e];return n}(),n={getAt:function(t){return e[t]},getLength:function(){return e.length},multiply:function(t){for(var r=new Array(n.getLength()+t.getLength()-1),e=0;e<n.getLength();e+=1)for(var o=0;o<t.getLength();o+=1)r[e+o]^=C.gexp(C.glog(n.getAt(e))+C.glog(t.getAt(o)));return k(r,0)},mod:function(t){if(n.getLength()-t.getLength()<0)return n;for(var r=C.glog(n.getAt(0))-C.glog(t.getAt(0)),e=new Array(n.getLength()),o=0;o<n.getLength();o+=1)e[o]=n.getAt(o);for(o=0;o<t.getLength();o+=1)e[o]^=C.gexp(C.glog(t.getAt(o))+r);return k(e,0).mod(t)}};return n}var A=function(){var t=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],r=function(t,r){var e={};return e.totalCount=t,e.dataCount=r,e},e={};return e.getRSBlocks=function(e,n){var o=function(r,e){switch(e){case g.L:return t[4*(r-1)+0];case g.M:return t[4*(r-1)+1];case g.Q:return t[4*(r-1)+2];case g.H:return t[4*(r-1)+3];default:return}}(e,n);if(void 0===o)throw"bad rs block @ typeNumber:"+e+"/errorCorrectionLevel:"+n;for(var i=o.length/3,a=[],u=0;u<i;u+=1)for(var f=o[3*u+0],c=o[3*u+1],l=o[3*u+2],h=0;h<f;h+=1)a.push(r(c,l));return a},e}(),b=function(){var t=[],r=0,e={getBuffer:function(){return t},getAt:function(r){var e=Math.floor(r/8);return 1==(t[e]>>>7-r%8&1)},put:function(t,r){for(var n=0;n<r;n+=1)e.putBit(1==(t>>>r-n-1&1))},getLengthInBits:function(){return r},putBit:function(e){var n=Math.floor(r/8);t.length<=n&&t.push(0),e&&(t[n]|=128>>>r%8),r+=1}};return e},M=function(t){var r=a,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+2<r.length;)t.put(o(r.substring(n,n+3)),10),n+=3;n<r.length&&(r.length-n==1?t.put(o(r.substring(n,n+1)),4):r.length-n==2&&t.put(o(r.substring(n,n+2)),7))}},o=function(t){for(var r=0,e=0;e<t.length;e+=1)r=10*r+i(t.charAt(e));return r},i=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);throw"illegal char :"+t};return n},x=function(t){var r=u,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+1<r.length;)t.put(45*o(r.charAt(n))+o(r.charAt(n+1)),11),n+=2;n<r.length&&t.put(o(r.charAt(n)),6)}},o=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);if("A"<=t&&t<="Z")return t.charCodeAt(0)-"A".charCodeAt(0)+10;switch(t){case" ":return 36;case"$":return 37;case"%":return 38;case"*":return 39;case"+":return 40;case"-":return 41;case".":return 42;case"/":return 43;case":":return 44;default:throw"illegal char :"+t}};return n},m=function(r){var e=f,n=t.stringToBytes(r),o={getMode:function(){return e},getLength:function(t){return n.length},write:function(t){for(var r=0;r<n.length;r+=1)t.put(n[r],8)}};return o},L=function(r){var e=c,n=t.stringToBytesFuncs.SJIS;if(!n)throw"sjis not supported.";!function(){var t=n("友");if(2!=t.length||38726!=(t[0]<<8|t[1]))throw"sjis not supported."}();var o=n(r),i={getMode:function(){return e},getLength:function(t){return~~(o.length/2)},write:function(t){for(var r=o,e=0;e+1<r.length;){var n=(255&r[e])<<8|255&r[e+1];if(33088<=n&&n<=40956)n-=33088;else{if(!(57408<=n&&n<=60351))throw"illegal char at "+(e+1)+"/"+n;n-=49472}n=192*(n>>>8&255)+(255&n),t.put(n,13),e+=2}if(e<r.length)throw"illegal char at "+(e+1)}};return i},D=function(){var t=[],r={writeByte:function(r){t.push(255&r)},writeShort:function(t){r.writeByte(t),r.writeByte(t>>>8)},writeBytes:function(t,e,n){e=e||0,n=n||t.length;for(var o=0;o<n;o+=1)r.writeByte(t[o+e])},writeString:function(t){for(var e=0;e<t.length;e+=1)r.writeByte(t.charCodeAt(e))},toByteArray:function(){return t},toString:function(){var r="";r+="[";for(var e=0;e<t.length;e+=1)e>0&&(r+=","),r+=t[e];return r+="]"}};return r},S=function(t){var r=t,e=0,n=0,o=0,i={read:function(){for(;o<8;){if(e>=r.length){if(0==o)return-1;throw"unexpected end of file./"+o}var t=r.charAt(e);if(e+=1,"="==t)return o=0,-1;t.match(/^\s$/)||(n=n<<6|a(t.charCodeAt(0)),o+=6)}var i=n>>>o-8&255;return o-=8,i}},a=function(t){if(65<=t&&t<=90)return t-65;if(97<=t&&t<=122)return t-97+26;if(48<=t&&t<=57)return t-48+52;if(43==t)return 62;if(47==t)return 63;throw"c:"+t};return i},I=function(t,r,e){for(var n=function(t,r){var e=t,n=r,o=new Array(t*r),i={setPixel:function(t,r,n){o[r*e+t]=n},write:function(t){t.writeString("GIF87a"),t.writeShort(e),t.writeShort(n),t.writeByte(128),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(255),t.writeByte(255),t.writeByte(255),t.writeString(","),t.writeShort(0),t.writeShort(0),t.writeShort(e),t.writeShort(n),t.writeByte(0);var r=a(2);t.writeByte(2);for(var o=0;r.length-o>255;)t.writeByte(255),t.writeBytes(r,o,255),o+=255;t.writeByte(r.length-o),t.writeBytes(r,o,r.length-o),t.writeByte(0),t.writeString(";")}},a=function(t){for(var r=1<<t,e=1+(1<<t),n=t+1,i=u(),a=0;a<r;a+=1)i.add(String.fromCharCode(a));i.add(String.fromCharCode(r)),i.add(String.fromCharCode(e));var f,c,g,l=D(),h=(f=l,c=0,g=0,{write:function(t,r){if(t>>>r!=0)throw"length over";for(;c+r>=8;)f.writeByte(255&(t<<c|g)),r-=8-c,t>>>=8-c,g=0,c=0;g|=t<<c,c+=r},flush:function(){c>0&&f.writeByte(g)}});h.write(r,n);var s=0,v=String.fromCharCode(o[s]);for(s+=1;s<o.length;){var d=String.fromCharCode(o[s]);s+=1,i.contains(v+d)?v+=d:(h.write(i.indexOf(v),n),i.size()<4095&&(i.size()==1<<n&&(n+=1),i.add(v+d)),v=d)}return h.write(i.indexOf(v),n),h.write(e,n),h.flush(),l.toByteArray()},u=function(){var t={},r=0,e={add:function(n){if(e.contains(n))throw"dup key:"+n;t[n]=r,r+=1},size:function(){return r},indexOf:function(r){return t[r]},contains:function(r){return void 0!==t[r]}};return e};return i}(t,r),o=0;o<r;o+=1)for(var i=0;i<t;i+=1)n.setPixel(i,o,e(i,o));var a=D();n.write(a);for(var u=function(){var t=0,r=0,e=0,n="",o={},i=function(t){n+=String.fromCharCode(a(63&t))},a=function(t){if(t<0);else{if(t<26)return 65+t;if(t<52)return t-26+97;if(t<62)return t-52+48;if(62==t)return 43;if(63==t)return 47}throw"n:"+t};return o.writeByte=function(n){for(t=t<<8|255&n,r+=8,e+=1;r>=6;)i(t>>>r-6),r-=6},o.flush=function(){if(r>0&&(i(t<<6-r),t=0,r=0),e%3!=0)for(var o=3-e%3,a=0;a<o;a+=1)n+="="},o.toString=function(){return n},o}(),f=a.toByteArray(),c=0;c<f.length;c+=1)u.writeByte(f[c]);return u.flush(),"data:image/gif;base64,"+u};return t}();qrcode.stringToBytesFuncs["UTF-8"]=function(t){return function(t){for(var r=[],e=0;e<t.length;e++){var n=t.charCodeAt(e);n<128?r.push(n):n<2048?r.push(192|n>>6,128|63&n):n<55296||n>=57344?r.push(224|n>>12,128|n>>6&63,128|63&n):(e++,n=65536+((1023&n)<<10|1023&t.charCodeAt(e)),r.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|63&n))}return r}(t)};
-</script>
 <script>
 const $=id=>document.getElementById(id);
 // Hilfetext ein-/ausklappen (Fragezeichen neben dem Label)
@@ -1363,7 +1359,7 @@ function toggleHelp(btn){
 // Programmversion. Sie steht in der Fusszeile, auf jedem Export und in der
 // Einstellungsdatei - bei einer Rueckmeldung ist damit sofort klar, welche
 // Fassung gemeint ist.
-const KNOTI_VERSION='310';
+const KNOTI_VERSION='312';
 let PX_PER_MM=4;
 let BODY_PX=4;      // eigener Zoom fuer die 3D-Koerperzeichnung
 const state={};
@@ -5007,17 +5003,24 @@ function buildBallAdapterSTL(dirs, opts){
     }
     return d;
   };
-  // Marching-Cubes-Gitterschrittweite wird schon HIER gebraucht (statt erst
-  // weiter unten beim eigentlichen Abtasten): die Gravurtiefe der flach
-  // eingepraegten Beschriftung muss zur tatsaechlichen Gitterweite passen,
-  // sonst kann das Marching-Cubes-Gitter die duenne Rille gar nicht sauber
-  // auflösen (siehe unten bei aufFlaeche).
-  const ext=armLen+collar+2+(zapfen?depth:0);
-  const N = opts.res ? opts.res : Math.max(48, Math.min(96, Math.round(ext*2.2)));
-  const lo=-ext, hi=ext, step=(hi-lo)/N;
-  // --- Beschriftung vorbereiten ---
+  // --- Beschriftung: ob und wie, muss schon VOR der Gitterweite feststehen -
+  // die Gravurtiefe (eDepth) der flach eingepraegten Beschriftung richtet
+  // sich unten nach der tatsaechlichen Gitterweite.
   const engraveChar = opts.label ? String(opts.label).charAt(0).toUpperCase() : '';
   const engrave = !!(engraveChar && ENGRAVE_FONT[engraveChar]);
+  const aufFlaeche = !!(opts.flatLabel && flatAktiv);
+  const ext=armLen+collar+2+(zapfen?depth:0);
+  const N = opts.res ? opts.res : Math.max(48, Math.min(96, Math.round(ext*2.2)));
+  // HINWEIS: ein frueherer Versuch, das Gitter bei flach eingepraegter
+  // Beschriftung gezielt extrem zu verfeinern (Ziel-Schrittweite 0,2mm),
+  // wurde WIEDER VERWORFEN - Marching Cubes tastet das gesamte Volumen ab,
+  // die Kosten steigen mit N^3: eine Verfeinerung von N=64 auf N~190 (fuer
+  // 0,2mm Schritt bei diesem Koerper) hat den Export von ~3s auf ueber 70s
+  // verlangsamt (gemessen). Die Loesung liegt daher NICHT in mehr Gitter-
+  // aufloesung, sondern in einer flacheren Soll-Tiefe (siehe eDepth unten) -
+  // die bringt die Druckbarkeit, ohne das Gitter anzufassen.
+  const lo=-ext, hi=ext, step=(hi-lo)/N;
+  // --- Beschriftung vorbereiten ---
   // Blickrichtung fuer den Text: moeglichst weit weg von allen Armen. Wir
   // suchen auf einer Kugel die Richtung mit dem groessten Mindestabstand zu
   // allen Arm-Achsen (grob per Kandidatensuche).
@@ -5025,23 +5028,23 @@ function buildBallAdapterSTL(dirs, opts){
   // bei feinerer Aufloesung sauber erfasst und nach dem Druck lesbar sind.
   let eN=[0,0,1], eU=[1,0,0], eV=[0,1,0], eDepth=Math.min(1.1, collar*0.55), eHalf=0.75;
   // Beim Flachdruck sitzt der Buchstabe auf der aufliegenden Flaeche und wird
-  // flach eingepraegt. Die Rille muss dafuer deutlich tiefer sein als die
-  // Marching-Cubes-Gitterweite (step) - sonst faellt sie zwischen zwei
-  // Gitterebenen und wird je nach Position gar nicht oder nur bruchstueckhaft
-  // erfasst, was genau das "schwer lesbar"-Ergebnis verursacht. Mindestens
-  // gut zwei Gitterschritte Tiefe, damit die Rille bei jeder Aufloesung und
-  // Bauteilgroesse sauber im Gitter aufgeloest wird.
-  const aufFlaeche = !!(opts.flatLabel && flatAktiv);
-  // Nicht die Tiefe entscheidet hier ueber Lesbarkeit, sondern die
-  // Strichbreite: ein zu duenner Strich faellt im groben Marching-Cubes-
-  // Gitter zwischen die Gitterpunkte und wird zu einem unleserlichen Fleck
-  // statt einer klaren Linie - egal wie tief er eingeschnitten ist. Deshalb
-  // Strichbreite (eHalf) UND Buchstabengroesse (textScale) beim Flachdruck
-  // deutlich groesser als bei der normalen Gravur, und die Strichbreite wie
-  // schon die Tiefe an die tatsaechliche Gitterweite gekoppelt, damit sie bei
-  // jeder Aufloesung/Bauteilgroesse zuverlaessig als fette, grosse Buchstaben
-  // aufgeloest werden.
-  if(aufFlaeche){ eDepth=Math.max(0.4, step*2.2); eHalf=Math.max(0.9, step*2.0); }
+  // flach eingepraegt. Die Rille muss dafuer mindestens eine Marching-Cubes-
+  // Gitterweite (step) tief sein - sonst faellt sie zwischen zwei Gitter-
+  // ebenen und wird je nach Position gar nicht oder nur bruchstueckhaft
+  // erfasst. Mehr als EINE Gitterweite Tiefe bringt aber keine bessere
+  // Lesbarkeit mehr (per Soll/Ist-Vergleich am echten Netz vermessen), macht
+  // die Praegung aber unnoetig tief und damit schlechter druckbar (mehr
+  // Lagen, duenne stehende Waende je Buchstabenstrich - genau das Problem,
+  // das beim Druck aufgefallen ist). eDepth bleibt daher bei EINER
+  // Gitterweite, nicht bei 2,2 Gitterweiten wie zuvor; 0,35mm als Mindest-
+  // tiefe fuer sehr feine Gitter, damit die Rille auch dann nicht zu seicht
+  // zum Abformen wird. Nicht die Tiefe allein entscheidet aber ueber
+  // Lesbarkeit, sondern auch die Strichbreite: ein zu duenner Strich faellt
+  // im Gitter zwischen die Gitterpunkte und wird zu einem unleserlichen
+  // Fleck statt einer klaren Linie. Deshalb Strichbreite (eHalf) UND
+  // Buchstabengroesse (textScale) beim Flachdruck deutlich groesser als bei
+  // der normalen Gravur.
+  if(aufFlaeche){ eDepth=Math.max(0.35, step*1.0); eHalf=Math.max(0.9, step*2.0); }
   const textScale = aufFlaeche ? Math.min(coreR*1.7, rOuter*2.0) : Math.min(coreR*1.25, rOuter*1.5);  // Buchstabenhoehe
   if(engrave){
     const cand=[];
@@ -5242,9 +5245,6 @@ function packTiles(tiles, fmtW, fmtH, gap, forExport){
     const oy=kopfBand+s*(fmtH+sheetGap);
     out+=`<rect x="0" y="${oy}" width="${fmtW}" height="${fmtH}" fill="none" stroke="#CBC9C2" stroke-width="0.6" stroke-dasharray="4,3"/>`;
     out+=`<text x="0.5" y="${(oy-1.6).toFixed(1)}" font-size="3.2" fill="#8e44ad">Blatt ${s+1} · ${fmtW}×${fmtH} mm</text>`;
-    // QR-Code (Link zur aktuellen Einstellung) je EINMAL pro Blatt, nicht pro
-    // Teil - dort unten rechts, im selben Zwischenraum wie die Blattbeschriftung.
-    out+=qrEckeSVG(forExport, 0, oy, fmtW, fmtH);
   }
   placed.forEach(pl=>{
     const oy=kopfBand+pl.sheetIdx*(fmtH+sheetGap);
@@ -5310,9 +5310,6 @@ function render(){
   renderIntern();
   // Nach jedem Zeichnen die Hilfslinien nach hinten legen.
   try{ farbebenen(); }catch(e){}
-  // QR-Code (Link zur aktuellen Einstellung) im Hintergrund nachziehen -
-  // gebuendelt, damit ein gezogener Regler nicht dutzendfach neu komprimiert.
-  try{ qrAktualisierenSpaeter(); }catch(e){}
 }
 function renderIntern(){
   readState();
@@ -5436,105 +5433,6 @@ function einstellungLesen(){
   return st;
 }
 
-// ---- QR-Code auf Baupläne/SVGs: Link zu den aktuellen Einstellungen -------
-// Derselbe Gedanke wie "Als Link teilen" oben (Einstellungen komprimiert in
-// die Adresse) - die Kompression/Kodierung ist hier bewusst noch einmal kurz
-// hingeschrieben statt von dort importiert, weil "Als Link teilen" in einer
-// eigenen, nicht global sichtbaren Funktion steckt (IIFE weiter unten).
-// Der QR-Code liegt in der Farbe "#00a3a3" (Tuerkis) - genau die Farbe der
-// bestehenden Ebene "Zusatzinfo/Sonstiges" (sonstige Beschriftung, Laengen
-// etc). Dadurch greift der schon vorhandene Ebenen-Filter (farbenFiltern(),
-// Knopf "Ebenen im Export") automatisch mit: der QR-Code ist ueber genau
-// diesen Schalter aus- und einblendbar, ohne eigene neue Bedienung.
-let __qrURL=null, __qrMatrix=null, __qrTimer=null, __qrBusy=false;
-function qrLinkB64(bytes){
-  let s=''; for(const b of bytes) s+=String.fromCharCode(b);
-  return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-}
-async function qrLinkURL(){
-  const roh=new TextEncoder().encode(JSON.stringify(einstellungLesen()));
-  if(typeof CompressionStream==='function'){
-    const cs=new CompressionStream('deflate-raw');
-    const buf=await new Response(new Blob([roh]).stream().pipeThrough(cs)).arrayBuffer();
-    return location.origin+location.pathname+location.search+'#e=z'+qrLinkB64(new Uint8Array(buf));
-  }
-  return location.origin+location.pathname+location.search+'#e=r'+qrLinkB64(roh);
-}
-// Baut im Hintergrund die QR-Matrix zur aktuellen Einstellung neu. Laeuft
-// asynchron (wegen CompressionStream) und wird per qrAktualisierenSpaeter()
-// gebuendelt aus render() angestossen - die SVG-Bauer selbst bleiben
-// synchron und lesen nur die zuletzt fertige Matrix (__qrMatrix).
-async function qrAktualisieren(){
-  if(__qrBusy || typeof qrcode!=='function') return;
-  __qrBusy=true;
-  try{
-    const url=await qrLinkURL();
-    if(url!==__qrURL || !__qrMatrix){
-      const qr=qrcode(0,'L');
-      qr.addData(url);
-      qr.make();
-      __qrURL=url;
-      __qrMatrix={ n:qr.getModuleCount(), get:(r,c)=>qr.isDark(r,c) };
-    }
-  }catch(e){ /* QR ist nur eine Zugabe - im Fehlerfall bleibt einfach die zuletzt gueltige Matrix stehen */ }
-  __qrBusy=false;
-}
-function qrAktualisierenSpaeter(){
-  clearTimeout(__qrTimer);
-  __qrTimer=setTimeout(qrAktualisieren, 350);
-}
-// Kantenlaenge des QR-Codes in mm. Der QR traegt die VOLLEN Einstellungen
-// (wie "Als Link teilen"), das ergibt je nach Bedienung ein paar hundert bis
-// gut tausend Zeichen und damit einen recht dichten Code (oft 100+ Module).
-// Damit er trotzdem noch scannbar bleibt, richtet sich die Groesse nach der
-// tatsaechlichen Modulzahl (~0.4mm/Modul), gedeckelt auf einen Anteil der
-// Blattgroesse - auf einem kleinen Blatt/Teil wird der Code stattdessen ganz
-// weggelassen statt gequetscht zu werden.
-function qrSizeMM(vbW, vbH){
-  if(!__qrMatrix) return 0;
-  const n=__qrMatrix.n, margin=4, total=n+margin*2;
-  const zielZelle=0.4;    // angestrebte Modulgroesse (mm) - komfortabel scannbar
-  const minZelle=0.25;    // absolute Untergrenze - darunter lieber ganz weglassen als zu fein quetschen
-  const grenze=Math.min(Math.abs(vbW),Math.abs(vbH))*0.30;  // hoechstens ~30% der kleineren Seite
-  const s=Math.min(total*zielZelle, grenze);
-  return (s/total)>=minZelle ? s : 0;
-}
-// Reine QR-Flaeche (ohne Positionierung), in Tuerkis, als <g> mit
-// zeilenweise zusammengefassten Rechtecken (kompakteres SVG als ein Rechteck
-// pro Modul). Ruhezone (margin) von 4 Modulen fuer verlaessliches Scannen.
-function qrGroupSVG(sizeMM){
-  if(!__qrMatrix || !(sizeMM>0)) return '';
-  const n=__qrMatrix.n, margin=4, total=n+margin*2, cell=sizeMM/total;
-  let rects='';
-  for(let r=0;r<n;r++){
-    let c=0;
-    while(c<n){
-      if(__qrMatrix.get(r,c)){
-        let c2=c+1; while(c2<n && __qrMatrix.get(r,c2)) c2++;
-        const x=(margin+c)*cell, y=(margin+r)*cell, w=(c2-c)*cell;
-        rects+=`<rect x="${x.toFixed(3)}" y="${y.toFixed(3)}" width="${w.toFixed(3)}" height="${cell.toFixed(3)}"/>`;
-        c=c2;
-      } else c++;
-    }
-  }
-  return rects ? `<g fill="#00a3a3">${rects}</g>` : '';
-}
-// QR-Code unten rechts in der angegebenen Ansicht (vbX/vbY/vbW/vbH = die
-// Ecke und Groesse des jeweiligen viewBox). bottomClear haelt zusaetzlichen
-// Abstand nach unten (z.B. ueber einer Fusszeile). Liefert '' wenn nicht
-// exportiert wird, das Blatt zu klein ist oder die Matrix noch nicht bereit
-// ist - die Aufrufstellen koennen das Ergebnis daher immer einfach anhaengen.
-function qrEckeSVG(forExport, vbX, vbY, vbW, vbH, bottomClear){
-  if(!forExport) return '';
-  const size=qrSizeMM(vbW, vbH);
-  if(!size) return '';
-  const g=qrGroupSVG(size);
-  if(!g) return '';
-  const rand=Math.max(1, Math.min(vbW,vbH)*0.015);
-  const x=vbX+vbW-size-rand, y=vbY+vbH-size-rand-(bottomClear||0);
-  return `<g transform="translate(${x.toFixed(2)},${y.toFixed(2)})">${g}</g>`;
-}
-
 function einstellungSetzen(st){
   if(!st || (!st.felder && !st.segs)) return false;
   const segsSetzen=()=>{
@@ -5605,8 +5503,10 @@ function verlaufGehen(d){
   verlauf.pos=z;
   einstellungSetzen(verlauf.stand[z].st);
   verlaufKnoepfe();
-  presetHinweis((d<0?'Änderung zurückgenommen':'Änderung wiederhergestellt')
-    +` (Schritt ${z+1} von ${verlauf.stand.length})`);
+  const EN=(typeof curLang!=='undefined'&&curLang==='en');
+  presetHinweis((EN
+    ? (d<0?'Change undone':'Change restored')+` (step ${z+1} of ${verlauf.stand.length})`
+    : (d<0?'Änderung zurückgenommen':'Änderung wiederhergestellt')+` (Schritt ${z+1} von ${verlauf.stand.length})`));
 }
 // ---- Gemerkte Einstellungen im Browser ----
 function presetsLesen(){
@@ -5620,11 +5520,20 @@ function presetHinweis(t){
 }
 function presetListe(){
   const sel=document.getElementById('presetSel'); if(!sel) return;
+  // presetListe() wird schon beim Laden der Seite aufgerufen (weiter unten in
+  // diesem Script), BEVOR "let curLang" im spaeteren Script-Block ausgefuehrt
+  // wurde - "typeof curLang" schuetzt hier NICHT (TDZ bei let/const wirft
+  // trotzdem). Try/catch faengt das ab; zu diesem Zeitpunkt ist Deutsch ohnehin
+  // richtig (curLang startet als 'de').
+  let EN=false; try{ EN=(typeof curLang!=='undefined'&&curLang==='en'); }catch(e){}
   const p=presetsLesen(), aktuell=sel.value;
   const namen=Object.keys(p).sort((a,b)=>
     (a===PRESET_LETZT?-1:b===PRESET_LETZT?1:a.localeCompare(b,'de')));
-  sel.innerHTML='<option value="">– gespeicherte Einstellungen –</option>'
-    + namen.map(n=>`<option value="${n.replace(/"/g,'&quot;')}">${n}</option>`).join('');
+  // PRESET_LETZT ('letzter Stand') ist zugleich der Speicherschluessel - der
+  // bleibt deutsch (sonst verlieren schon gespeicherte Staende ihren Platz),
+  // nur die ANZEIGE bekommt bei EN ein eigenes Label.
+  sel.innerHTML=`<option value="">${EN?'– saved settings –':'– gespeicherte Einstellungen –'}</option>`
+    + namen.map(n=>`<option value="${n.replace(/"/g,'&quot;')}">${(EN&&n===PRESET_LETZT)?'last state':n}</option>`).join('');
   if(namen.includes(aktuell)) sel.value=aktuell;
 }
 function download(name,content,type){
@@ -5957,7 +5866,12 @@ function bodyAdapterSheet(forExport){
       const [fw,fh]=currentFormat(); const gap=+$('nGapMin').value||0;
       const packed=packTiles(parts, fw, fh, gap, forExport);
       svg=packed.svg; maxX=packed.totalW; maxY=packed.totalH;
-      if($('layoutInfo')) $('layoutInfo').textContent=`${parts.length} Teile auf ${packed.sheets} Blatt · ${fw}×${fh} mm · Abstand ${gap} mm`;
+      if($('layoutInfo')){
+        const EN=(typeof curLang!=='undefined'&&curLang==='en');
+        $('layoutInfo').textContent = EN
+          ? `${parts.length} parts on ${packed.sheets} sheet(s) · ${fw}×${fh} mm · gap ${gap} mm`
+          : `${parts.length} Teile auf ${packed.sheets} Blatt · ${fw}×${fh} mm · Abstand ${gap} mm`;
+      }
     } else {
       parts.forEach((p,i)=>{
         const cx=(i%cols)*cellW+cellW/2, cy=Math.floor(i/cols)*cellH+cellH/2;
@@ -6062,7 +5976,12 @@ function bodyAdapterSheet(forExport){
     const [fw,fh]=currentFormat(); const gap=+$('nGapMin').value||0;
     const packed=packTiles(parts, fw, fh, gap, forExport);
     body_svg=packed.svg; maxX=packed.totalW; maxY=packed.totalH;
-    if($('layoutInfo')) $('layoutInfo').textContent=`${parts.length} Teile auf ${packed.sheets} Blatt${packed.sheets>1?'':''} · ${fw}×${fh} mm · Abstand ${gap} mm`;
+    if($('layoutInfo')){
+      const EN=(typeof curLang!=='undefined'&&curLang==='en');
+      $('layoutInfo').textContent = EN
+        ? `${parts.length} parts on ${packed.sheets} sheet(s) · ${fw}×${fh} mm · gap ${gap} mm`
+        : `${parts.length} Teile auf ${packed.sheets} Blatt${packed.sheets>1?'':''} · ${fw}×${fh} mm · Abstand ${gap} mm`;
+    }
   } else {
     parts.forEach((p,i)=>{
       const cx=(i%cols)*cell+cell/2, cy=Math.floor(i/cols)*cell+cell/2;
@@ -6076,18 +5995,21 @@ function bodyAdapterSheet(forExport){
 }
 
 function bodyCutlist(){
+  // War bisher immer Deutsch (keine EN-Abfrage) - jetzt wie der Rest des
+  // Tools zweisprachig, siehe Audit zu fehlenden englischen Texten.
+  const EN=(typeof curLang!=='undefined'&&curLang==='en');
   const body=lastBody; if(!body) return '';
-  let txt=`Schnittliste – ${$('bodySel').selectedOptions[0].text}\n`;
+  let txt=`${EN?'Cut list':'Schnittliste'} – ${$('bodySel').selectedOptions[0].text}\n`;
   const key=$('bodySel').value;
   if(key==='box8'){
-    txt+=`Maße L×B×H ${$('nBoxL').value}×${$('nBoxB').value}×${$('nBoxH').value} mm, Neigung ${$('nBoxAngle').value}°\n\n`;
+    txt+=`${EN?'Size L×W×H':'Maße L×B×H'} ${$('nBoxL').value}×${$('nBoxB').value}×${$('nBoxH').value} mm, ${EN?'tilt':'Neigung'} ${$('nBoxAngle').value}°\n\n`;
   } else if(key==='stl'){
     const sm = stlMesh&&stlMesh.stats ? stlMesh.stats : null;
     const scaleMode=document.querySelector('#stlScaleSeg .on')?document.querySelector('#stlScaleSeg .on').dataset.v:'mm';
-    txt+=`Import: ${stlName||'STL'} · ${sm?sm.verts+' Ecken, '+sm.edges+' Kanten':''}\n`;
-    txt+=`Maße ${scaleMode==='mm'?'in echten mm aus der Datei':'auf Kantenlänge '+state.edge+' mm skaliert'}\n\n`;
+    txt+=`${EN?'Import':'Import'}: ${stlName||'STL'} · ${sm?sm.verts+(EN?' vertices, ':' Ecken, ')+sm.edges+(EN?' edges':' Kanten'):''}\n`;
+    txt+=`${EN?'Size':'Maße'} ${scaleMode==='mm'?(EN?'in real mm from the file':'in echten mm aus der Datei'):(EN?'scaled to edge length '+state.edge+' mm':'auf Kantenlänge '+state.edge+' mm skaliert')}\n\n`;
   } else {
-    txt+=`Kantenlänge (Referenz) ${body.edgeLen} mm\n\n`;
+    txt+=`${EN?'Edge length (reference)':'Kantenlänge (Referenz)'} ${body.edgeLen} mm\n\n`;
   }
   const rEndFor=n=>{const ang=Array.from({length:n},(_,i)=>i*360/n);return computeREnd(ang);};
   const lens=body.edges.map(([a,b])=>{
@@ -6107,34 +6029,34 @@ function bodyCutlist(){
                   && document.querySelector('#joinSeg .on').dataset.v==='direct';
   if(directJoin){
     const ovl = joinOverlapInfo && joinOverlapInfo.overlap>0.05;
-    txt+=`VERBINDUNG: direkt gesteckt (keine Streben)\n`;
-    txt+=`  Armlänge ${state.len} mm (folgt aus der Kantenlänge)\n`;
+    txt+=`${EN?'CONNECTION: plugged directly (no rods)':'VERBINDUNG: direkt gesteckt (keine Streben)'}\n`;
+    txt+=`  ${EN?'Arm length':'Armlänge'} ${state.len} mm (${EN?'follows from the edge length':'folgt aus der Kantenlänge'})\n`;
     if(ovl){
-      txt+=`  überlappend: ${joinOverlapInfo.overlap.toFixed(1)} mm Überlappung\n`;
-      txt+=`  ${joinOverlapInfo.pairs||0} Loch/Löcher liegen deckungsgleich (nieten/kleben)\n`;
-      txt+=`  Lochabstand ${state.holeGap} mm, 1. Loch ${state.holeStart} mm ab Knicklinie\n`;
+      txt+=`  ${EN?'overlapping':'überlappend'}: ${joinOverlapInfo.overlap.toFixed(1)} mm ${EN?'overlap':'Überlappung'}\n`;
+      txt+=`  ${joinOverlapInfo.pairs||0} ${EN?'hole(s) line up (rivet/glue)':'Loch/Löcher liegen deckungsgleich (nieten/kleben)'}\n`;
+      txt+=`  ${EN?'hole spacing':'Lochabstand'} ${state.holeGap} mm, ${EN?'1st hole':'1. Loch'} ${state.holeStart} mm ${EN?'from the fold line':'ab Knicklinie'}\n`;
     } else {
-      txt+=`  mittig stoßend: die Armenden treffen sich in der Kantenmitte\n`;
+      txt+=`  ${EN?'butting in the middle: the arm ends meet at the edge midpoint':'mittig stoßend: die Armenden treffen sich in der Kantenmitte'}\n`;
     }
-    txt+=`  ${body.edges.length} Kanten à ${body.edgeLen} mm\n`;
+    txt+=`  ${body.edges.length} ${EN?'edges at':'Kanten à'} ${body.edgeLen} mm\n`;
   } else {
-    txt+=`STÄBE (${body.edges.length} Stück, ${keys.length} Länge${keys.length>1?'n':''}):\n`;
+    txt+=`${EN?'RODS':'STÄBE'} (${body.edges.length} ${EN?'piece(s),':'Stück,'} ${keys.length} ${EN?'length(s)':'Länge'+(keys.length>1?'n':'')}):\n`;
     keys.forEach(k=>{
-      txt+=`  ${k} mm × ${groups[k].length} Stück: ${groups[k].join(', ')}\n`;
+      txt+=`  ${k} mm × ${groups[k].length} ${EN?'piece(s)':'Stück'}: ${groups[k].join(', ')}\n`;
     });
   }
   const typen={};
   body.nodes.forEach(nd=>{ (typen[nd.label]=typen[nd.label]||[]).push(nd); });
   const typKeys=Object.keys(typen).sort();
-  txt+=`\nVERBINDER (${body.verts.length} Stück, ${typKeys.length} Typ${typKeys.length>1?'en':''}):\n`;
+  txt+=`\n${EN?'CONNECTORS':'VERBINDER'} (${body.verts.length} ${EN?'piece(s),':'Stück,'} ${typKeys.length} ${EN?'type(s)':'Typ'+(typKeys.length>1?'en':'')}):\n`;
   // Der Buchstabe sagt, welche Teile gleich geschnitten sind - die Nummer sagt,
   // wohin das einzelne Teil gehoert. Beides wird gebraucht: das erste fuer den
   // Zuschnitt, das zweite fuer den Zusammenbau.
   typKeys.forEach(lb=>{
     const grp=typen[lb];
-    txt+=`  Typ ${lb}: ${grp.length}× gleich, ${grp[0].n} Arme (${grp.map(nd=>nd.id).join(', ')})\n`;
+    txt+=`  ${EN?'Type':'Typ'} ${lb}: ${grp.length}× ${EN?'identical,':'gleich,'} ${grp[0].n} ${EN?'arms':'Arme'} (${grp.map(nd=>nd.id).join(', ')})\n`;
   });
-  txt+=`\nZUSAMMENBAU – jeder Arm nennt seinen Nachbarn:\n`;
+  txt+=`\n${EN?'ASSEMBLY – each arm names its neighbour:':'ZUSAMMENBAU – jeder Arm nennt seinen Nachbarn:'}\n`;
   body.nodes.slice().sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true})).forEach(nd=>{
     txt+=`  ${nd.id} → ${(nd.neighbors||[]).join(', ')}\n`;
   });
@@ -6142,26 +6064,29 @@ function bodyCutlist(){
 }
 
 function currentCutlist(){
+  // War bisher immer Deutsch (keine EN-Abfrage) - jetzt wie der Rest des
+  // Tools zweisprachig, siehe Audit zu fehlenden englischen Texten.
+  const EN=(typeof curLang!=='undefined'&&curLang==='en');
   if(mode==='body') return bodyCutlist();
   if(mode==='single'){
     const g=lastGeom; if(!g) return '';
-    let txt=`Schnittliste – Einzeladapter\n${g.ang.length} Arme\n\n`;
-    txt+=`Adapter-Auflagelänge je Arm: ${state.len} mm\n`;
-    txt+=`Knicklinie ${g.rEnd.toFixed(1)} mm von der Mitte\n`;
-    txt+=`Armbreite ${state.wid} mm, Löcher/Arm ${state.holes} (Ø ${state.hd} mm)\n`;
-    txt+=`Abstand Streben (Spalt): ${state.gap} mm\n`;
-    txt+=`\nHinweis: Beim Einzeladapter legt das Tool keine Strebenlänge fest – die\n`;
-    txt+=`Streben steckst du nach Bedarf ein. Die Knicklinie sitzt ${g.rEnd.toFixed(1)} mm vom\n`;
-    txt+=`Mittelpunkt entfernt; ab dort beginnt die Strebe. Im Körper-Modus ergibt\n`;
-    txt+=`sich die Strebenlänge dann als Kantenlänge minus die Knicklinien-Rückzüge\n`;
-    txt+=`der beiden verbundenen Adapter.\n`;
+    let txt=`${EN?'Cut list':'Schnittliste'} – ${EN?'Single adapter':'Einzeladapter'}\n${g.ang.length} ${EN?'arms':'Arme'}\n\n`;
+    txt+=`${EN?'Adapter bearing length per arm':'Adapter-Auflagelänge je Arm'}: ${state.len} mm\n`;
+    txt+=`${EN?'Fold line':'Knicklinie'} ${g.rEnd.toFixed(1)} mm ${EN?'from the centre':'von der Mitte'}\n`;
+    txt+=`${EN?'Arm width':'Armbreite'} ${state.wid} mm, ${EN?'holes/arm':'Löcher/Arm'} ${state.holes} (Ø ${state.hd} mm)\n`;
+    txt+=`${EN?'Rod spacing (gap)':'Abstand Streben (Spalt)'}: ${state.gap} mm\n`;
+    txt+=`\n${EN?'Note: for the single adapter the tool does not fix a rod length – you':'Hinweis: Beim Einzeladapter legt das Tool keine Strebenlänge fest – die'}\n`;
+    txt+=`${EN?'plug in rods as needed. The fold line sits '+g.rEnd.toFixed(1)+' mm from the':'Streben steckst du nach Bedarf ein. Die Knicklinie sitzt '+g.rEnd.toFixed(1)+' mm vom'}\n`;
+    txt+=`${EN?'centre; the rod starts there. In body mode the rod length then':'Mittelpunkt entfernt; ab dort beginnt die Strebe. Im Körper-Modus ergibt'}\n`;
+    txt+=`${EN?'results as edge length minus the fold-line setbacks':'sich die Strebenlänge dann als Kantenlänge minus die Knicklinien-Rückzüge'}\n`;
+    txt+=`${EN?'of the two connected adapters.':'der beiden verbundenen Adapter.'}\n`;
     return txt;
   }
   if(mode==='cone'){
     const cg=lastCone; if(!cg) return '';
-    let txt=`Schnittliste – Kegelecke\n${cg.arms} Streben, Sektor ${cg.sector.toFixed(0)}° (Defekt ${cg.defekt.toFixed(0)}°)\n\n`;
-    txt+=`Außenradius ${cg.R} mm, Mittelloch Ø ${cg.holeD} mm\nÜberlappung ${cg.overlap}° (50/50)\n`;
-    txt+=`Stab-Montagepositionen (Winkel im Sektor): ${cg.stabAngles.map(a=>a.toFixed(0)+'°').join(', ')}\n`;
+    let txt=`${EN?'Cut list':'Schnittliste'} – ${EN?'Corner cone':'Kegelecke'}\n${cg.arms} ${EN?'rods, sector':'Streben, Sektor'} ${cg.sector.toFixed(0)}° (${EN?'defect':'Defekt'} ${cg.defekt.toFixed(0)}°)\n\n`;
+    txt+=`${EN?'Arm length':'Armlänge'} ${cg.R} mm, ${EN?'centre hole Ø':'Mittelloch Ø'} ${cg.holeD} mm\n${EN?'Overlap':'Überlappung'} ${cg.overlap}° (50/50)\n`;
+    txt+=`${EN?'Rod mounting positions (angle within sector)':'Stab-Montagepositionen (Winkel im Sektor)'}: ${cg.stabAngles.map(a=>a.toFixed(0)+'°').join(', ')}\n`;
     return txt;
   }
   return '';
@@ -6621,8 +6546,7 @@ function buildBauplanSVG(forExport){
   const sizeAttr=forExport?`width="${A4W}mm" height="${totalH}mm"`:`width="${(A4W*2.4).toFixed(0)}"`;
   let pagesG='';
   for(let pi=0;pi<pageCountAll;pi++){
-    // bottomClear haelt den QR-Code ueber der Fusszeile (Massangaben/Copyright).
-    pagesG+=`<g transform="translate(0,${A4H*pi})">${pageSVGs[pi]}${qrEckeSVG(forExport,0,0,A4W,A4H,13)}</g>`;
+    pagesG+=`<g transform="translate(0,${A4H*pi})">${pageSVGs[pi]}</g>`;
   }
   return `<svg id="bauplanSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${A4W} ${totalH}" ${sizeAttr} font-family="Segoe UI Rounded, SF Pro Rounded, Trebuchet MS, Segoe UI, Verdana, sans-serif" style="max-width:70%;max-height:80vh;">
     ${pagesG}
@@ -7125,10 +7049,15 @@ function buildStaebeSVG(forExport){
     const gap=+($('nGapMin')?$('nGapMin').value:0)||0;
     const packed=packTiles(teile, fw, fh, gap, forExport);
     svg=packed.svg; W=packed.totalW; H=packed.totalH;
-    // Die Zeile der Verbinder nicht ueberschreiben, sondern ergaenzen.
+    // Die Zeile der Verbinder nicht ueberschreiben, sondern ergaenzen. Der
+    // Trenner " | " ist sprachunabhaengig, damit das Abschneiden des alten
+    // Zusatzes auch nach einem Sprachwechsel (DE<->EN) funktioniert.
     if(!forExport && $('layoutInfo')){
-      const alt=$('layoutInfo').textContent.split(' | Streben:')[0];
-      $('layoutInfo').textContent=alt+` | Streben: ${teile.length} Teile auf ${packed.sheets} Blatt`;
+      const EN=(typeof curLang!=='undefined'&&curLang==='en');
+      const alt=$('layoutInfo').textContent.split(' | ')[0];
+      $('layoutInfo').textContent=alt + (EN
+        ? ` | Rods: ${teile.length} parts on ${packed.sheets} sheet(s)`
+        : ` | Streben: ${teile.length} Teile auf ${packed.sheets} Blatt`);
     }
   }
   const sizeAttr=forExport?`width="${W.toFixed(0)}mm" height="${H.toFixed(0)}mm"`:`width="${(W*PX_PER_MM).toFixed(0)}"`;
@@ -7153,13 +7082,15 @@ function buildStaebeSVG(forExport){
   k('btnUndo', ()=>verlaufGehen(-1));
   k('btnRedo', ()=>verlaufGehen(+1));
   k('btnNeu', ()=>{
-    if(!werksEinstellung){ presetHinweis('Anfangszustand noch nicht bekannt.'); return; }
-    if(!confirm('Alle Einstellungen auf den Anfangszustand zurücksetzen?')) return;
+    const EN=(typeof curLang!=='undefined'&&curLang==='en');
+    if(!werksEinstellung){ presetHinweis(EN?'Initial state not known yet.':'Anfangszustand noch nicht bekannt.'); return; }
+    if(!confirm(EN?'Reset all settings to the initial state?':'Alle Einstellungen auf den Anfangszustand zurücksetzen?')) return;
     einstellungSetzen(werksEinstellung); verlaufMerken();
     const sel=document.getElementById('presetSel'); if(sel) sel.value='';
-    presetHinweis('Auf Anfangszustand zurückgesetzt.');
+    presetHinweis(EN?'Reset to initial state.':'Auf Anfangszustand zurückgesetzt.');
   });
   k('btnMerkenAuf', ()=>{
+    const EN=(typeof curLang!=='undefined'&&curLang==='en');
     const box=document.getElementById('merkenBox'), ch=document.getElementById('merkenChev');
     const b=document.getElementById('btnMerkenAuf');
     const auf = box.style.display==='none';
@@ -7171,27 +7102,32 @@ function buildStaebeSVG(forExport){
     if(auf){
       presetListe();
       const p=presetsLesen(), n=Object.keys(p).length;
-      presetHinweis(n ? `${n} gemerkt${p[PRESET_LETZT]?', „letzter Stand“ dabei':''}.`
-                      : 'Noch nichts gemerkt.');
+      presetHinweis(EN
+        ? (n ? `${n} saved${p[PRESET_LETZT]?', including “last state”':''}.` : 'Nothing saved yet.')
+        : (n ? `${n} gemerkt${p[PRESET_LETZT]?', „letzter Stand“ dabei':''}.` : 'Noch nichts gemerkt.'));
     }
   });
   k('btnPresetSave', ()=>{
+    const EN=(typeof curLang!=='undefined'&&curLang==='en');
     const sel=document.getElementById('presetSel');
     const vorschlag=(sel && sel.value && sel.value!==PRESET_LETZT) ? sel.value
-      : (typeof exportBaseName==='function' ? exportBaseName().slice(0,40) : 'Einstellung');
-    const name=(prompt('Name für diese Einstellungen:', vorschlag)||'').trim();
+      : (typeof exportBaseName==='function' ? exportBaseName().slice(0,40) : (EN?'Setting':'Einstellung'));
+    const name=(prompt(EN?'Name for these settings:':'Name für diese Einstellungen:', vorschlag)||'').trim();
     if(!name) return;
     const p=presetsLesen(); p[name]=einstellungLesen();
     if(presetsSchreiben(p)){ presetListe(); if(sel) sel.value=name;
-      presetHinweis(`„${name}“ gemerkt (${Object.keys(p).length} gespeichert).`); }
-    else presetHinweis('Der Browser lässt hier kein Speichern zu. Nimm „Als Datei“.');
+      presetHinweis(EN?`“${name}” saved (${Object.keys(p).length} total).`
+                      :`„${name}“ gemerkt (${Object.keys(p).length} gespeichert).`); }
+    else presetHinweis(EN?'This browser does not allow saving here. Use “As file”.'
+                          :'Der Browser lässt hier kein Speichern zu. Nimm „Als Datei“.');
   });
   k('btnPresetDel', ()=>{
+    const EN=(typeof curLang!=='undefined'&&curLang==='en');
     const sel=document.getElementById('presetSel'); if(!sel || !sel.value) return;
     const name=sel.value;
-    if(!confirm(`„${name}“ löschen?`)) return;
+    if(!confirm((EN?`Delete “${name}”?`:`„${name}“ löschen?`))) return;
     const p=presetsLesen(); delete p[name]; presetsSchreiben(p);
-    presetListe(); sel.value=''; presetHinweis(`„${name}“ gelöscht.`);
+    presetListe(); sel.value=''; presetHinweis(EN?`“${name}” deleted.`:`„${name}“ gelöscht.`);
   });
   // --- Einstellung als Link teilen --------------------------------------
   // Derselbe Zustand wie in der .knoti.json wandert komprimiert in die
@@ -7233,33 +7169,37 @@ function buildStaebeSVG(forExport){
     }
   });
   k('btnPresetFile', ()=>{
+    const EN=(typeof curLang!=='undefined'&&curLang==='en');
     const st=einstellungLesen();
     const basis=(typeof exportBaseName==='function'?exportBaseName():'knoti').slice(0,60);
     download(basis+'.knoti.json', JSON.stringify(st,null,1), 'application/json');
-    presetHinweis('Als Datei gesichert. Sie lässt sich in jeder Version wieder laden.');
+    presetHinweis(EN?'Saved as a file. It can be loaded back in any version.'
+                    :'Als Datei gesichert. Sie lässt sich in jeder Version wieder laden.');
   });
   k('btnPresetLoad', ()=>{ const f=document.getElementById('presetFile'); if(f) f.click(); });
   const datei=document.getElementById('presetFile');
   if(datei) datei.addEventListener('change', ev=>{
+    const EN=(typeof curLang!=='undefined'&&curLang==='en');
     const f=ev.target.files && ev.target.files[0]; if(!f) return;
     const r=new FileReader();
     r.onload=()=>{
       try{
         const st=JSON.parse(r.result);
-        if(st.werkzeug!=='KNOTI') { presetHinweis('Das ist keine KNOTI-Einstellungsdatei.'); return; }
+        if(st.werkzeug!=='KNOTI') { presetHinweis(EN?'This is not a KNOTI settings file.':'Das ist keine KNOTI-Einstellungsdatei.'); return; }
         einstellungSetzen(st); verlaufMerken();
-        presetHinweis(`Geladen aus ${f.name}.`);
-      }catch(e){ presetHinweis('Datei konnte nicht gelesen werden.'); }
+        presetHinweis(EN?`Loaded from ${f.name}.`:`Geladen aus ${f.name}.`);
+      }catch(e){ presetHinweis(EN?'File could not be read.':'Datei konnte nicht gelesen werden.'); }
     };
     r.readAsText(f);
     ev.target.value='';
   });
   const sel=document.getElementById('presetSel');
   if(sel) sel.addEventListener('change', ()=>{
+    const EN=(typeof curLang!=='undefined'&&curLang==='en');
     if(!sel.value) return;
     const p=presetsLesen();
     if(p[sel.value]){ einstellungSetzen(p[sel.value]); verlaufMerken();
-      presetHinweis(`„${sel.value}“ geladen.`); }
+      presetHinweis(EN?`“${sel.value}” loaded.`:`„${sel.value}“ geladen.`); }
   });
   document.addEventListener('keydown', e=>{
     if(!(e.ctrlKey||e.metaKey)) return;
@@ -7316,15 +7256,21 @@ $('stlFile').addEventListener('change',ev=>{
       updateStlInfo();
       render();
     }catch(err){
-      $('stlInfo').textContent='Fehler beim Lesen: '+err.message;
+      const EN=(typeof curLang!=='undefined'&&curLang==='en');
+      $('stlInfo').textContent=(EN?'Error while reading: ':'Fehler beim Lesen: ')+err.message;
     }
   };
   reader.readAsArrayBuffer(f);
 });
 function updateStlInfo(){
-  if(!stlMesh){ $('stlInfo').textContent='Noch keine Datei geladen.'; return; }
+  // War bisher immer Deutsch (keine EN-Abfrage) - jetzt zweisprachig, auch
+  // beim reinen Sprachwechsel ohne neu geladene Datei (siehe Aufruf in applyLang).
+  const EN=(typeof curLang!=='undefined'&&curLang==='en');
+  if(!stlMesh){ $('stlInfo').textContent=EN?'No file loaded yet.':'Noch keine Datei geladen.'; return; }
   const s=stlMesh.stats;
-  $('stlInfo').textContent=`${stlName}: ${s.tris} Dreiecke → ${s.verts} Ecken, ${s.edges} Kanten erkannt.`;
+  $('stlInfo').textContent=EN
+    ? `${stlName}: ${s.tris} triangles → ${s.verts} vertices, ${s.edges} edges detected.`
+    : `${stlName}: ${s.tris} Dreiecke → ${s.verts} Ecken, ${s.edges} Kanten erkannt.`;
 }
 // Schwelle / Skalierung neu anwenden
 $('stlAngle').addEventListener('input',()=>{ if(stlRaw){ lastSrc='stlAngle'; applyStlScale(); updateStlInfo(); render(); } });
@@ -7504,10 +7450,15 @@ document.querySelectorAll('#starLayerSeg button').forEach(b=>b.addEventListener(
 // Werte bleiben frei aenderbar. Strebendurchmesser am realen Stein pruefen!
 let brickPresetApplying=false;
 const BRICK_PRESETS={
-  lego:    {gap:8,  hd:4.8, start:4, wid:8,  info:'Lego / Technic: Rastermaß 8 mm, Zapfen/Pin/Loch Ø 4,8 mm. Erstes Loch 4 mm (halbes Raster) vom Rand.'},
-  duplo:   {gap:16, hd:9.4, start:8, wid:13, info:'Duplo: Rastermaß 16 mm, Zapfen-Außen-Ø ~9,4 mm. Erstes Loch 8 mm (halbes Raster) vom Rand.'}
+  lego:    {gap:8,  hd:4.8, start:4, wid:8,
+    info:'Lego / Technic: Rastermaß 8 mm, Zapfen/Pin/Loch Ø 4,8 mm. Erstes Loch 4 mm (halbes Raster) vom Rand.',
+    infoEN:'Lego / Technic: 8 mm grid, stud/pin/hole Ø 4.8 mm. First hole 4 mm (half grid) from the edge.'},
+  duplo:   {gap:16, hd:9.4, start:8, wid:13,
+    info:'Duplo: Rastermaß 16 mm, Zapfen-Außen-Ø ~9,4 mm. Erstes Loch 8 mm (halbes Raster) vom Rand.',
+    infoEN:'Duplo: 16 mm grid, stud outer Ø ~9.4 mm. First hole 8 mm (half grid) from the edge.'}
 };
 $('brickPreset').addEventListener('change',()=>{
+  const EN=(typeof curLang!=='undefined'&&curLang==='en');
   const key=$('brickPreset').value;
   const p=BRICK_PRESETS[key];
   if(!p){ $('brickPresetInfo').textContent=''; return; }
@@ -7517,7 +7468,7 @@ $('brickPreset').addEventListener('change',()=>{
   set('nHoleGap','holeGap',p.gap);
   set('nHoleStart','holeStart',p.start);
   set('nHd','hd',p.hd);
-  $('brickPresetInfo').textContent=p.info;
+  $('brickPresetInfo').textContent = EN ? p.infoEN : p.info;
   lastSrc='nWid';
   render();
   set('nHd','hd',p.hd);
@@ -7725,10 +7676,17 @@ function updateStepsAndJoin(){
     if(!w && $('grpHoleMode')){
       w=document.createElement('div'); w.id='ovManuellWarn';
       w.style.cssText='display:none;font-size:11px;color:#b8541b;background:rgba(184,84,27,0.08);border-radius:6px;padding:7px 9px;margin-top:8px;';
-      w.textContent='Achtung: Bei fester Verteilung können Löcher und Schlitze außerhalb des überlappten Bereichs liegen. Dann treffen sie sich auf dem Gegenarm nicht.';
       $('grpHoleMode').appendChild(w);
     }
-    if(w) w.style.display = (ovl && !autoV) ? 'block' : 'none';
+    // Text bei JEDEM Aufruf neu setzen (nicht nur beim Erstellen) - sonst
+    // bleibt nach einem Sprachwechsel die zuerst gesetzte Sprache stehen.
+    if(w){
+      const EN=(typeof curLang!=='undefined'&&curLang==='en');
+      w.textContent = EN
+        ? 'Warning: with a fixed distribution, holes and slots can end up outside the overlapped area. They would then not meet on the opposite arm.'
+        : 'Achtung: Bei fester Verteilung können Löcher und Schlitze außerhalb des überlappten Bereichs liegen. Dann treffen sie sich auf dem Gegenarm nicht.';
+      w.style.display = (ovl && !autoV) ? 'block' : 'none';
+    }
   })();
   if(typeof updateJoinExportVis==='function') updateJoinExportVis();
   if(typeof updateSectionHeads==='function') updateSectionHeads();
@@ -8013,7 +7971,8 @@ $('fmtSel').addEventListener('change',()=>{
   render(); }); });
 $('fmtSave').addEventListener('click',()=>{
   try{ localStorage.setItem('laserFmt', JSON.stringify([+$('fmtW').value,+$('fmtH').value])); }catch(e){}
-  $('layoutInfo').textContent='Laser-Bereich gemerkt: '+$('fmtW').value+'×'+$('fmtH').value+' mm';
+  const EN=(typeof curLang!=='undefined'&&curLang==='en');
+  $('layoutInfo').textContent=(EN?'Laser area saved: ':'Laser-Bereich gemerkt: ')+$('fmtW').value+'×'+$('fmtH').value+' mm';
 });
 // gemerkten Bereich laden
 try{ const lf=JSON.parse(localStorage.getItem('laserFmt')||'null');
@@ -8397,7 +8356,7 @@ function buildEinzelBauplanSVG(){
   } else if(typ==='cone' && lastCone){
     const c=lastCone;
     zeilen.push([EN?'Rods':'Streben', c.arms]);
-    zeilen.push([EN?'Outer radius':'Außenradius', n(c.R)]);
+    zeilen.push([EN?'Arm length':'Armlänge', n(c.R)]);
     zeilen.push([EN?'Centre hole':'Mittelloch Ø', n(c.holeD)]);
     zeilen.push([EN?'Rod width':'Strebenbreite', n(c.stabW)]);
     zeilen.push([EN?'Sector':'Sektor', Math.round(c.sector)+'°']);
@@ -8490,11 +8449,8 @@ function buildEinzelBauplanSVG(){
   const fuss=`<text x="${M}" y="${A4H-11}" font-size="2.8" fill="#6b6f63">${massstabTxt}</text>`
     + `<text x="${A4W-M}" y="${A4H-11}" font-size="2.8" text-anchor="end" fill="#9a9e95">`
     + `© 2026 Peter Hausegger · CC BY-SA 4.0</text>`;
-  // QR-Code unten rechts, mit Luft zur Fusszeile darunter. Diese Seite wird
-  // immer direkt gedruckt/exportiert (kein Vorschau-Aufruf ohne forExport).
-  const qrTag=qrEckeSVG(true,0,0,A4W,A4H,13);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${A4W} ${A4H}" width="${A4W}mm" height="${A4H}mm" font-family="Segoe UI Rounded, SF Pro Rounded, Trebuchet MS, Segoe UI, Verdana, sans-serif">
-    ${rahmen}${kopf}${bild}${tabelle}${fuss}${qrTag}</svg>`;
+    ${rahmen}${kopf}${bild}${tabelle}${fuss}</svg>`;
 }
 function openBauplanPrint(svg, name){
   const A4W=210, A4H=297;
@@ -8508,7 +8464,7 @@ function openBauplanPrint(svg, name){
           + `viewBox="0 ${(A4H*i)} ${A4W} ${A4H}" width="${A4W}mm" height="${A4H}mm" font-family="Segoe UI Rounded, SF Pro Rounded, Trebuchet MS, Segoe UI, Verdana, sans-serif">${innen}</svg></div>`;
   }
   const w=window.open('', '_blank');
-  if(!w){ alert('Bitte Pop-ups für diese Seite erlauben, damit der Bauplan geöffnet werden kann.'); return; }
+  if(!w){ const EN=(typeof curLang!=='undefined'&&curLang==='en'); alert(EN?'Please allow pop-ups for this page so the build plan can be opened.':'Bitte Pop-ups für diese Seite erlauben, damit der Bauplan geöffnet werden kann.'); return; }
   w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+name+'</title>'
     + '<style>@page{size:A4 portrait; margin:0;}'
     + 'html,body{margin:0;padding:0;background:#f0f0f0;}'
@@ -9254,7 +9210,7 @@ $('stlExport').addEventListener('click',async ()=>{
   // Koerpermodus: pro Knotentyp eine eigene Datei, zusammen als ZIP-Ordner.
   if(mode==='body' && lastBody){
     const list=bodyAdapterGeometryList();
-    if(!list || list.unsupported || !list.length){ alert('STL-Export für Körper-Verbindersätze wird für den aktuellen Verbindertyp nicht unterstützt.'); return; }
+    if(!list || list.unsupported || !list.length){ const EN=(typeof curLang!=='undefined'&&curLang==='en'); alert(EN?'STL export for body connector sets is not supported for the current connector type.':'STL-Export für Körper-Verbindersätze wird für den aktuellen Verbindertyp nicht unterstützt.'); return; }
     const files=[];
     for(const item of list){
       const o={...opts, foldCircles:item.geo.foldCircles, foldLines:item.geo.foldLines};
@@ -9268,7 +9224,7 @@ $('stlExport').addEventListener('click',async ()=>{
   }
   // Einzeladapter / Kegel: eine Datei.
   const geo=currentAdapterGeometry();
-  if(!geo){ alert('STL-Export ist für Einzeladapter, Kegelecke und Körper-Adaptersätze verfügbar.'); return; }
+  if(!geo){ const EN=(typeof curLang!=='undefined'&&curLang==='en'); alert(EN?'STL export is available for single adapters, the cone corner, and body adapter sets.':'STL-Export ist für Einzeladapter, Kegelecke und Körper-Adaptersätze verfügbar.'); return; }
   const o={...opts, foldCircles:geo.foldCircles, foldLines:geo.foldLines};
   const tris=buildAdapterSTL(geo.rings, geo.holes, o);
   dlBlobNow(trisToSTL(tris), adapterFileName('stl', o));
@@ -9499,7 +9455,7 @@ const I18N = {
   'Länge L ':'Length L ','Breite B ':'Width B ','Höhe H ':'Height H ','Neigungswinkel ':'Tilt angle ',
   'STL-Datei':'STL file','Kanten-Schwelle ':'Edge threshold ','Skalierung':'Scaling',
   'Kantenlänge ':'Edge length ','Welcher Verbinder? ':'Which connector? ','Ansicht':'View',
-  'Außenradius ':'Outer radius ','Mittelloch Ø ':'Center hole Ø ',
+  'Mittelloch Ø ':'Center hole Ø ',
   'Lochdurchmesser ':'Hole diameter ','Überlappung ':'Overlap ','Doppellage':'Double layer',
   'Materialstärke Streben ':'Material thickness rods ','Knickfläche':'Fold face',
   'Knickflächenbreite ':'Fold face width ',
@@ -9632,6 +9588,8 @@ if(typeof updateSectionHeads==='function') updateSectionHeads();
   // nach Englisch der zuletzt gesetzte deutsche Text stehen.
   if(typeof updateBallKonstruktionUI==='function') updateBallKonstruktionUI();
   if(typeof updateFlatWarn==='function') updateFlatWarn();
+  if(typeof updateStlInfo==='function') updateStlInfo();
+  if(typeof presetListe==='function') presetListe();
   if(typeof render==='function') render();
 }
 document.querySelectorAll('#langSeg button').forEach(btn=>btn.addEventListener('click',()=>applyLang(btn.dataset.lang)));
