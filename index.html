@@ -565,6 +565,23 @@
         3D-Knoten: gedruckter Körper mit Kragen zum Stecken der Streben. Sehr stabil
         und winkelgenau, braucht einen Drucker.
       </div>
+  <div class="grp" id="grpSternWinkel" style="display:none;">
+    <label>Armwinkel <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
+    <div class="seg" id="sternWinkelSeg">
+      <button data-v="exakt" class="on">exakt</button>
+      <button data-v="prop">proportional (bis v313)</button>
+    </div>
+    <div class="help-text" data-i18n="help_sternwinkel">
+      Exakt: Jede Strebe wird auf die Mittelplatte des Knotens projiziert. Die
+      Arme liegen genau in diesen Richtungen, und jeder Arm bekommt seinen
+      eigenen Faltwinkel. Er steht in Türkis innen an der Knicklinie. Gefaltet
+      zeigt dann jeder Arm genau in Strebenrichtung. Ein negativer Wert heißt:
+      diesen Arm in die Gegenrichtung falten.
+      Proportional: Die echten Winkel zwischen den Streben werden gleichmäßig
+      auf 360° gestreckt und alle Arme gleich weit gefaltet (Verfahren bis
+      v313). An regelmäßigen Ecken wie beim Ikosaeder ergeben beide dasselbe.
+    </div>
+  </div>
   <div class="grp" id="grpJoinMode" style="display:none;">
     <div class="seg" id="joinModeSeg" style="display:none;">
       <button data-v="mid" class="on">mittig stoßend</button>
@@ -1359,7 +1376,7 @@ function toggleHelp(btn){
 // Programmversion. Sie steht in der Fusszeile, auf jedem Export und in der
 // Einstellungsdatei - bei einer Rueckmeldung ist damit sofort klar, welche
 // Fassung gemeint ist.
-const KNOTI_VERSION='312';
+const KNOTI_VERSION='314';
 let PX_PER_MM=4;
 let BODY_PX=4;      // eigener Zoom fuer die 3D-Koerperzeichnung
 const state={};
@@ -1420,6 +1437,18 @@ function readState(){
   state.holeMode = document.querySelector('#holeModeSeg .on') ? document.querySelector('#holeModeSeg .on').dataset.v : 'auto';
   state.holeGap = sync('holeGap','nHoleGap',lastSrc);
   state.holeStart = sync('holeStart','nHoleStart',lastSrc);
+  // Bausystem-Vorlage (Lego/Duplo) beim Stern: das Lochraster laeuft durch die
+  // Mitte. Der erste Armloch-Abstand wird so gesetzt, dass jedes Loch ein
+  // ganzes Vielfaches des Rasters vom Mittelloch entfernt ist - auch wenn
+  // danach Knicklinie, Armzahl oder Winkel geaendert werden.
+  // Tippt der Nutzer gerade selbst den Lochstart ein, gilt sein Wert (die
+  // Vorlage springt dann ohnehin auf "frei").
+  if(lastSrc!=='holeStart' && lastSrc!=='nHoleStart'){ const bs=brickRasterStart();
+    if(bs!==null){
+      state.holeStart=bs;
+      if($('nHoleStart')) $('nHoleStart').value=bs;
+      if($('holeStart')) $('holeStart').value=Math.max(+$('holeStart').min, Math.min(+$('holeStart').max, bs));
+    } }
   // Das Loch muss in den Arm passen, auf dem es sitzt. Massgeblich ist deshalb
   // die Breite DIESES Arms: beim Stern die Armbreite, beim Kegel dessen eigene
   // Armbreite. Frueher hatte der Kegel ein eigenes Lochdurchmesser-Feld ohne
@@ -1433,6 +1462,43 @@ function readState(){
   state.kerf = sync('kerf','nKerf',lastSrc) || 0;
 }
 
+// Aktive Bausystem-Vorlage (sonst null): {p: Vorlage, stern: Raster ab der Mitte?}.
+function brickVorlageStern(){
+  const sel=$('brickPreset'); if(!sel || !sel.value) return null;
+  let p=null; try{ p=BRICK_PRESETS[sel.value]; }catch(e){ return null; }
+  if(!p) return null;
+  const hm=document.querySelector('#holeModeSeg .on');
+  if(!hm || hm.dataset.v!=='fixed') return null;
+  const sub=(mode==='body' && document.querySelector('#bodyAdapterSeg .on'))
+          ? document.querySelector('#bodyAdapterSeg .on').dataset.v : null;
+  const js=document.querySelector('#joinSeg .on');
+  // Ohne Streben (Arme stossen/ueberlappen) richten sich die Loecher nach der
+  // Kante, nicht nach dem Raster der Mitte - dann gilt wie beim Kegel der
+  // Lochstart der Vorlage.
+  const stern = (mode==='single' || (mode==='body' && sub==='star'))
+             && !(mode==='body' && js && js.dataset.v==='direct');
+  return {p, stern};
+}
+// Abstand des ersten Armlochs von der Knicklinie, damit es auf dem Raster ab
+// der Mitte liegt (Mittelloch = Rasterpunkt 0). Mindestens so weit von der
+// Knicklinie weg, dass der Lochrand nicht auf der Falz sitzt.
+function brickRasterStart(){
+  const v=brickVorlageStern(); if(!v) return null;
+  const p=v.p;
+  if(!v.stern) return p.start;
+  let rEnd;
+  if(mode==='body'){
+    const nd=(typeof lastBody!=='undefined' && lastBody && lastBody.nodes && lastBody.nodes[0]) ? lastBody.nodes[0] : null;
+    if(!nd || !(nd.n>0)) return null;
+    // Winkel wie beim Zeichnen des Koerper-Adapters.
+    rEnd=knotenREnd(nd);
+  } else {
+    rEnd=computeREnd(angles());
+  }
+  const minD=p.hd/2+1;
+  const k=Math.max(1, Math.ceil((rEnd+minD)/p.gap - 1e-6));
+  return Math.round((k*p.gap - rEnd)*10)/10;
+}
 // Breite des Arms, auf dem die Loecher sitzen - je nach Verbindertyp aus einem
 // anderen Regler. Wird fuer die Obergrenze des Lochdurchmessers gebraucht,
 // seit Stern und Kegel sich einen Lochdurchmesser-Regler teilen.
@@ -2104,7 +2170,68 @@ function analyzeBody(key, edgeLenMM){
       const seg=Math.acos(Math.max(-1,Math.min(1,(a[0]*bb[0]+a[1]*bb[1]+a[2]*bb[2])/(vlen(a)*vlen(bb)))))*180/Math.PI;
       segs.push(seg); total+=seg;
     }
-    return {defekt:360-total, segs, orderNb:sortedNb};
+    // Exakte Abwicklung fuer den gefalteten Stern: die Mittelplatte liegt
+    // senkrecht zur Knotennormalen. Jeder Arm verlaeuft in der Platte in
+    // Richtung der PROJEKTION seiner Strebe und wird an der Knicklinie um
+    // deren Neigung gegen die Platte aufgefaltet. projSegs = Winkel zwischen
+    // benachbarten Projektionen (Summe genau 360°), falt = Neigung je Arm
+    // (positiv = zur Koerpermitte hin, negativ = in die Gegenrichtung).
+    // Lage der Mittelplatte: NICHT nach dem Koerperschwerpunkt (der liegt bei
+    // einer Kuppel ueber dem Boden, dann bekaemen gleiche Ecken - gleicher
+    // Buchstabe - verschiedene Zuschnitte), sondern allein aus den Streben
+    // dieser Ecke: die Spitzen der Streben-Einheitsvektoren bekommen eine
+    // Ausgleichsebene, deren Normale ist die Plattennormale. Bei drei Streben
+    // geht die Ebene genau durch alle drei Spitzen - dann sind alle Falt-
+    // winkel gleich (Prisma, Wuerfel ...); sonst sind sie so gleich wie
+    // moeglich. Ist die Lage nicht eindeutig (z.B. raeumliches Kreuz) oder
+    // ergibt sich keine saubere Umlaufreihenfolge, bleibt es fuer diese Ecke
+    // beim proportionalen Verfahren (projSegs=null).
+    const plattenProj=(nrm)=>{
+      let r=Math.abs(nrm[0])<0.9?[1,0,0]:[0,1,0];
+      const u1=vnorm([nrm[1]*r[2]-nrm[2]*r[1], nrm[2]*r[0]-nrm[0]*r[2], nrm[0]*r[1]-nrm[1]*r[0]]);
+      const u2=vnorm([nrm[1]*u1[2]-nrm[2]*u1[1], nrm[2]*u1[0]-nrm[0]*u1[2], nrm[0]*u1[1]-nrm[1]*u1[0]]);
+      const az=sortedVecs.map(v=>Math.atan2(v[0]*u2[0]+v[1]*u2[1]+v[2]*u2[2], v[0]*u1[0]+v[1]*u1[1]+v[2]*u1[2])*180/Math.PI);
+      const ps=az.map((a,k)=>{ let d=az[(k+1)%az.length]-a; while(d<=0) d+=360; while(d>360) d-=360; return d; });
+      if(ps.length===1) ps[0]=360;
+      const summe=ps.reduce((a,b)=>a+b,0);
+      const falt=sortedVecs.map(v=>{ const l=vlen(v)||1;
+        return Math.asin(Math.max(-1,Math.min(1,-(v[0]*nrm[0]+v[1]*nrm[1]+v[2]*nrm[2])/l)))*180/Math.PI; });
+      return {ps, falt, ok:Math.abs(summe-360)<1e-6};
+    };
+    const spitzen=sortedVecs.map(v=>vnorm(v));
+    const mw=[0,1,2].map(i=>spitzen.reduce((s,v)=>s+v[i],0)/spitzen.length);
+    // Kovarianz der Spitzen, kleinster Eigenvektor = Ebenennormale (Jacobi).
+    const Cm=[[0,0,0],[0,0,0],[0,0,0]];
+    spitzen.forEach(v=>{ const d=[v[0]-mw[0],v[1]-mw[1],v[2]-mw[2]];
+      for(let a=0;a<3;a++) for(let b2=0;b2<3;b2++) Cm[a][b2]+=d[a]*d[b2]; });
+    const eig=(A)=>{ const M=A.map(r=>r.slice()); const E=[[1,0,0],[0,1,0],[0,0,1]];
+      for(let it=0;it<60;it++){
+        let p=0,q=1; if(Math.abs(M[0][2])>Math.abs(M[p][q])){p=0;q=2;} if(Math.abs(M[1][2])>Math.abs(M[p][q])){p=1;q=2;}
+        if(Math.abs(M[p][q])<1e-14) break;
+        const th=(M[q][q]-M[p][p])/(2*M[p][q]);
+        const t=Math.sign(th||1)/(Math.abs(th)+Math.sqrt(th*th+1)), cs=1/Math.sqrt(t*t+1), sn=t*cs;
+        for(let k=0;k<3;k++){ const mkp=M[k][p], mkq=M[k][q]; M[k][p]=cs*mkp-sn*mkq; M[k][q]=sn*mkp+cs*mkq; }
+        for(let k=0;k<3;k++){ const mpk=M[p][k], mqk=M[q][k]; M[p][k]=cs*mpk-sn*mqk; M[q][k]=sn*mpk+cs*mqk; }
+        for(let k=0;k<3;k++){ const ekp=E[k][p], ekq=E[k][q]; E[k][p]=cs*ekp-sn*ekq; E[k][q]=sn*ekp+cs*ekq; }
+      }
+      return [0,1,2].map(i=>({w:M[i][i], v:[E[0][i],E[1][i],E[2][i]]})).sort((a,b)=>a.w-b.w); };
+    let projSegs=null, falt=null;
+    if(spitzen.length>=3){
+      const ev=eig(Cm);
+      const eindeutig = ev[1].w > 1e-9 && (ev[0].w/ev[1].w) < 0.8;
+      if(eindeutig){
+        let nE=vnorm(ev[0].v);
+        // Nach aussen: die Streben laufen von der Platte weg nach innen.
+        const s=spitzen.reduce((a,v)=>a+v[0]*nE[0]+v[1]*nE[1]+v[2]*nE[2],0);
+        if(s>1e-6 || (Math.abs(s)<=1e-6 && nE[0]*normal[0]+nE[1]*normal[1]+nE[2]*normal[2]<0)) nE=[-nE[0],-nE[1],-nE[2]];
+        const pr=plattenProj(nE);
+        if(pr.ok){ projSegs=pr.ps; falt=pr.falt; }
+      }
+    } else if(spitzen.length===2){
+      const pr=plattenProj(normal);
+      if(pr.ok){ projSegs=pr.ps; falt=pr.falt; }
+    }
+    return {defekt:360-total, segs, orderNb:sortedNb, projSegs, falt};
   }
   // Erst pro Knoten die Geometrie bestimmen, dann GLEICHE Knoten erkennen und
   // ihnen denselben Buchstaben geben. Zwei Ecken sind nur dann gleich, wenn sie
@@ -2180,10 +2307,36 @@ function analyzeBody(key, edgeLenMM){
             nbLen,
             nbTxt:dd.orderNb.map((j,k)=>ids[j]+(gleich?'':'·'+Math.round(nbLen[k]))),
             selfIdx:i,
-            tilt:rawTilt[i],defekt:dd.defekt,segs:dd.segs};
+            tilt:rawTilt[i],defekt:dd.defekt,segs:dd.segs,
+            projSegs:dd.projSegs, falt:dd.falt};
   });
   return {verts,edges:d.edges,labels,ids,nodes,edgeLen:edgeLenMM};
 }
+
+// ---- Armwinkel des flachen Sterns an einem Koerperknoten ----------------
+// 'exakt': Projektion der Streben auf die Mittelplatte, jeder Arm mit eigenem
+//          Faltwinkel - gefaltet zeigt jeder Arm genau in Strebenrichtung.
+// 'prop' : die echten 3D-Winkel zwischen Nachbarstreben, proportional auf
+//          360° gestreckt, alle Arme mit dem mittleren Faltwinkel (bis v313).
+function sternWinkelModus(){
+  const b=document.querySelector('#sternWinkelSeg .on');
+  return b ? b.dataset.v : 'exakt';
+}
+function knotenSternWinkel(nd){
+  const n=(nd && nd.n)||0;
+  const gleich=()=>Array.from({length:n},(_,i)=>i*360/n);
+  if(!nd || n<2) return {ang:gleich(), falt:null};
+  const kumuliert=s=>{ const ang=[0]; let acc=0; for(let k=0;k<s.length-1;k++){ acc+=s[k]; ang.push(acc); } return ang; };
+  if(sternWinkelModus()==='exakt' && nd.projSegs && nd.projSegs.length===n){
+    return {ang:kumuliert(nd.projSegs), falt:(nd.falt||[]).slice()};
+  }
+  if(!nd.segs || nd.segs.length<2) return {ang:gleich(), falt:null};
+  const summe=nd.segs.reduce((a,b)=>a+b,0)||360;
+  return {ang:kumuliert(nd.segs.map(s=>s*360/summe)), falt:null};
+}
+// Abstand der Knicklinien von der Mitte fuer DIESEN Knoten - dieselbe Quelle
+// fuer Zuschnitt, Strebenlaengen und Schnittliste.
+function knotenREnd(nd){ return computeREnd(knotenSternWinkel(nd).ang); }
 
 // ---- Kegelabwicklung (Einzeladapter) ----
 const CONE_PRESETS={
@@ -3223,11 +3376,20 @@ function buildUnion(ang,rEnd){
 
 // Eckenrundung: Außenecken bekommen den Fillet-Radius, Innenecken (zwischen den
 // Armen) bekommen ebenfalls eine Rundung, begrenzt durch die kurzen Kanten dort.
-function roundCorners(ring,radius){
-  if(radius<=0)return ring.map(p=>[p[0],p[1]]);
+// opt (optional): {innerR, rFold} - Innenecken (zwischen zwei Armen) bekommen
+// den VOLLEN eingestellten Radius innerR, nicht nur den fuer die Armenden
+// gekappten Wert 'radius'. Grenze ist die Knicklinie (Abstand rFold von der
+// Mitte): die Rundung endet spaetestens dort, damit gerade gefaltet wird.
+// Wo innerR keinen Platz findet, bleibt es mindestens beim bisherigen Wert.
+function roundCorners(ring,radius,opt){
+  const innerR = (opt && opt.innerR>0) ? opt.innerR : 0;
+  if(radius<=0 && innerR<=0)return ring.map(p=>[p[0],p[1]]);
   let pts=ring.slice();
   if(pts.length>1 && pts[0][0]===pts[pts.length-1][0] && pts[0][1]===pts[pts.length-1][1]) pts=pts.slice(0,-1);
   const n=pts.length; if(n<3)return ring.map(p=>[p[0],p[1]]);
+  // Umlaufsinn, um Innenecken (einspringend) von Aussenecken zu trennen.
+  let area2=0;
+  for(let i=0;i<n;i++){ const a=pts[i], b=pts[(i+1)%n]; area2+=a[0]*b[1]-b[0]*a[1]; }
   const out=[];
   for(let i=0;i<n;i++){
     const p0=pts[(i-1+n)%n],p1=pts[i],p2=pts[(i+1)%n];
@@ -3238,6 +3400,40 @@ function roundCorners(ring,radius){
     // Der Fillet darf höchstens die halbe kürzere Nachbarkante aufbrauchen.
     const cap = Math.min(l1,l2)*0.5;
     let r = Math.min(radius, cap);
+    if(innerR>0){
+      const kreuz = (p1[0]-p0[0])*(p2[1]-p1[1]) - (p1[1]-p0[1])*(p2[0]-p1[0]);
+      const einspringend = area2>0 ? kreuz<0 : kreuz>0;
+      if(einspringend){
+        const u1=[v1[0]/l1,v1[1]/l1], u2=[v2[0]/l2,v2[1]/l2];
+        const cosPhi=Math.max(-1,Math.min(1,u1[0]*u2[0]+u1[1]*u2[1]));
+        const phi=Math.acos(cosPhi);              // Winkel zwischen den Kanten
+        if(phi>0.05 && phi<Math.PI-0.05){
+          // Tangentenlaenge fuer einen ECHTEN Radius innerR bei diesem Winkel.
+          let t=innerR/Math.tan(phi/2);
+          // Nicht ueber die Knicklinie hinaus (beide Kanten laufen den Arm
+          // entlang nach aussen).
+          if(opt && isFinite(opt.rFold)){
+            const fold1=opt.rFold-0.3-(p1[0]*u1[0]+p1[1]*u1[1]);
+            const fold2=opt.rFold-0.3-(p1[0]*u2[0]+p1[1]*u2[1]);
+            t=Math.min(t, fold1, fold2);
+          }
+          t=Math.min(t, cap);
+          if(t>r+1e-6){
+            // Kreisbogen statt Bezier: Mittelpunkt auf der Winkelhalbierenden.
+            const R=t*Math.tan(phi/2);
+            const bis=[u1[0]+u2[0], u1[1]+u2[1]], bl=Math.hypot(bis[0],bis[1])||1;
+            const dm=R/Math.sin(phi/2);
+            const m=[p1[0]+bis[0]/bl*dm, p1[1]+bis[1]/bl*dm];
+            const a=[p1[0]+u1[0]*t, p1[1]+u1[1]*t], b=[p1[0]+u2[0]*t, p1[1]+u2[1]*t];
+            let w0=Math.atan2(a[1]-m[1],a[0]-m[0]), w1=Math.atan2(b[1]-m[1],b[0]-m[0]);
+            let dw=w1-w0; while(dw>Math.PI) dw-=2*Math.PI; while(dw<-Math.PI) dw+=2*Math.PI;
+            const seg=Math.max(8, Math.ceil(Math.abs(dw)/(6*Math.PI/180)));
+            for(let s=0;s<=seg;s++){ const w=w0+dw*s/seg; out.push([m[0]+R*Math.cos(w), m[1]+R*Math.sin(w)]); }
+            continue;
+          }
+        }
+      }
+    }
     if(r<0.05){ out.push([p1[0],p1[1]]); continue; }
     const a=[p1[0]+v1[0]/l1*r,p1[1]+v1[1]/l1*r];
     const b=[p1[0]+v2[0]/l2*r,p1[1]+v2[1]/l2*r];
@@ -3575,7 +3771,9 @@ function buildConnector(ang, rEnd){
   const rings=[];
   const kh=kerfHalf();
   union.forEach(poly=>poly.forEach(ring=>{
-    let r=roundCorners(ring,rRound);
+    // Innenecken mit vollem Radius (bis zur Knicklinie), Armenden wie bisher
+    // hoechstens mit halber Armbreite.
+    let r=roundCorners(ring,rRound,{innerR: noRound?0:state.fil, rFold:rEnd});
     if(kh>0) r=offsetRing(r, kh);
     rings.push(r);
   }));
@@ -4342,12 +4540,12 @@ function renderBody(){
     // Die Strebe endet an der Knick- bzw. Falzlinie des Verbinders. Beim STERN
     // ist das rEnd, beim KEGEL die Innenkante rin. Frueher wurde immer der
     // Sternwert abgezogen, wodurch die Strebe beim Kegel zu lang war.
-    const rEndFor=n=>{const ang=Array.from({length:n},(_,i)=>i*360/n);return computeREnd(ang);};
+    const rEndFor=nd=>knotenREnd(nd);
     let lenMax=Infinity;
     body.edges.forEach(([a,b])=>{
       const dx=body.verts[a][0]-body.verts[b][0],dy=body.verts[a][1]-body.verts[b][1],dz=body.verts[a][2]-body.verts[b][2];
       const kante=Math.hypot(dx,dy,dz);
-      const free=(kante - rEndFor(body.nodes[a].n) - rEndFor(body.nodes[b].n))/2;
+      const free=(kante - rEndFor(body.nodes[a]) - rEndFor(body.nodes[b]))/2;
       if(free<lenMax) lenMax=free;
     });
     lenMax=Math.max(2, lenMax);
@@ -4359,7 +4557,7 @@ function renderBody(){
       let freiMin=Infinity;
       body.edges.forEach(([a,b])=>{
         const dx=body.verts[a][0]-body.verts[b][0],dy=body.verts[a][1]-body.verts[b][1],dz=body.verts[a][2]-body.verts[b][2];
-        const frei=Math.hypot(dx,dy,dz) - rEndFor(body.nodes[a].n) - rEndFor(body.nodes[b].n);
+        const frei=Math.hypot(dx,dy,dz) - rEndFor(body.nodes[a]) - rEndFor(body.nodes[b]);
         if(frei<freiMin) freiMin=frei;
       });
       const za=(typeof zapfenAbstand==='function') ? zapfenAbstand() : 0;
@@ -5892,14 +6090,9 @@ function bodyAdapterSheet(forExport){
   // proportional auf volle 360° skaliert: die relativen Winkelverhaeltnisse
   // zwischen den Staeben bleiben erhalten (wichtig an unregelmaessigen Knoten
   // wie dem Rand einer Kuppel), auch wenn die absoluten Winkel flach anders sind.
-  const armAnglesFromSegs=(nd)=>{
-    if(!nd.segs || nd.segs.length<2) return Array.from({length:nd.n},(_,i)=>i*360/nd.n);
-    const segSum=nd.segs.reduce((a,b)=>a+b,0)||360;
-    const scaled=nd.segs.map(s=>s*360/segSum);
-    const ang=[0]; let acc=0;
-    for(let k=0;k<scaled.length-1;k++){ acc+=scaled[k]; ang.push(acc); }
-    return ang;
-  };
+  // Seit v314 waehlbar (Umschalter "Armwinkel"): exakt per Projektion mit
+  // eigenem Faltwinkel je Arm, oder wie bisher proportional gestreckt.
+  const armAnglesFromSegs=(nd)=>knotenSternWinkel(nd).ang;
   body.nodes.forEach(nd=>{
     const savedArms=state.arms; state.arms=nd.n;
     const savedLens=state.lens, savedStarts=state.starts;
@@ -5910,21 +6103,24 @@ function bodyAdapterSheet(forExport){
     state.lens = armLengthsForNode(nd, rEnd);
     if(isDouble){
       // Parallelflaechen: Knicklinie wandert um Abstand * tan(Neigung/2).
-      const dr = nd.tilt>0 ? state.plate*Math.tan(nd.tilt*Math.PI/360) : 0;
+      // Exakte Armwinkel: mittlerer Betrag der eigenen Faltwinkel dieses Knotens.
+      const swD=knotenSternWinkel(nd);
+      const tiltK = (swD.falt && swD.falt.length) ? swD.falt.reduce((a,f)=>a+Math.abs(f),0)/swD.falt.length : nd.tilt;
+      const dr = tiltK>0 ? state.plate*Math.tan(tiltK*Math.PI/360) : 0;
       const lm=starLayerMode();
       if(lm!=='outer'){
         const cInner=buildConnector(ang, Math.max(rEnd-dr/2, state.wid*0.3));
-        tiles.push({...cInner,label:(nd.id||nd.label)+'i',neighbors:nd.neighbors,marken:armMarken(nd),ang,rEnd:cInner.rEnd,sub:'innen'});
+        tiles.push({...cInner,label:(nd.id||nd.label)+'i',neighbors:nd.neighbors,marken:armMarken(nd),ang,rEnd:cInner.rEnd,sub:'innen',falt:knotenSternWinkel(nd).falt});
       }
       if(lm!=='inner'){
         schalenVersatz=dr;
         const cOuter=buildConnector(ang, rEnd+dr/2);
         schalenVersatz=0;
-        tiles.push({...cOuter,label:(nd.id||nd.label)+'a',neighbors:nd.neighbors,marken:armMarken(nd),ang,rEnd:cOuter.rEnd,sub:'außen'});
+        tiles.push({...cOuter,label:(nd.id||nd.label)+'a',neighbors:nd.neighbors,marken:armMarken(nd),ang,rEnd:cOuter.rEnd,sub:'außen',falt:knotenSternWinkel(nd).falt});
       }
     } else {
       const conn=buildConnector(ang,rEnd);
-      tiles.push({...conn,label:(nd.id||nd.label),neighbors:nd.neighbors,marken:armMarken(nd),ang,rEnd:conn.rEnd});
+      tiles.push({...conn,label:(nd.id||nd.label),neighbors:nd.neighbors,marken:armMarken(nd),ang,rEnd:conn.rEnd,falt:knotenSternWinkel(nd).falt});
     }
     state.arms=savedArms; state.lens=savedLens; state.starts=savedStarts;
   });
@@ -5962,6 +6158,14 @@ function bodyAdapterSheet(forExport){
       g+=`<text x="${lp[0].toFixed(2)}" y="${(lp[1]+1.4).toFixed(2)}" font-size="4" font-weight="bold" text-anchor="middle" fill="#8e44ad">${t.label}</text>`;
     }
     if(t.sub) g+=`<text x="0" y="${(-t.outer+4).toFixed(2)}" font-size="2.6" text-anchor="middle" fill="#8e44ad">${t.sub}</text>`;
+    // Exakte Armwinkel: jeder Arm hat seinen eigenen Faltwinkel. Er steht
+    // quer zum Arm direkt innen an der Knicklinie (bei sehr kleiner Mitte
+    // aussen davor), in der Farbe der Zusatzinfos.
+    if(t.falt && t.falt.length===t.ang.length){
+      const rF = t.rEnd>=3.2 ? t.rEnd-1.0 : t.rEnd+1.8;
+      t.ang.forEach((a,k)=>{ const p=rot(0,rF,a-90);
+        g+=`<text x="${p[0].toFixed(2)}" y="${p[1].toFixed(2)}" font-size="1.6" text-anchor="middle" fill="#00a3a3" transform="rotate(${a},${p[0].toFixed(2)},${p[1].toFixed(2)})">${Math.round(t.falt[k])}°</text>`; });
+    }
     t.ang.forEach((a,k)=>{const p=rot(0,t.outer-2.2,a-90);g+=`<text x="${p[0].toFixed(2)}" y="${p[1].toFixed(2)}" font-size="2.4" text-anchor="middle" fill="#8e44ad" transform="rotate(${a},${p[0].toFixed(2)},${p[1].toFixed(2)})">${(t.marken&&t.marken[k])||t.neighbors[k]||''}</text>`;});
     // Auch beim Stern den echten Umriss messen statt eines Quadrats um den
     // groessten vorkommenden Radius: sonst wandert jedes Teil mit dem
@@ -6011,14 +6215,14 @@ function bodyCutlist(){
   } else {
     txt+=`${EN?'Edge length (reference)':'Kantenlänge (Referenz)'} ${body.edgeLen} mm\n\n`;
   }
-  const rEndFor=n=>{const ang=Array.from({length:n},(_,i)=>i*360/n);return computeREnd(ang);};
+  const rEndFor=nd=>knotenREnd(nd);
   const lens=body.edges.map(([a,b])=>{
     const dx=body.verts[a][0]-body.verts[b][0], dy=body.verts[a][1]-body.verts[b][1], dz=body.verts[a][2]-body.verts[b][2];
     return Math.hypot(dx,dy,dz);
   });
   const groups={};
   body.edges.forEach(([a,b],i)=>{
-    const rA=rEndFor(body.nodes[a].n), rB=rEndFor(body.nodes[b].n);
+    const rA=rEndFor(body.nodes[a]), rB=rEndFor(body.nodes[b]);
     const cut=lens[i]-rA-rB;
     const key=cut.toFixed(1);
     (groups[key]=groups[key]||[]).push(`${(body.ids||body.labels)[a]}–${(body.ids||body.labels)[b]}`);
@@ -6055,6 +6259,14 @@ function bodyCutlist(){
   typKeys.forEach(lb=>{
     const grp=typen[lb];
     txt+=`  ${EN?'Type':'Typ'} ${lb}: ${grp.length}× ${EN?'identical,':'gleich,'} ${grp[0].n} ${EN?'arms':'Arme'} (${grp.map(nd=>nd.id).join(', ')})\n`;
+    // Exakte Armwinkel: Faltwinkel je Arm, in Armreihenfolge mit dem Typ des
+    // Nachbarn (beim Stern-Verbinder).
+    const sw=(typeof knotenSternWinkel==='function') ? knotenSternWinkel(grp[0]) : null;
+    const istStern=!document.querySelector('#bodyAdapterSeg .on') || document.querySelector('#bodyAdapterSeg .on').dataset.v==='star';
+    if(istStern && sw && sw.falt){
+      const wf=v=>(Math.round(v*10)/10).toString().replace('.', EN?'.':',')+'°';
+      txt+=`    ${EN?'fold angle per arm':'Faltwinkel je Arm'}: ${sw.falt.map((f,k)=>'→'+((grp[0].nbTyp||[])[k]||'?')+' '+wf(f)).join(', ')}\n`;
+    }
   });
   txt+=`\n${EN?'ASSEMBLY – each arm names its neighbour:':'ZUSAMMENBAU – jeder Arm nennt seinen Nachbarn:'}\n`;
   body.nodes.slice().sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true})).forEach(nd=>{
@@ -6146,11 +6358,11 @@ function buildBauplanSVG(forExport){
   armKeys.forEach((k,gi)=>{ nodeColor[k]=colorFor(gi); });
 
   // --- Streben gruppieren nach Länge, Farbe je Gruppe ---
-  const rEndFor=n=>{const ang=Array.from({length:n},(_,i)=>i*360/n);return computeREnd(ang);};
+  const rEndFor=nd=>knotenREnd(nd);
   const stabGroups={};   // lenKey -> {count, edges:[[a,b]]}
   body.edges.forEach(([a,b])=>{
     const dx=body.verts[a][0]-body.verts[b][0],dy=body.verts[a][1]-body.verts[b][1],dz=body.verts[a][2]-body.verts[b][2];
-    const L=Math.hypot(dx,dy,dz)-rEndFor(body.nodes[a].n)-rEndFor(body.nodes[b].n);
+    const L=Math.hypot(dx,dy,dz)-rEndFor(body.nodes[a])-rEndFor(body.nodes[b]);
     const key=L.toFixed(1);
     if(!stabGroups[key]) stabGroups[key]={count:0,color:null,edges:[]};
     stabGroups[key].count++; stabGroups[key].edges.push([a,b]);
@@ -6558,13 +6770,15 @@ function buildBauplanSVG(forExport){
 // das selbst aus, waehrend die Armmarken den Eckpunktabstand zeigten - dann
 // stand am Arm eine Zahl, die auf keiner Strebe zu finden war. Beides holt die
 // Laenge jetzt hier.
-function strebenEndRadius(n){
+function strebenEndRadius(nd){
   const cg=(typeof window!=='undefined' && window.__bodyCone) ? window.__bodyCone : null;
   const seg=document.querySelector('#bodyAdapterSeg .on');
   const istKegel = seg && seg.dataset.v==='cone';
   if(istKegel && cg && isFinite(cg.rin)) return cg.rin;
-  const ang=Array.from({length:n},(_,i)=>i*360/n);
-  return computeREnd(ang);
+  // Dieselben Armwinkel wie beim Zuschnitt dieses Knotens - frueher wurden
+  // hier gleichmaessige Winkel angenommen; an unregelmaessigen Knoten (Kuppel-
+  // rand, Prisma) lag die Knicklinie dadurch anders als auf dem Teil.
+  return knotenREnd(nd);
 }
 // Liefert {roh, len}: roh = rechnerische Laenge, len = auf STREBE_MIN begrenzt.
 function strebenLaenge(ia, ib){
@@ -6572,7 +6786,7 @@ function strebenLaenge(ia, ib){
   if(!body || !body.verts[ia] || !body.verts[ib]) return null;
   const A=body.verts[ia], B=body.verts[ib];
   let L=Math.hypot(A[0]-B[0],A[1]-B[1],A[2]-B[2])
-        - strebenEndRadius(body.nodes[ia].n) - strebenEndRadius(body.nodes[ib].n);
+        - strebenEndRadius(body.nodes[ia]) - strebenEndRadius(body.nodes[ib]);
   // Wird der Schlitz aus seiner Grundlage verschoben, wandert beim Zusammenbau
   // auch die Strebe. Damit die Kantenlaenge stimmt, wird sie um das Doppelte
   // dieser Verschiebung angepasst - mit DEMSELBEN Abstand, den der Verbinder
@@ -7348,6 +7562,8 @@ function updateBodyAdapterVis(){
   const cone = inBody && sub==='cone';
   const ball = inBody && sub==='ball3d';
   $('bodyConeControls').style.display = cone?'block':'none';
+  // Armwinkel-Verfahren: nur beim Stern im Koerpermodus.
+  if($('grpSternWinkel')) $('grpSternWinkel').style.display = (inBody && sub==='star')?'block':'none';
   // 3D-Adapter-Regler (Kragen, Bohrung, Armlaenge, Bohrtiefe) auch im Koerper
   // anbieten. Arme/Winkel entfallen, da sie aus der Koerpergeometrie kommen.
   if($('ball3dControls')) $('ball3dControls').style.display = ball?'block':'none';
@@ -7452,11 +7668,26 @@ let brickPresetApplying=false;
 const BRICK_PRESETS={
   lego:    {gap:8,  hd:4.8, start:4, wid:8,
     info:'Lego / Technic: Rastermaß 8 mm, Zapfen/Pin/Loch Ø 4,8 mm. Erstes Loch 4 mm (halbes Raster) vom Rand.',
-    infoEN:'Lego / Technic: 8 mm grid, stud/pin/hole Ø 4.8 mm. First hole 4 mm (half grid) from the edge.'},
+    infoEN:'Lego / Technic: 8 mm grid, stud/pin/hole Ø 4.8 mm. First hole 4 mm (half grid) from the edge.',
+    infoStern:'Lego / Technic: Rastermaß 8 mm, Loch Ø 4,8 mm. Mit Mittelloch; alle Armlöcher liegen im 8-mm-Raster ab der Mitte.',
+    infoSternEN:'Lego / Technic: 8 mm grid, hole Ø 4.8 mm. With centre hole; all arm holes sit on the 8 mm grid from the centre.'},
   duplo:   {gap:16, hd:9.4, start:8, wid:13,
     info:'Duplo: Rastermaß 16 mm, Zapfen-Außen-Ø ~9,4 mm. Erstes Loch 8 mm (halbes Raster) vom Rand.',
-    infoEN:'Duplo: 16 mm grid, stud outer Ø ~9.4 mm. First hole 8 mm (half grid) from the edge.'}
+    infoEN:'Duplo: 16 mm grid, stud outer Ø ~9.4 mm. First hole 8 mm (half grid) from the edge.',
+    infoStern:'Duplo: Rastermaß 16 mm, Loch Ø 9,4 mm. Mit Mittelloch; alle Armlöcher liegen im 16-mm-Raster ab der Mitte.',
+    infoSternEN:'Duplo: 16 mm grid, hole Ø 9.4 mm. With centre hole; all arm holes sit on the 16 mm grid from the centre.'}
 };
+// Infozeile zur Vorlage - beim Stern mit Mittelloch-Hinweis. Auch bei Typ-
+// und Sprachwechsel neu setzen.
+function brickInfoAktualisieren(){
+  const el=$('brickPresetInfo'), sel=$('brickPreset'); if(!el||!sel) return;
+  const p=BRICK_PRESETS[sel.value]; if(!p){ el.textContent=''; return; }
+  const EN=(typeof curLang!=='undefined'&&curLang==='en');
+  const v=brickVorlageStern();
+  const stern = v ? v.stern : (mode==='single' || (mode==='body' && document.querySelector('#bodyAdapterSeg .on')
+                && document.querySelector('#bodyAdapterSeg .on').dataset.v==='star'));
+  el.textContent = stern ? (EN ? p.infoSternEN : p.infoStern) : (EN ? p.infoEN : p.info);
+}
 $('brickPreset').addEventListener('change',()=>{
   const EN=(typeof curLang!=='undefined'&&curLang==='en');
   const key=$('brickPreset').value;
@@ -7468,7 +7699,12 @@ $('brickPreset').addEventListener('change',()=>{
   set('nHoleGap','holeGap',p.gap);
   set('nHoleStart','holeStart',p.start);
   set('nHd','hd',p.hd);
-  $('brickPresetInfo').textContent = EN ? p.infoEN : p.info;
+  // Beim Stern gehoert ein Mittelloch dazu: gleicher Durchmesser, und die
+  // Armloecher liegen im selben Raster ab der Mitte (siehe brickRasterStart).
+  const sternJetzt = mode==='single' || (mode==='body' && document.querySelector('#bodyAdapterSeg .on')
+                     && document.querySelector('#bodyAdapterSeg .on').dataset.v==='star');
+  if(sternJetzt) set('nCenter','center',Math.min(12,p.hd));
+  brickInfoAktualisieren();
   lastSrc='nWid';
   render();
   set('nHd','hd',p.hd);
@@ -7538,6 +7774,12 @@ $('gapTouch').addEventListener('click',()=>{
   lastSrc='nGap'; render();
 });
 // Koerper-Kegel: Doppellage und Knickflaeche
+document.querySelectorAll('#sternWinkelSeg button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#sternWinkelSeg button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  // Die Armwinkel aendern die Knicklinien je Knoten und damit Strebenlaengen.
+  if(typeof renderAndFit==='function') renderAndFit(); else render();
+}));
 document.querySelectorAll('#bConeLayerSeg button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('#bConeLayerSeg button').forEach(x=>x.classList.remove('on'));
   b.classList.add('on');
@@ -7822,8 +8064,10 @@ function updateMovedGroupVis(){
   // Im Koerpermodus ergibt sich die Stablaenge aus der Kantenlaenge; der
   // Regler waere dort irrefuehrend.
   // Strebenlaenge nur, wenn ueberhaupt mit Streben gebaut wird.
+  // "ohne Streben" gibt es nur im Koerpermodus; der Umschalter behaelt aber
+  // seinen Stand, wenn man zum Einzelverbinder zurueckwechselt.
   const jsS=document.querySelector('#joinSeg .on');
-  const mitStreben = !(jsS && jsS.dataset.v==='direct');
+  const mitStreben = mode!=='body' || !(jsS && jsS.dataset.v==='direct');
   if($('grpStab')) $('grpStab').style.display =
     (mode==='body'||ballNow||!mitStreben) ? 'none' : 'block';
   // Abschnittskoepfe erst NACH dieser Sichtbarkeit neu bewerten.
@@ -7889,6 +8133,12 @@ function applyMode(){
   $('ball3dControls').style.display = (mode==='ball3d')?'block':'none';
   if(mode==='ball3d' && typeof updateBallAngleWrap==='function') updateBallAngleWrap();
   $('starControls').style.display = (mode==='cone'||mode==='ball3d')?'none':'block';
+  // Armbreite, Eckenabrundung und Bauart werden nur von updateBodyAdapterVis()
+  // versteckt (Koerper + Kegel/3D-Knoten) - die laeuft aber nur im Koerper-
+  // modus. Ohne dieses Zuruecksetzen blieben die drei Regler nach einem
+  // Abstecher dorthin auch beim Einzel-Stern verschwunden.
+  if(mode!=='body') ['grpWid','grpFil','grpBuild'].forEach(id=>{ const el=$(id); if(el) el.style.display=''; });
+  if(mode!=='body' && $('grpSternWinkel')) $('grpSternWinkel').style.display='none';
   // Loch-Regler (Löcher pro Stab, Verteilung, Bausystem/Lego/Duplo) gelten für
   // die 2D-Typen Stern UND Kegel, weil beide Montagelöcher haben. Nur der
   // gedruckte Knotenpunkt braucht sie nicht.
@@ -7932,6 +8182,7 @@ function applyMode(){
               : 'Sternverbinder · 2D';
   { const sub=$('subtitle'); if(sub) sub.textContent = (typeof curLang!=='undefined' && curLang==='en' && typeof I18N!=='undefined' && I18N[subDE]) ? I18N[subDE] : subDE; }
   if(inBody) updateBodyAdapterVis();
+  if(typeof brickInfoAktualisieren==='function') try{ brickInfoAktualisieren(); }catch(e){}
   render();
 }
 document.querySelectorAll('#modeSeg button').forEach(b=>b.addEventListener('click',()=>{
@@ -8045,10 +8296,12 @@ $('dlBauplan').addEventListener('click',()=>{
 function bodyAdapterGeometryList(){
   const body=lastBody; if(!body) return null;
   const adapterType = document.querySelector('#bodyAdapterSeg .on') ? document.querySelector('#bodyAdapterSeg .on').dataset.v : 'star';
-  // Anzahl je eindeutigem Knotentyp (nach Armzahl) zaehlen.
+  // Anzahl je Knotentyp (Buchstabe) zaehlen. Frueher wurde nur nach Armzahl
+  // gruppiert: zwei verschiedene 4-Arm-Knoten (z.B. am Kuppelrand) bekamen
+  // dann dieselbe Datei, obwohl ihre Winkel verschieden sind.
   const counts={}; const repNode={};
-  body.nodes.forEach(nd=>{ counts[nd.n]=(counts[nd.n]||0)+1; if(!repNode[nd.n]) repNode[nd.n]=nd; });
-  const armCounts=Object.keys(counts).map(Number).sort((a,b)=>a-b);
+  body.nodes.forEach(nd=>{ const k=nd.label; counts[k]=(counts[k]||0)+1; if(!repNode[k]) repNode[k]=nd; });
+  const armCounts=Object.keys(counts).sort((a,b)=>(repNode[a].n-repNode[b].n)||a.localeCompare(b));
 
   if(adapterType==='cone'){
     // Kegel-Koerper: pro Knotentyp eine Kegelschale (bzw. innen+aussen bei Doppel).
@@ -8072,7 +8325,7 @@ function bodyAdapterGeometryList(){
         go.holes.forEach(h=>geo.holes.push(h.map(p=>[p[0]+shift,p[1]])));
         if(cg.foldFace) geo.foldCircles.push({cx:shift,cy:0,r:Rout-zoneLen});
       }
-      return {arms:n, count:counts[n], geo, cone:true};
+      return {arms:nd.n, typ:n, count:counts[n], geo, cone:true};
     });
     return list;
   }
@@ -8080,19 +8333,23 @@ function bodyAdapterGeometryList(){
   // Stern-Koerper: pro Knotentyp ein Stern-Adapter.
   const hd=state.hd||2; const hr=Math.max(0.05, hd/2 - kerfHalf());
   const savedArms=state.arms;
-  const list=armCounts.map(n=>{
+  const savedLens=state.lens, savedStarts=state.starts;
+  const list=armCounts.map(k=>{
+    const nd=repNode[k], n=nd.n;
     state.arms=n;
-    const ang=Array.from({length:n},(_,i)=>i*360/n);
+    // Dieselben Armwinkel und Armlaengen wie auf dem Zuschnitt (SVG).
+    const ang=knotenSternWinkel(nd).ang;
     const rEnd=computeREnd(ang);
+    state.lens=(typeof armLengthsForNode==='function') ? armLengthsForNode(nd, rEnd) : savedLens;
     const conn=buildConnector(ang,rEnd);
     const geo={rings:[], holes:[], foldCircles:[], foldLines:[]};
     conn.rings.forEach(r=>geo.rings.push(r));
     conn.holes.forEach(hp=>geo.holes.push(circlePoly(hp[0],hp[1],hr)));
     if(state.center>0) geo.holes.push(circlePoly(0,0,Math.max(0.05,state.center/2-kerfHalf())));
     conn.stab.forEach(seg=>geo.foldLines.push({x1:seg[0][0],y1:seg[0][1],x2:seg[1][0],y2:seg[1][1]}));
-    return {arms:n, count:counts[n], geo};
+    return {arms:n, typ:k, count:counts[k], geo};
   });
-  state.arms=savedArms;
+  state.arms=savedArms; state.lens=savedLens; state.starts=savedStarts;
   return list;
 }
 // Erzeugt fuer einen Koerper-Knoten ein Kegel-Geometrie-Objekt (wie makeCG in
@@ -8790,7 +9047,8 @@ function updateLockOpt(){
   // Strebenlaenge nur, wenn ueberhaupt mit Streben gebaut wird.
   (function(){
     const j=document.querySelector('#joinSeg .on');
-    document.body.classList.toggle('ohneStreben', !!(j && j.dataset.v==='direct'));
+    // "ohne Streben" gilt nur im Koerpermodus (siehe auch grpStab/matWrap).
+    document.body.classList.toggle('ohneStreben', mode==='body' && !!(j && j.dataset.v==='direct'));
     // Bei ueberlappenden Armen sitzen die Schlitze symmetrisch zur
     // Kantenmitte; eine Hakenrichtung gibt es dort nicht.
     (function(){
@@ -8879,7 +9137,7 @@ function updateLockOpt(){
   (function(){
     const js2=document.querySelector('#joinSeg .on');
     const ovW=(typeof sync==='function' && $('armOv')) ? sync('armOv','nArmOv',lastSrc) : 0;
-    const ovAktiv = js2 && js2.dataset.v==='direct' && ovW>0.05;
+    const ovAktiv = mode==='body' && js2 && js2.dataset.v==='direct' && ovW>0.05;
     document.body.classList.toggle('ohneHakenRichtung', !!ovAktiv);
   })();
   // Die Materialstaerken werden nur gebraucht, wenn Schlitze oder Laschen
@@ -8898,7 +9156,7 @@ function updateLockOpt(){
     // Verbindungsarten und gehoeren als Punkt der Konstruktion nach oben,
     // nicht erst wenn eine bestimmte Verbindungsart das noetig macht.
     const jsMat=document.querySelector('#joinSeg .on');
-    const mitStrebenMat = !(jsMat && jsMat.dataset.v==='direct');
+    const mitStrebenMat = mode!=='body' || !(jsMat && jsMat.dataset.v==='direct');
     zeig('matWrap', brauchtVerb || brauchtStreb || mitStrebenMat);
     // Die VERBINDER-Staerke wird nur fuer Zapfen und Haken gebraucht. Die
     // STREBEN-Staerke zusaetzlich fuer Kegelnaht und Doppellage, weil sie dort
@@ -8924,7 +9182,7 @@ function updateLockOpt(){
   // die Breite folgte still der Armbreite, ohne dass man sie aendern konnte.
   (function(){
     const jsB=document.querySelector('#joinSeg .on');
-    const mitStrebenB = !(jsB && jsB.dataset.v==='direct');
+    const mitStrebenB = mode!=='body' || !(jsB && jsB.dataset.v==='direct');
     ['strebB','nStrebB'].forEach(id=>{
       const e=document.getElementById(id); if(!e) return;
       const lab=e.closest('label');
@@ -9216,7 +9474,7 @@ $('stlExport').addEventListener('click',async ()=>{
       const o={...opts, foldCircles:item.geo.foldCircles, foldLines:item.geo.foldLines};
       const tris=buildAdapterSTL(item.geo.rings, item.geo.holes, o);
       const blob=trisToSTL(tris);
-      files.push({name:bodyStlFileName(item.arms, item.count, o, item.cone), data:new Uint8Array(await blob.arrayBuffer())});
+      files.push({name:bodyStlFileName(item.arms, item.count, o, item.cone, item.typ), data:new Uint8Array(await blob.arrayBuffer())});
     }
     $('stlDialog').style.display='none';
     await dlFileSet(files, exportBaseName());
@@ -9232,13 +9490,15 @@ $('stlExport').addEventListener('click',async ()=>{
 });
 // Dateiname fuer einen Koerper-Adaptertyp inkl. Stueckzahl, z.B.
 // "koerper_ico_12x_5arm_h0.6_k0.4.stl" oder "koerper_ico_12x_5stab_kegel.stl".
-function bodyStlFileName(arms, count, o, isCone){
+function bodyStlFileName(arms, count, o, isCone, typ){
   const clean=v=>String(v).replace(/[^0-9a-zA-Z.]/g,'');
   const EN=(typeof curLang!=='undefined'&&curLang==='en');
   const W = EN ? {body:'body',arm:'arm',rod:'rod',cone:'cone'} : {body:'koerper',arm:'arm',rod:'stab',cone:'kegel'};
   const key=$('bodySel')?clean($('bodySel').value):W.body;
   const unit=isCone?W.rod:W.arm;
-  const parts=[W.body, key, count+'x', arms+unit];
+  const parts=[W.body, key];
+  if(typ) parts.push((EN?'type':'typ')+clean(typ));
+  parts.push(count+'x', arms+unit);
   if(isCone) parts.push(W.cone);
   parts.push('h'+clean(o.height), 'k'+clean(o.foldRest));
   return parts.join('_')+'.stl';
@@ -9456,6 +9716,9 @@ const I18N = {
   'STL-Datei':'STL file','Kanten-Schwelle ':'Edge threshold ','Skalierung':'Scaling',
   'Kantenlänge ':'Edge length ','Welcher Verbinder? ':'Which connector? ','Ansicht':'View',
   'Mittelloch Ø ':'Center hole Ø ',
+  'Breite Streben ':'Rod width ',
+  'Armwinkel ':'Arm angles ','exakt':'exact','proportional (bis v313)':'proportional (up to v313)',
+  help_sternwinkel:'Exact: every rod is projected onto the centre plate of the node. The arms lie exactly in these directions and each arm gets its own fold angle, shown in turquoise inside the fold line. Folded, every arm then points exactly along its rod. A negative value means: fold this arm the other way. Proportional: the true angles between the rods are stretched evenly to 360° and all arms are folded by the same angle (method up to v313). At regular corners such as the icosahedron both give the same result.',
   'Lochdurchmesser ':'Hole diameter ','Überlappung ':'Overlap ','Doppellage':'Double layer',
   'Materialstärke Streben ':'Material thickness rods ','Knickfläche':'Fold face',
   'Knickflächenbreite ':'Fold face width ',
