@@ -94,8 +94,26 @@
   body.ohneVerbindungsart #nahtWrap, body.ohneVerbindungsart #grpLock,
   body.ohneVerbindungsart #grpStab{display:none !important;}
   body.ohneLoecher #grpHoles, body.ohneLoecher #grpHd,
-  body.ohneLoecher #grpHoleMode{display:none !important;}
+  body.ohneLoecher #grpHoleMode, body.ohneLoecher #holeSpacingWrap{display:none !important;}
   .seg.multi button.on::before{content:'\2713'; font-size:11px; margin-right:4px;}
+  /* Verbindung: aktive Arten wie die Knotentyp-Knoepfe in der Typfarbe
+     gefuellt (rot Stern, blau Kegel), mit kleinem Zeichen statt Haekchen. */
+  #lockSeg button{gap:5px;}
+  #lockSeg .licon{width:17px; height:17px; flex:none;}
+  #lockSeg button.on{background:var(--type); border-color:var(--type); color:#fff; box-shadow:none;}
+  #lockSeg button.on::before{content:none;}
+  /* Ebenen im Export: kleinere Schrift, damit die Begriffe in die Felder
+     passen; aktive Ebenen in ihrer eigenen Farbe gefuellt statt Haekchen. */
+  #farbSeg button{font-size:11px; padding:8px 2px; min-width:0; flex:1 1 30%;
+    white-space:nowrap; color:var(--muted);}
+  #farbSeg button.on::before{content:none;}
+  #farbSeg button.on{color:#fff; box-shadow:none; border-width:1px;}
+  #farbSeg button.on[data-c="#FF0000"]{background:#E00000; border-color:#E00000;}
+  #farbSeg button.on[data-c="#0000FF"]{background:#0000FF; border-color:#0000FF;}
+  #farbSeg button.on[data-c="#FF00FF"]{background:#D400D4; border-color:#D400D4;}
+  #farbSeg button.on[data-c="#000000"]{background:#1a2b22; border-color:#1a2b22;}
+  #farbSeg button.on[data-c="#8e44ad"]{background:#8e44ad; border-color:#8e44ad;}
+  #farbSeg button.on[data-c="#00a3a3"]{background:#00a3a3; border-color:#00a3a3;}
   /* Die Mehrfachauswahl hat je nach Modus bis zu fuenf Eintraege. Ohne Umbruch
      quetscht der fuenfte (Steckfalz beim Kegel mit Doppellage + Falz) die
      uebrigen zusammen und laeuft ueber den Rand der Leiste hinaus. */
@@ -174,6 +192,7 @@
   aside[data-collapsed~="arme"] .grp[data-sect="arme"]{display:none !important;}
   aside[data-collapsed~="node3d"] .grp[data-sect="node3d"]{display:none !important;}
   aside[data-collapsed~="loecher"] .grp[data-sect="loecher"]{display:none !important;}
+  aside[data-collapsed~="streben"] .grp[data-sect="streben"]{display:none !important;}
   aside[data-collapsed~="ausgabe"] .grp[data-sect="ausgabe"]{display:none !important;}
   aside[data-collapsed~="flach"] .grp[data-sect="flach"]{display:none !important;}
   /* Ansicht-Umschalter im Vorschaufenster: kein Kasten, die Knoepfe selbst
@@ -299,19 +318,19 @@
   <div class="grp">
     <label class="steplab"><span class="stepno" id="st1"></span>Was bauen? <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
     <div class="seg" id="modeSeg">
-      <button data-v="single" class="on">Einzelverbinder</button>
+      <button data-v="single" class="on">Einzelknoten</button>
       <button data-v="body">Körper</button>
     </div>
     <div class="help-text" data-i18n="help_mode">
-      Einzelverbinder erzeugt ein einzelnes Bauteil, das du frei einstellst.
+      Einzelknoten erzeugt ein einzelnes Bauteil, das du frei einstellst.
       Körper baut einen kompletten Bausatz für einen geometrischen Körper, also
-      alle Verbinder und Streben auf einmal, mit einem Verbinder pro Ecke.
+      alle Knoten und Streben auf einmal, mit einem Knoten pro Ecke.
     </div>
   </div>
 <div class="grp" id="grpJoin" style="display:none;">
     <label style="margin-top:12px;">Konstruktion <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
     <div class="seg" id="joinSeg">
-      <button data-v="rods" class="on">Verbinder + Streben</button>
+      <button data-v="rods" class="on">Knoten + Streben</button>
       <button data-v="direct">ohne Streben</button>
     </div>
     <div id="kantenWarn" style="display:none;font-size:11px;color:#b8541b;
@@ -322,39 +341,14 @@
       baue mit Streben.
     </div>
     <div class="help-text" data-i18n="help_join">
-      + Streben: die Verbinder sitzen an den Ecken, dazwischen kommen Streben.
-      Ohne Streben: die Verbinder werden ohne Streben aneinandergebaut, ihre Arme bilden
+      + Streben: die Knoten sitzen an den Ecken, dazwischen kommen Streben.
+      Ohne Streben: die Knoten werden ohne Streben aneinandergebaut, ihre Arme bilden
       selbst die Kanten. Die Kantenlänge gibst du vor, die Armlänge folgt daraus.
       Die Arme stoßen entweder mittig aneinander oder überlappen sich.
     </div>
   </div>
-<div class="grp" id="matWrap">
-    <div id="matBlock" style="margin-top:10px;">
-      <label>Materialstärke Verbinder <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nMat" min="0.1" max="12" step="0.1" value="0.5"><span class="unit">mm</span><span class="help-btn" onclick="toggleHelp(this)">?</span></span></label>
-      <input type="range" id="mat" min="0.1" max="12" value="0.5" step="0.1">
-      <label style="margin-top:9px;">Materialstärke Streben <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nMatArm" min="0.1" max="12" step="0.1" value="0.5"><span class="unit">mm</span></span><span class="help-btn" onclick="toggleHelp(this)">?</span></label>
-      <div class="help-text" data-i18n="help_matarm">
-        Dicke der Streben: Sie wird bei Schlitzverbindungen und Doppelschalen benötigt.
-      </div>
-      <input type="range" id="matArm" min="0.1" max="12" value="0.5" step="0.1">
-      <label style="margin-top:9px;">Breite Streben <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nStrebB" min="2" max="60" step="0.5" value="0"><span class="unit">mm</span><span class="help-btn" onclick="toggleHelp(this)">?</span></span></label>
-      <input type="range" id="strebB" min="2" max="60" value="6" step="0.5">
-      <div class="help-text" data-i18n="help_strebbreite">
-        Breite der Streben. Sie folgt automatisch der Armbreite, bis du sie
-        selbst einstellst. Bei Haken steht die Strebe hochkant im Schlitz und
-        ist ein eigenes Bauteil - dort löst sich die Kopplung, und beim Kegel
-        mit Doppellage ist diese Breite zugleich der Abstand zwischen Innen-
-        und Außenschale.
-      </div>
-      <div class="help-text" data-i18n="help_mat">
-        Verbinder und Streben können aus unterschiedlichem Material sein.
-        Verbinder etwa aus Kraftpapier mit 0,5 mm, Streben aus Sperrholz mit
-        3 mm. Die Materialstärke bestimmt die Maße der Steckverbindungen.
-      </div>
-    </div>
-  </div>
   <div class="grp" id="singleTypeWrap">
-    <label class="steplab"><span class="stepno" id="st3a"></span>Welcher Verbinder? <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
+    <label class="steplab"><span class="stepno" id="st3a"></span>Welcher Knotentyp? <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
     <div class="seg" id="typeSeg">
       <button data-v="star" class="on"><svg class="ticon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 12V4M12 12L4.4 9.5M12 12l-4.7 6.5M12 12l4.7 6.5M12 12l7.6-2.5"/></svg>Stern</button>
       <button data-v="cone"><svg class="ticon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 17.4L9.5 8.2M19.5 17.4L14.5 8.2"/><ellipse cx="12" cy="8.2" rx="2.5" ry="1.1"/><path d="M4.5 17.4a7.5 3.1 0 0 0 15 0"/></svg>Kegel</button>
@@ -549,7 +543,7 @@
       <input type="range" id="edge" min="20" max="500" value="120" step="0.1">
     </div>
     <div class="grp">
-      <label class="steplab"><span class="stepno" id="st3b"></span>Welcher Verbinder? <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
+      <label class="steplab"><span class="stepno" id="st3b"></span>Welcher Knotentyp? <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
       <div class="seg" id="bodyAdapterSeg">
         <button data-v="star" class="on"><svg class="ticon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 12V4M12 12L4.4 9.5M12 12l-4.7 6.5M12 12l4.7 6.5M12 12l7.6-2.5"/></svg>Stern</button>
         <button data-v="cone"><svg class="ticon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 17.4L9.5 8.2M19.5 17.4L14.5 8.2"/><ellipse cx="12" cy="8.2" rx="2.5" ry="1.1"/><path d="M4.5 17.4a7.5 3.1 0 0 0 15 0"/></svg>Kegel</button>
@@ -599,12 +593,12 @@
   <div class="grp" id="grpOverlapHoles" style="display:none;">
     <div class="help-text" data-i18n="help_joinholes">
       Wie viele Löcher beim Überlappen genau übereinanderliegen sollen. Der
-      Lochabstand wird automatisch so gewählt, dass die Raster beider Verbinder
+      Lochabstand wird automatisch so gewählt, dass die Raster beider Knoten
       zusammenfallen. So kann man durchstecken, nieten und verkleben.
     </div>
   </div>
 </div>
-  <div class="sect" data-sect="kegel"><span class="stepno"></span><span class="sect-txt">Form</span><span class="chev">▾</span></div>
+  <div class="sect" data-sect="kegel"><span class="stepno"></span><span class="sect-txt">Knotenform</span><span class="chev">▾</span></div>
     <div id="bodyConeControls" style="display:none;">
       <div class="grp">
         <label>Armlänge <span><input class="numfield" type="number" id="nBConeR" min="15" max="300" step="0.1" value="45"><span class="unit">mm</span></span></label>
@@ -638,7 +632,7 @@
 </div>
   </div>
 
-  <div class="sect" data-sect="kegel"><span class="stepno"></span><span class="sect-txt">Form</span><span class="chev">▾</span></div>
+  <div class="sect" data-sect="kegel"><span class="stepno"></span><span class="sect-txt">Knotenform</span><span class="chev">▾</span></div>
   <div id="coneControls" style="display:none;">
     <div class="grp">
       <label>Eckentyp</label>
@@ -706,11 +700,11 @@
     </div>
 </div>
 
-  <div class="sect" data-sect="arme"><span class="stepno"></span><span class="sect-txt">Form</span><span class="chev">▾</span></div>
+  <div class="sect" data-sect="arme"><span class="stepno"></span><span class="sect-txt">Knotenform</span><span class="chev">▾</span></div>
   <div id="starControls">
   <div class="grp" id="grpArms">
-    <label>Anzahl Arme <input class="numfield" type="number" id="nArms" min="1" max="24" step="1" value="4"></label>
-    <input type="range" id="arms" min="1" max="12" value="4" step="1">
+    <label>Anzahl Arme <input class="numfield" type="number" id="nArms" min="1" max="24" step="1" value="3"></label>
+    <input type="range" id="arms" min="1" max="12" value="3" step="1">
   </div>
   <div class="grp" id="grpVerteilung">
     <label>Verteilung Arme</label>
@@ -732,11 +726,11 @@
   </div>
   <div class="grp" id="customLenWrap" style="display:none;">
     <label>Armlängen (mm, kommagetrennt) <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
-    <input type="text" id="customLens" value="26,26,26,26">
+    <input type="text" id="customLens" value="26,26,26">
     <div class="help-text" data-i18n="help_customlen">
       Eine Länge je Arm, in derselben Reihenfolge wie die Winkel. Fehlen
       Werte, gilt für die übrigen Arme die eingestellte Armlänge. So kannst du
-      einen Verbinder bauen, der an unterschiedlich langen Kanten sitzt.
+      einen Knoten bauen, der an unterschiedlich langen Kanten sitzt.
     </div>
   </div>
   <div class="grp" id="grpArmLen">
@@ -783,7 +777,7 @@
       <label>Strebenneigung <span><input class="numfield" type="number" id="nTilt" min="0" max="60" step="0.1" value="20"><span class="unit">°</span></span></label>
       <input type="range" id="tilt" min="0" max="60" value="20" step="0.1">
       <div class="help-text" data-i18n="help_double">
-        Doppel-Adapter: Die Strebe wird zwischen eine innere und eine äußere Platte
+        Doppelknoten: Die Strebe wird zwischen eine innere und eine äußere Platte
         geklemmt. Beide Platten haben überall denselben Abstand zueinander: bei
         Hakenverbindung die Strebenbreite (die Strebe steht hochkant), sonst die
         Materialstärke Streben. Weil die Streben schräg stehen (Strebenneigung),
@@ -794,7 +788,7 @@
     </div>
   </div>
   </div>
-  <div class="sect" data-sect="node3d"><span class="stepno"></span><span class="sect-txt">Form</span><span class="chev">▾</span></div>
+  <div class="sect" data-sect="node3d"><span class="stepno"></span><span class="sect-txt">Knotenform</span><span class="chev">▾</span></div>
   <div id="ball3dControls" style="display:none;">
   <div class="grp">
     <label>Anzahl Arme <input class="numfield" type="number" id="nBallArms" min="1" max="24" step="1" value="4"></label>
@@ -911,15 +905,35 @@
     </div>
   </div>
   </div>
-  <div class="sect" data-sect="loecher"><span class="stepno"></span><span class="sect-txt">Verbindungsart</span><span class="chev">▾</span></div>
+  <div class="sect" data-sect="streben"><span class="stepno"></span><span class="sect-txt">Streben</span><span class="chev">▾</span></div>
+  <div class="grp" id="matWrap">
+    <div class="grp" id="grpStrebB">
+      <label>Breite Streben <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nStrebB" min="2" max="60" step="0.5" value="0"><span class="unit">mm</span><span class="help-btn" onclick="toggleHelp(this)">?</span></span></label>
+      <input type="range" id="strebB" min="2" max="60" value="6" step="0.5">
+      <div class="help-text" data-i18n="help_strebbreite">
+        Breite der Streben. Sie folgt automatisch der Armbreite, bis du sie
+        selbst einstellst. Bei Haken steht die Strebe hochkant im Schlitz und
+        ist ein eigenes Bauteil - dort löst sich die Kopplung, und beim Kegel
+        mit Doppellage ist diese Breite zugleich der Abstand zwischen Innen-
+        und Außenschale.
+      </div>
+    </div>
+  </div>
+  <div class="grp" id="grpStab">
+    <label>Strebenlänge <span><input class="numfield" type="number" id="nStab" min="20" max="2000" step="0.1" value="200"><span class="unit">mm</span></span></label>
+    <input type="range" id="stab" min="20" max="600" value="200" step="0.1">
+  </div>
+  <div class="sect" data-sect="loecher"><span class="stepno"></span><span class="sect-txt">Verbindung</span><span class="chev">▾</span></div>
   <div class="grp" id="grpLock">
     <label>Art wählen (mehrere möglich) <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
     <div class="seg multi" id="lockSeg">
-      <button data-v="loecher" class="on">Löcher</button>
-      <button data-v="naht">Kegelnaht</button>
-      <button data-v="zinken">Zapfen</button>
-      <button data-v="haken">Haken</button>
-      <button data-v="steck">Steckfalz</button>
+      <!-- Kleine Zeichen je Verbindung: Streifen mit Loechern, Naht, Pfeilzapfen,
+           Haken mit Nase, Schlitz vom Rand. -->
+      <button data-v="loecher" class="on"><svg class="licon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="10" rx="2"/><circle cx="8.5" cy="12" r="2"/><circle cx="15.5" cy="12" r="2"/></svg>Löcher</button>
+      <button data-v="naht"><svg class="licon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l3-4 3 8 3-8 3 8 3-8 3 4"/></svg>Kegelnaht</button>
+      <button data-v="zinken"><svg class="licon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h9V5.5l8 6.5-8 6.5V15H3z"/></svg>Zapfen</button>
+      <button data-v="haken"><svg class="licon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h17v10h-5.5v-5H3z"/></svg>Haken</button>
+      <button data-v="steck"><svg class="licon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="1.5"/><path d="M12 6v7"/></svg>Steckfalz</button>
     </div>
     
     
@@ -944,9 +958,6 @@
         der beide Schlitzarten braucht. Das Strebenblatt zeigt dann zwei
         Strebentypen: Haken-Streben und Zapfen-Streben.
       </div>
-  </div>
-<div class="grp" id="lochWrap">
-    <div class="subsect" data-sub="loch">Positionen auf dem Arm<span class="chev">▾</span></div>
     <div id="zapfenWarn" style="display:none;font-size:11px;color:#b8541b;
       background:rgba(184,84,27,0.08);border-radius:6px;padding:7px 9px;margin-bottom:8px;">
       Achtung: Ein Zapfenschlitz überschneidet sich mit einer Bohrung. Die
@@ -955,6 +966,26 @@
     </div>
     <div id="strebeWarn" style="display:none;font-size:11px;color:#b8541b;
       background:rgba(184,84,27,0.08);border-radius:6px;padding:7px 9px;margin-bottom:8px;"></div>
+  </div>
+  <div class="grp" id="grpMatKnoten">
+      <label>Materialstärke Knoten <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nMat" min="0.1" max="12" step="0.1" value="0.5"><span class="unit">mm</span><span class="help-btn" onclick="toggleHelp(this)">?</span></span></label>
+      <input type="range" id="mat" min="0.1" max="12" value="0.5" step="0.1">
+      <div class="help-text" data-i18n="help_mat">
+        Knoten und Streben können aus unterschiedlichem Material sein.
+        Knoten etwa aus Kraftpapier mit 0,5 mm, Streben aus Sperrholz mit
+        3 mm. Die Materialstärke bestimmt die Maße der Steckverbindungen.
+      </div>
+  </div>
+  <div class="grp" id="grpMatArm">
+    <label>Materialstärke Streben <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nMatArm" min="0.1" max="12" step="0.1" value="0.5"><span class="unit">mm</span></span><span class="help-btn" onclick="toggleHelp(this)">?</span></label>
+    <input type="range" id="matArm" min="0.1" max="12" value="0.5" step="0.1">
+    <div class="help-text" data-i18n="help_matarm">
+      Dicke der Streben: Sie wird bei Schlitzverbindungen und Doppelschalen benötigt.
+    </div>
+  </div>
+<div class="grp" id="lochWrap">
+    <div class="subsect" data-sub="loch">Locheinstellungen<span class="chev">▾</span></div>
+    <div class="subbox" id="lochBox">
     <div id="lochHinweis" style="display:none;font-size:11px;color:#6b6f63;
       background:rgba(0,0,0,0.03);border-radius:6px;padding:7px 9px;margin-bottom:8px;">
       Bei überlappenden Armen liegen zwei Arme übereinander. Die Löcher müssen
@@ -962,7 +993,6 @@
       automatischen Verteilung. Die Armlänge ergibt sich aus Kantenlänge,
       Überlappung und Lochlage und ist deshalb nicht frei einstellbar.
     </div>
-    <div class="subbox" id="lochBox">
   <div id="holeControls">
   <div class="grp" id="grpHoles">
     <label>Löcher pro Arm <input class="numfield" type="number" id="nHoles" min="0" max="10" step="1" value="2"></label>
@@ -980,11 +1010,6 @@
     </div>
   </div>
     </div>
-  </div>
-  <div class="grp" id="grpStab">
-    <label>Strebenlänge <span><input class="numfield" type="number" id="nStab" min="20" max="2000" step="0.1" value="200"><span class="unit">mm</span></span></label>
-    <input type="range" id="stab" min="20" max="600" value="200" step="0.1">
-  </div>
   <div id="holeSpacingWrap" style="display:none;">
     <div class="grp" id="grpBrickPreset">
       <label>Bausystem-Vorlage <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
@@ -1020,16 +1045,6 @@
     <label>Mittelloch Ø <span><input class="numfield" type="number" id="nCenter" min="0" max="12" step="0.1" value="0"><span class="unit">mm</span></span></label>
     <input type="range" id="center" min="0" max="12" value="0" step="0.1">
   </div>
-</div>
-  <div class="grp" id="nahtWrap">
-    <div class="subsect closed" data-sub="naht">Kegelnaht-Einstellungen<span class="chev">▾</span></div>
-    <div class="subbox zu" id="nahtBox">
-      <label>Anzahl Nahtzähne <input class="numfield" type="number" id="nNahtN" min="1" max="6" step="1" value="2"></label>
-      <input type="range" id="nahtN" min="1" max="6" value="2" step="1">
-      <label style="margin-top:9px;">Zahnlänge <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nNahtL" min="0.5" max="20" step="0.1" value="0"><span class="unit">mm</span></span></label>
-      <input type="range" id="nahtL" min="0.5" max="20" value="1" step="0.1">
-      <label style="margin-top:9px;">Widerhaken-Winkel <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nNahtW" min="0" max="35" step="1" value="0"><span class="unit">°</span></span></label>
-      <input type="range" id="nahtW" min="0" max="35" value="0" step="1">
     </div>
   </div>
   <div class="grp" id="zapfenWrap">
@@ -1043,8 +1058,8 @@
       </div>
       <label style="margin-top:9px;">Zapfenlänge <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nZapfenL" min="2" max="30" step="0.5" value="7"><span class="unit">mm</span></span></label>
       <input type="range" id="zapfenL" min="2" max="30" value="7" step="0.5">
-      <label style="margin-top:9px;">Widerhaken-Winkel <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nZapfenW" min="0" max="35" step="1" value="14"><span class="unit">°</span></span></label>
-      <input type="range" id="zapfenW" min="0" max="35" value="14" step="1">
+      <label style="margin-top:9px;">Widerhaken-Winkel <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nZapfenW" min="0" max="35" step="1" value="0"><span class="unit">°</span></span></label>
+      <input type="range" id="zapfenW" min="0" max="35" value="0" step="1">
       <label style="margin-top:9px;">Zapfenbreite <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nZapfenB" min="1" max="40" step="0.5" value="4"><span class="unit">mm</span></span></label>
       <input type="range" id="zapfenB" min="1" max="40" value="4" step="0.5">
       <label style="margin-top:9px;">Abstand Zapfen–Schlitz <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nZapfenA" min="2" max="60" step="0.5" value="8"><span class="unit">mm</span></span></label>
@@ -1094,6 +1109,28 @@
         vor, unabhängig von den Löchern.
       </div>
     
+    </div>
+  </div>
+  <div class="grp" id="grpMittelschlitz">
+    <label>Mittelschlitz <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nCslot" min="0" max="40" step="0.5" value="0"><span class="unit">mm</span><span class="help-btn" onclick="toggleHelp(this)">?</span></span></label>
+    <input type="range" id="cslot" min="0" max="40" value="0" step="0.5">
+    <div class="help-text" data-i18n="help_cslot">
+      Zeichnet in der Mitte des Sterns für jeden Arm einen Schlitz in
+      Armrichtung. Zusammen ergeben sie einen kleinen Stern, in den sich
+      etwas einstecken lässt. Der Wert ist die Länge ab der Mitte, 0 schaltet
+      ihn aus. Die Schlitzbreite entspricht den übrigen Schlitzen
+      (Materialstärke Streben, ohne Streben die der Knoten).
+    </div>
+  </div>
+  <div class="grp" id="nahtWrap">
+    <div class="subsect closed" data-sub="naht">Kegelnaht-Einstellungen<span class="chev">▾</span></div>
+    <div class="subbox zu" id="nahtBox">
+      <label>Anzahl Nahtzähne <input class="numfield" type="number" id="nNahtN" min="1" max="6" step="1" value="2"></label>
+      <input type="range" id="nahtN" min="1" max="6" value="2" step="1">
+      <label style="margin-top:9px;">Zahnlänge <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nNahtL" min="0.5" max="20" step="0.1" value="0"><span class="unit">mm</span></span></label>
+      <input type="range" id="nahtL" min="0.5" max="20" value="1" step="0.1">
+      <label style="margin-top:9px;">Widerhaken-Winkel <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nNahtW" min="0" max="35" step="1" value="0"><span class="unit">°</span></span></label>
+      <input type="range" id="nahtW" min="0" max="35" value="0" step="1">
     </div>
   </div>
       <div id="bConeFalzBlock" style="display:none;">
@@ -1174,6 +1211,20 @@
       Abgewählte Ebenen werden beim Export weggelassen. Nützlich, wenn der
       Laser nur die Schnittlinien bekommen soll oder Beschriftungen stören.
       Die Vorschau bleibt vollständig.
+    </div>
+  </div>
+  <div class="grp" id="grpQr" style="border-top:1px solid var(--grid);padding-top:14px;">
+    <label>QR-Code <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
+    <div class="seg" id="qrSeg">
+      <button data-v="off" class="on">aus</button>
+      <button data-v="on">an</button>
+    </div>
+    <div class="help-text" data-i18n="help_qr">
+      Druckt einen QR-Code mit einem Link zur aktuellen Einstellung auf den
+      Bauplan und auf die Blätter im Autolayout. Wer ihn scannt, öffnet KNOTI
+      mit genau diesen Werten. Er liegt in der Ebene Zusatzinfo (türkis) und
+      wird nur gezeichnet, wo er keine Teile überdeckt. Standardmäßig aus, weil
+      er das Erzeugen der Pläne etwas verlangsamt.
     </div>
   </div>
   <div class="grp" id="grpKerf" style="border-top:1px solid var(--grid);padding-top:14px;">
@@ -1284,7 +1335,7 @@
       <span class="viewbar-label" data-i18n-label>Ansicht</span>
       <div class="seg" id="viewSeg">
         <button data-v="body3d">Körper</button>
-        <button data-v="sheet">Verbinder</button>
+        <button data-v="sheet">Knoten</button>
         <button data-v="both" class="on">beide</button>
       </div>
     </div>
@@ -1307,7 +1358,7 @@
       <button id="panReset" title="Ansicht zentrieren">◎</button>
       <span class="zoomgrp" id="zoomBodyGrp"><span class="zoomlab">Zoom Körper</span>
         <input type="range" id="zoomBody" min="0.5" max="8" value="4" step="0.1"></span>
-      <span class="zoomgrp" id="zoomSheetGrp"><span class="zoomlab">Zoom Verbinder</span>
+      <span class="zoomgrp" id="zoomSheetGrp"><span class="zoomlab">Zoom Knoten</span>
         <input type="range" id="zoom" min="0.5" max="8" value="4" step="0.1"></span>
       <button id="zoomFit" title="Einpassen">⤢</button>
     </div>
@@ -1315,7 +1366,7 @@
   <div class="bar">
     <span class="info" id="info"></span>
     <span style="font-size:12px;color:var(--muted);margin-right:6px;">Export:</span>
-    <button class="ghost" id="dlAdapter">Verbinder (SVG)</button>
+    <button class="ghost" id="dlAdapter">Knoten (SVG)</button>
     <button class="ghost" id="dlCut">Schnittliste (TXT)</button>
     <button class="ghost" id="dlStaebe">Streben (SVG)</button>
     <button class="ghost" id="dlBauplan" style="display:none;">Bauplan (PDF)</button>
@@ -1395,6 +1446,10 @@
 
 window.earcut = (window.earcut && window.earcut.default) ? window.earcut.default : (typeof earcut!=="undefined"?earcut:null);
 </script>
+<!-- QR-Code-Generator, Copyright (c) 2009 Kazuhiko Arase, MIT-Lizenz - https://github.com/kazuhikoarase/qrcode-generator (offline, keine externen Aufrufe) -->
+<script>
+var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],f={},c=function(t,r){o=function(t){for(var r=new Array(t),e=0;e<t;e+=1){r[e]=new Array(t);for(var n=0;n<t;n+=1)r[e][n]=null}return r}(i=4*e+17),l(0,0),l(i-7,0),l(0,i-7),s(),h(),d(t,r),e>=7&&v(t),null==a&&(a=p(e,n,u)),w(a,r)},l=function(t,r){for(var e=-1;e<=7;e+=1)if(!(t+e<=-1||i<=t+e))for(var n=-1;n<=7;n+=1)r+n<=-1||i<=r+n||(o[t+e][r+n]=0<=e&&e<=6&&(0==n||6==n)||0<=n&&n<=6&&(0==e||6==e)||2<=e&&e<=4&&2<=n&&n<=4)},h=function(){for(var t=8;t<i-8;t+=1)null==o[t][6]&&(o[t][6]=t%2==0);for(var r=8;r<i-8;r+=1)null==o[6][r]&&(o[6][r]=r%2==0)},s=function(){for(var t=B.getPatternPosition(e),r=0;r<t.length;r+=1)for(var n=0;n<t.length;n+=1){var i=t[r],a=t[n];if(null==o[i][a])for(var u=-2;u<=2;u+=1)for(var f=-2;f<=2;f+=1)o[i+u][a+f]=-2==u||2==u||-2==f||2==f||0==u&&0==f}},v=function(t){for(var r=B.getBCHTypeNumber(e),n=0;n<18;n+=1){var a=!t&&1==(r>>n&1);o[Math.floor(n/3)][n%3+i-8-3]=a}for(n=0;n<18;n+=1){a=!t&&1==(r>>n&1);o[n%3+i-8-3][Math.floor(n/3)]=a}},d=function(t,r){for(var e=n<<3|r,a=B.getBCHTypeInfo(e),u=0;u<15;u+=1){var f=!t&&1==(a>>u&1);u<6?o[u][8]=f:u<8?o[u+1][8]=f:o[i-15+u][8]=f}for(u=0;u<15;u+=1){f=!t&&1==(a>>u&1);u<8?o[8][i-u-1]=f:u<9?o[8][15-u-1+1]=f:o[8][15-u-1]=f}o[i-8][8]=!t},w=function(t,r){for(var e=-1,n=i-1,a=7,u=0,f=B.getMaskFunction(r),c=i-1;c>0;c-=2)for(6==c&&(c-=1);;){for(var g=0;g<2;g+=1)if(null==o[n][c-g]){var l=!1;u<t.length&&(l=1==(t[u]>>>a&1)),f(n,c-g)&&(l=!l),o[n][c-g]=l,-1==(a-=1)&&(u+=1,a=7)}if((n+=e)<0||i<=n){n-=e,e=-e;break}}},p=function(t,r,e){for(var n=A.getRSBlocks(t,r),o=b(),i=0;i<e.length;i+=1){var a=e[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var u=0;for(i=0;i<n.length;i+=1)u+=n[i].dataCount;if(o.getLengthInBits()>8*u)throw"code length overflow. ("+o.getLengthInBits()+">"+8*u+")";for(o.getLengthInBits()+4<=8*u&&o.put(0,4);o.getLengthInBits()%8!=0;)o.putBit(!1);for(;!(o.getLengthInBits()>=8*u||(o.put(236,8),o.getLengthInBits()>=8*u));)o.put(17,8);return function(t,r){for(var e=0,n=0,o=0,i=new Array(r.length),a=new Array(r.length),u=0;u<r.length;u+=1){var f=r[u].dataCount,c=r[u].totalCount-f;n=Math.max(n,f),o=Math.max(o,c),i[u]=new Array(f);for(var g=0;g<i[u].length;g+=1)i[u][g]=255&t.getBuffer()[g+e];e+=f;var l=B.getErrorCorrectPolynomial(c),h=k(i[u],l.getLength()-1).mod(l);for(a[u]=new Array(l.getLength()-1),g=0;g<a[u].length;g+=1){var s=g+h.getLength()-a[u].length;a[u][g]=s>=0?h.getAt(s):0}}var v=0;for(g=0;g<r.length;g+=1)v+=r[g].totalCount;var d=new Array(v),w=0;for(g=0;g<n;g+=1)for(u=0;u<r.length;u+=1)g<i[u].length&&(d[w]=i[u][g],w+=1);for(g=0;g<o;g+=1)for(u=0;u<r.length;u+=1)g<a[u].length&&(d[w]=a[u][g],w+=1);return d}(o,n)};f.addData=function(t,r){var e=null;switch(r=r||"Byte"){case"Numeric":e=M(t);break;case"Alphanumeric":e=x(t);break;case"Byte":e=m(t);break;case"Kanji":e=L(t);break;default:throw"mode:"+r}u.push(e),a=null},f.isDark=function(t,r){if(t<0||i<=t||r<0||i<=r)throw t+","+r;return o[t][r]},f.getModuleCount=function(){return i},f.make=function(){if(e<1){for(var t=1;t<40;t++){for(var r=A.getRSBlocks(t,n),o=b(),i=0;i<u.length;i++){var a=u[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var g=0;for(i=0;i<r.length;i++)g+=r[i].dataCount;if(o.getLengthInBits()<=8*g)break}e=t}c(!1,function(){for(var t=0,r=0,e=0;e<8;e+=1){c(!0,e);var n=B.getLostPoint(f);(0==e||t>n)&&(t=n,r=e)}return r}())},f.createTableTag=function(t,r){t=t||2;var e="";e+='<table style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: "+(r=void 0===r?4*t:r)+"px;",e+='">',e+="<tbody>";for(var n=0;n<f.getModuleCount();n+=1){e+="<tr>";for(var o=0;o<f.getModuleCount();o+=1)e+='<td style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: 0px;",e+=" width: "+t+"px;",e+=" height: "+t+"px;",e+=" background-color: ",e+=f.isDark(n,o)?"#000000":"#ffffff",e+=";",e+='"/>';e+="</tr>"}return e+="</tbody>",e+="</table>"},f.createSvgTag=function(t,r,e,n){var o={};"object"==typeof arguments[0]&&(t=(o=arguments[0]).cellSize,r=o.margin,e=o.alt,n=o.title),t=t||2,r=void 0===r?4*t:r,(e="string"==typeof e?{text:e}:e||{}).text=e.text||null,e.id=e.text?e.id||"qrcode-description":null,(n="string"==typeof n?{text:n}:n||{}).text=n.text||null,n.id=n.text?n.id||"qrcode-title":null;var i,a,u,c,g=f.getModuleCount()*t+2*r,l="";for(c="l"+t+",0 0,"+t+" -"+t+",0 0,-"+t+"z ",l+='<svg version="1.1" xmlns="http://www.w3.org/2000/svg"',l+=o.scalable?"":' width="'+g+'px" height="'+g+'px"',l+=' viewBox="0 0 '+g+" "+g+'" ',l+=' preserveAspectRatio="xMinYMin meet"',l+=n.text||e.text?' role="img" aria-labelledby="'+y([n.id,e.id].join(" ").trim())+'"':"",l+=">",l+=n.text?'<title id="'+y(n.id)+'">'+y(n.text)+"</title>":"",l+=e.text?'<description id="'+y(e.id)+'">'+y(e.text)+"</description>":"",l+='<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>',l+='<path d="',a=0;a<f.getModuleCount();a+=1)for(u=a*t+r,i=0;i<f.getModuleCount();i+=1)f.isDark(a,i)&&(l+="M"+(i*t+r)+","+u+c);return l+='" stroke="transparent" fill="black"/>',l+="</svg>"},f.createDataURL=function(t,r){t=t||2,r=void 0===r?4*t:r;var e=f.getModuleCount()*t+2*r,n=r,o=e-r;return I(e,e,function(r,e){if(n<=r&&r<o&&n<=e&&e<o){var i=Math.floor((r-n)/t),a=Math.floor((e-n)/t);return f.isDark(a,i)?0:1}return 1})},f.createImgTag=function(t,r,e){t=t||2,r=void 0===r?4*t:r;var n=f.getModuleCount()*t+2*r,o="";return o+="<img",o+=' src="',o+=f.createDataURL(t,r),o+='"',o+=' width="',o+=n,o+='"',o+=' height="',o+=n,o+='"',e&&(o+=' alt="',o+=y(e),o+='"'),o+="/>"};var y=function(t){for(var r="",e=0;e<t.length;e+=1){var n=t.charAt(e);switch(n){case"<":r+="&lt;";break;case">":r+="&gt;";break;case"&":r+="&amp;";break;case'"':r+="&quot;";break;default:r+=n}}return r};return f.createASCII=function(t,r){if((t=t||1)<2)return function(t){t=void 0===t?2:t;var r,e,n,o,i,a=1*f.getModuleCount()+2*t,u=t,c=a-t,g={"██":"█","█ ":"▀"," █":"▄","  ":" "},l={"██":"▀","█ ":"▀"," █":" ","  ":" "},h="";for(r=0;r<a;r+=2){for(n=Math.floor((r-u)/1),o=Math.floor((r+1-u)/1),e=0;e<a;e+=1)i="█",u<=e&&e<c&&u<=r&&r<c&&f.isDark(n,Math.floor((e-u)/1))&&(i=" "),u<=e&&e<c&&u<=r+1&&r+1<c&&f.isDark(o,Math.floor((e-u)/1))?i+=" ":i+="█",h+=t<1&&r+1>=c?l[i]:g[i];h+="\n"}return a%2&&t>0?h.substring(0,h.length-a-1)+Array(a+1).join("▀"):h.substring(0,h.length-1)}(r);t-=1,r=void 0===r?2*t:r;var e,n,o,i,a=f.getModuleCount()*t+2*r,u=r,c=a-r,g=Array(t+1).join("██"),l=Array(t+1).join("  "),h="",s="";for(e=0;e<a;e+=1){for(o=Math.floor((e-u)/t),s="",n=0;n<a;n+=1)i=1,u<=n&&n<c&&u<=e&&e<c&&f.isDark(o,Math.floor((n-u)/t))&&(i=0),s+=i?g:l;for(o=0;o<t;o+=1)h+=s+"\n"}return h.substring(0,h.length-1)},f.renderTo2dContext=function(t,r){r=r||2;for(var e=f.getModuleCount(),n=0;n<e;n++)for(var o=0;o<e;o++)t.fillStyle=f.isDark(n,o)?"black":"white",t.fillRect(o*r,n*r,r,r)},f};t.stringToBytes=(t.stringToBytesFuncs={default:function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);r.push(255&n)}return r}}).default,t.createStringToBytes=function(t,r){var e=function(){for(var e=S(t),n=function(){var t=e.read();if(-1==t)throw"eof";return t},o=0,i={};;){var a=e.read();if(-1==a)break;var u=n(),f=n()<<8|n();i[String.fromCharCode(a<<8|u)]=f,o+=1}if(o!=r)throw o+" != "+r;return i}(),n="?".charCodeAt(0);return function(t){for(var r=[],o=0;o<t.length;o+=1){var i=t.charCodeAt(o);if(i<128)r.push(i);else{var a=e[t.charAt(o)];"number"==typeof a?(255&a)==a?r.push(a):(r.push(a>>>8),r.push(255&a)):r.push(n)}}return r}};var r,e,n,o,i,a=1,u=2,f=4,c=8,g={L:1,M:0,Q:3,H:2},l=0,h=1,s=2,v=3,d=4,w=5,p=6,y=7,B=(r=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],e=1335,n=7973,i=function(t){for(var r=0;0!=t;)r+=1,t>>>=1;return r},(o={}).getBCHTypeInfo=function(t){for(var r=t<<10;i(r)-i(e)>=0;)r^=e<<i(r)-i(e);return 21522^(t<<10|r)},o.getBCHTypeNumber=function(t){for(var r=t<<12;i(r)-i(n)>=0;)r^=n<<i(r)-i(n);return t<<12|r},o.getPatternPosition=function(t){return r[t-1]},o.getMaskFunction=function(t){switch(t){case l:return function(t,r){return(t+r)%2==0};case h:return function(t,r){return t%2==0};case s:return function(t,r){return r%3==0};case v:return function(t,r){return(t+r)%3==0};case d:return function(t,r){return(Math.floor(t/2)+Math.floor(r/3))%2==0};case w:return function(t,r){return t*r%2+t*r%3==0};case p:return function(t,r){return(t*r%2+t*r%3)%2==0};case y:return function(t,r){return(t*r%3+(t+r)%2)%2==0};default:throw"bad maskPattern:"+t}},o.getErrorCorrectPolynomial=function(t){for(var r=k([1],0),e=0;e<t;e+=1)r=r.multiply(k([1,C.gexp(e)],0));return r},o.getLengthInBits=function(t,r){if(1<=r&&r<10)switch(t){case a:return 10;case u:return 9;case f:case c:return 8;default:throw"mode:"+t}else if(r<27)switch(t){case a:return 12;case u:return 11;case f:return 16;case c:return 10;default:throw"mode:"+t}else{if(!(r<41))throw"type:"+r;switch(t){case a:return 14;case u:return 13;case f:return 16;case c:return 12;default:throw"mode:"+t}}},o.getLostPoint=function(t){for(var r=t.getModuleCount(),e=0,n=0;n<r;n+=1)for(var o=0;o<r;o+=1){for(var i=0,a=t.isDark(n,o),u=-1;u<=1;u+=1)if(!(n+u<0||r<=n+u))for(var f=-1;f<=1;f+=1)o+f<0||r<=o+f||0==u&&0==f||a==t.isDark(n+u,o+f)&&(i+=1);i>5&&(e+=3+i-5)}for(n=0;n<r-1;n+=1)for(o=0;o<r-1;o+=1){var c=0;t.isDark(n,o)&&(c+=1),t.isDark(n+1,o)&&(c+=1),t.isDark(n,o+1)&&(c+=1),t.isDark(n+1,o+1)&&(c+=1),0!=c&&4!=c||(e+=3)}for(n=0;n<r;n+=1)for(o=0;o<r-6;o+=1)t.isDark(n,o)&&!t.isDark(n,o+1)&&t.isDark(n,o+2)&&t.isDark(n,o+3)&&t.isDark(n,o+4)&&!t.isDark(n,o+5)&&t.isDark(n,o+6)&&(e+=40);for(o=0;o<r;o+=1)for(n=0;n<r-6;n+=1)t.isDark(n,o)&&!t.isDark(n+1,o)&&t.isDark(n+2,o)&&t.isDark(n+3,o)&&t.isDark(n+4,o)&&!t.isDark(n+5,o)&&t.isDark(n+6,o)&&(e+=40);var g=0;for(o=0;o<r;o+=1)for(n=0;n<r;n+=1)t.isDark(n,o)&&(g+=1);return e+=Math.abs(100*g/r/r-50)/5*10},o),C=function(){for(var t=new Array(256),r=new Array(256),e=0;e<8;e+=1)t[e]=1<<e;for(e=8;e<256;e+=1)t[e]=t[e-4]^t[e-5]^t[e-6]^t[e-8];for(e=0;e<255;e+=1)r[t[e]]=e;var n={glog:function(t){if(t<1)throw"glog("+t+")";return r[t]},gexp:function(r){for(;r<0;)r+=255;for(;r>=256;)r-=255;return t[r]}};return n}();function k(t,r){if(void 0===t.length)throw t.length+"/"+r;var e=function(){for(var e=0;e<t.length&&0==t[e];)e+=1;for(var n=new Array(t.length-e+r),o=0;o<t.length-e;o+=1)n[o]=t[o+e];return n}(),n={getAt:function(t){return e[t]},getLength:function(){return e.length},multiply:function(t){for(var r=new Array(n.getLength()+t.getLength()-1),e=0;e<n.getLength();e+=1)for(var o=0;o<t.getLength();o+=1)r[e+o]^=C.gexp(C.glog(n.getAt(e))+C.glog(t.getAt(o)));return k(r,0)},mod:function(t){if(n.getLength()-t.getLength()<0)return n;for(var r=C.glog(n.getAt(0))-C.glog(t.getAt(0)),e=new Array(n.getLength()),o=0;o<n.getLength();o+=1)e[o]=n.getAt(o);for(o=0;o<t.getLength();o+=1)e[o]^=C.gexp(C.glog(t.getAt(o))+r);return k(e,0).mod(t)}};return n}var A=function(){var t=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],r=function(t,r){var e={};return e.totalCount=t,e.dataCount=r,e},e={};return e.getRSBlocks=function(e,n){var o=function(r,e){switch(e){case g.L:return t[4*(r-1)+0];case g.M:return t[4*(r-1)+1];case g.Q:return t[4*(r-1)+2];case g.H:return t[4*(r-1)+3];default:return}}(e,n);if(void 0===o)throw"bad rs block @ typeNumber:"+e+"/errorCorrectionLevel:"+n;for(var i=o.length/3,a=[],u=0;u<i;u+=1)for(var f=o[3*u+0],c=o[3*u+1],l=o[3*u+2],h=0;h<f;h+=1)a.push(r(c,l));return a},e}(),b=function(){var t=[],r=0,e={getBuffer:function(){return t},getAt:function(r){var e=Math.floor(r/8);return 1==(t[e]>>>7-r%8&1)},put:function(t,r){for(var n=0;n<r;n+=1)e.putBit(1==(t>>>r-n-1&1))},getLengthInBits:function(){return r},putBit:function(e){var n=Math.floor(r/8);t.length<=n&&t.push(0),e&&(t[n]|=128>>>r%8),r+=1}};return e},M=function(t){var r=a,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+2<r.length;)t.put(o(r.substring(n,n+3)),10),n+=3;n<r.length&&(r.length-n==1?t.put(o(r.substring(n,n+1)),4):r.length-n==2&&t.put(o(r.substring(n,n+2)),7))}},o=function(t){for(var r=0,e=0;e<t.length;e+=1)r=10*r+i(t.charAt(e));return r},i=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);throw"illegal char :"+t};return n},x=function(t){var r=u,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+1<r.length;)t.put(45*o(r.charAt(n))+o(r.charAt(n+1)),11),n+=2;n<r.length&&t.put(o(r.charAt(n)),6)}},o=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);if("A"<=t&&t<="Z")return t.charCodeAt(0)-"A".charCodeAt(0)+10;switch(t){case" ":return 36;case"$":return 37;case"%":return 38;case"*":return 39;case"+":return 40;case"-":return 41;case".":return 42;case"/":return 43;case":":return 44;default:throw"illegal char :"+t}};return n},m=function(r){var e=f,n=t.stringToBytes(r),o={getMode:function(){return e},getLength:function(t){return n.length},write:function(t){for(var r=0;r<n.length;r+=1)t.put(n[r],8)}};return o},L=function(r){var e=c,n=t.stringToBytesFuncs.SJIS;if(!n)throw"sjis not supported.";!function(){var t=n("友");if(2!=t.length||38726!=(t[0]<<8|t[1]))throw"sjis not supported."}();var o=n(r),i={getMode:function(){return e},getLength:function(t){return~~(o.length/2)},write:function(t){for(var r=o,e=0;e+1<r.length;){var n=(255&r[e])<<8|255&r[e+1];if(33088<=n&&n<=40956)n-=33088;else{if(!(57408<=n&&n<=60351))throw"illegal char at "+(e+1)+"/"+n;n-=49472}n=192*(n>>>8&255)+(255&n),t.put(n,13),e+=2}if(e<r.length)throw"illegal char at "+(e+1)}};return i},D=function(){var t=[],r={writeByte:function(r){t.push(255&r)},writeShort:function(t){r.writeByte(t),r.writeByte(t>>>8)},writeBytes:function(t,e,n){e=e||0,n=n||t.length;for(var o=0;o<n;o+=1)r.writeByte(t[o+e])},writeString:function(t){for(var e=0;e<t.length;e+=1)r.writeByte(t.charCodeAt(e))},toByteArray:function(){return t},toString:function(){var r="";r+="[";for(var e=0;e<t.length;e+=1)e>0&&(r+=","),r+=t[e];return r+="]"}};return r},S=function(t){var r=t,e=0,n=0,o=0,i={read:function(){for(;o<8;){if(e>=r.length){if(0==o)return-1;throw"unexpected end of file./"+o}var t=r.charAt(e);if(e+=1,"="==t)return o=0,-1;t.match(/^\s$/)||(n=n<<6|a(t.charCodeAt(0)),o+=6)}var i=n>>>o-8&255;return o-=8,i}},a=function(t){if(65<=t&&t<=90)return t-65;if(97<=t&&t<=122)return t-97+26;if(48<=t&&t<=57)return t-48+52;if(43==t)return 62;if(47==t)return 63;throw"c:"+t};return i},I=function(t,r,e){for(var n=function(t,r){var e=t,n=r,o=new Array(t*r),i={setPixel:function(t,r,n){o[r*e+t]=n},write:function(t){t.writeString("GIF87a"),t.writeShort(e),t.writeShort(n),t.writeByte(128),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(255),t.writeByte(255),t.writeByte(255),t.writeString(","),t.writeShort(0),t.writeShort(0),t.writeShort(e),t.writeShort(n),t.writeByte(0);var r=a(2);t.writeByte(2);for(var o=0;r.length-o>255;)t.writeByte(255),t.writeBytes(r,o,255),o+=255;t.writeByte(r.length-o),t.writeBytes(r,o,r.length-o),t.writeByte(0),t.writeString(";")}},a=function(t){for(var r=1<<t,e=1+(1<<t),n=t+1,i=u(),a=0;a<r;a+=1)i.add(String.fromCharCode(a));i.add(String.fromCharCode(r)),i.add(String.fromCharCode(e));var f,c,g,l=D(),h=(f=l,c=0,g=0,{write:function(t,r){if(t>>>r!=0)throw"length over";for(;c+r>=8;)f.writeByte(255&(t<<c|g)),r-=8-c,t>>>=8-c,g=0,c=0;g|=t<<c,c+=r},flush:function(){c>0&&f.writeByte(g)}});h.write(r,n);var s=0,v=String.fromCharCode(o[s]);for(s+=1;s<o.length;){var d=String.fromCharCode(o[s]);s+=1,i.contains(v+d)?v+=d:(h.write(i.indexOf(v),n),i.size()<4095&&(i.size()==1<<n&&(n+=1),i.add(v+d)),v=d)}return h.write(i.indexOf(v),n),h.write(e,n),h.flush(),l.toByteArray()},u=function(){var t={},r=0,e={add:function(n){if(e.contains(n))throw"dup key:"+n;t[n]=r,r+=1},size:function(){return r},indexOf:function(r){return t[r]},contains:function(r){return void 0!==t[r]}};return e};return i}(t,r),o=0;o<r;o+=1)for(var i=0;i<t;i+=1)n.setPixel(i,o,e(i,o));var a=D();n.write(a);for(var u=function(){var t=0,r=0,e=0,n="",o={},i=function(t){n+=String.fromCharCode(a(63&t))},a=function(t){if(t<0);else{if(t<26)return 65+t;if(t<52)return t-26+97;if(t<62)return t-52+48;if(62==t)return 43;if(63==t)return 47}throw"n:"+t};return o.writeByte=function(n){for(t=t<<8|255&n,r+=8,e+=1;r>=6;)i(t>>>r-6),r-=6},o.flush=function(){if(r>0&&(i(t<<6-r),t=0,r=0),e%3!=0)for(var o=3-e%3,a=0;a<o;a+=1)n+="="},o.toString=function(){return n},o}(),f=a.toByteArray(),c=0;c<f.length;c+=1)u.writeByte(f[c]);return u.flush(),"data:image/gif;base64,"+u};return t}();qrcode.stringToBytesFuncs["UTF-8"]=function(t){return function(t){for(var r=[],e=0;e<t.length;e++){var n=t.charCodeAt(e);n<128?r.push(n):n<2048?r.push(192|n>>6,128|63&n):n<55296||n>=57344?r.push(224|n>>12,128|n>>6&63,128|63&n):(e++,n=65536+((1023&n)<<10|1023&t.charCodeAt(e)),r.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|63&n))}return r}(t)};
+</script>
 <script>
 const $=id=>document.getElementById(id);
 // Hilfetext ein-/ausklappen (Fragezeichen neben dem Label)
@@ -1405,7 +1460,7 @@ function toggleHelp(btn){
 // Programmversion. Sie steht in der Fusszeile, auf jedem Export und in der
 // Einstellungsdatei - bei einer Rueckmeldung ist damit sofort klar, welche
 // Fassung gemeint ist.
-const KNOTI_VERSION='317';
+const KNOTI_VERSION='324';
 let PX_PER_MM=4;
 let BODY_PX=4;      // eigener Zoom fuer die 3D-Koerperzeichnung
 const state={};
@@ -1462,6 +1517,7 @@ function readState(){
   state.plate=(typeof schalenAbstand==='function') ? schalenAbstand() : matArme();
   state.center=Math.min(12, Math.max(0, sync('center','nCenter',lastSrc)));
   if(+$('nCenter').value>12){ $('nCenter').value=12; }
+  state.cslot=$('cslot') ? Math.min(40, Math.max(0, sync('cslot','nCslot',lastSrc))) : 0;
   state.stab=sync('stab','nStab',lastSrc);
   state.holeMode = document.querySelector('#holeModeSeg .on') ? document.querySelector('#holeModeSeg .on').dataset.v : 'auto';
   state.holeGap = sync('holeGap','nHoleGap',lastSrc);
@@ -2555,6 +2611,38 @@ function steckDicke(){
 // zusaetzlich, wo eine Rundung den Querschnitt verengen wuerde - am Zapfen-
 // ansatz darf sie nicht ins Material schneiden, sonst entsteht eine
 // Sollbruchstelle.
+// Ersetzt markierte Ecken eines Umrisses durch Kreisboegen. Ein Punkt
+// [x, y, r] mit r>0 wird mit Radius r gerundet, alle anderen bleiben spitz.
+// Frueher wurden die Strebenecken nur angefast (eine schraege Linie), die
+// Knoten aber gerundet - deshalb sahen die Streben eckig aus.
+function eckenBoegen(pts){
+  const n=pts.length, out=[];
+  for(let i=0;i<n;i++){
+    const p1=pts[i], R=p1[2];
+    if(!(R>0.05)){ out.push([p1[0],p1[1]]); continue; }
+    const p0=pts[(i-1+n)%n], p2=pts[(i+1)%n];
+    const v1=[p0[0]-p1[0],p0[1]-p1[1]], v2=[p2[0]-p1[0],p2[1]-p1[1]];
+    const l1=Math.hypot(v1[0],v1[1]), l2=Math.hypot(v2[0],v2[1]);
+    if(l1<1e-6||l2<1e-6){ out.push([p1[0],p1[1]]); continue; }
+    const u1=[v1[0]/l1,v1[1]/l1], u2=[v2[0]/l2,v2[1]/l2];
+    const phi=Math.acos(Math.max(-1,Math.min(1,u1[0]*u2[0]+u1[1]*u2[1])));
+    if(phi<0.05 || phi>Math.PI-0.05){ out.push([p1[0],p1[1]]); continue; }
+    // Ist der Nachbar ebenfalls gerundet, teilen sich beide die Kante.
+    const cap1=(p0[2]>0.05) ? l1/2 : l1-0.2, cap2=(p2[2]>0.05) ? l2/2 : l2-0.2;
+    let t=R/Math.tan(phi/2); t=Math.max(0, Math.min(t, cap1, cap2));
+    if(t<0.05){ out.push([p1[0],p1[1]]); continue; }
+    const Rr=t*Math.tan(phi/2);
+    const bi=[u1[0]+u2[0],u1[1]+u2[1]], bl=Math.hypot(bi[0],bi[1])||1;
+    const dm=Rr/Math.sin(phi/2);
+    const m=[p1[0]+bi[0]/bl*dm, p1[1]+bi[1]/bl*dm];
+    const a=[p1[0]+u1[0]*t, p1[1]+u1[1]*t], b=[p1[0]+u2[0]*t, p1[1]+u2[1]*t];
+    const w0=Math.atan2(a[1]-m[1],a[0]-m[0]), w1=Math.atan2(b[1]-m[1],b[0]-m[0]);
+    let dw=w1-w0; while(dw>Math.PI) dw-=2*Math.PI; while(dw<-Math.PI) dw+=2*Math.PI;
+    const seg=Math.max(4, Math.ceil(Math.abs(dw)/(10*Math.PI/180)));
+    for(let s=0;s<=seg;s++){ const w=w0+dw*s/seg; out.push([m[0]+Rr*Math.cos(w), m[1]+Rr*Math.sin(w)]); }
+  }
+  return out;
+}
 function eckenRadius(hoehe, maxR){
   const f=(typeof state!=='undefined' && isFinite(state.fil)) ? state.fil : 0;
   let r=Math.min(f, (hoehe||0)/2, 6);
@@ -3652,14 +3740,19 @@ function zapfenAbstandIdeal(){
 // Der TATSAECHLICH verwendete Abstand. Beide Seiten - Arm und Strebe - muessen
 // exakt denselben Wert benutzen, sonst passen die Teile nicht zusammen.
 function zapfenAbstandEff(){
-  const L=(typeof armLenMin==='function') ? armLenMin() : 0;
   const roh=zapfenAbstand();
-  return (L>2) ? Math.max(2, Math.min(roh, L-2)) : roh;
+  return Math.max(2, Math.min(roh, zapfenAbstandMax()));
 }
 function zapfenAbstand(){
   const v=(typeof sync==='function' && $('zapfenA')) ? sync('zapfenA','nZapfenA',lastSrc) : 8;
   const roh=(isNaN(v)||v<=0) ? 8 : v;
-  return Math.min(roh, zapfenAbstandIdeal());
+  return Math.min(roh, zapfenAbstandMax());
+}
+// Groesster einstellbarer Abstand.
+function zapfenAbstandMax(){
+  // v320: wieder die alte Regel - der Schlitz bleibt vor der Knicklinie.
+  // Fuer einen Stecksitz in der Mitte gibt es jetzt den Mittelschlitz.
+  return zapfenAbstandIdeal();
 }
 function zapfenLaenge(){
   const v=(typeof sync==='function' && $('zapfenL')) ? sync('zapfenL','nZapfenL',lastSrc) : 7;
@@ -3668,8 +3761,8 @@ function zapfenLaenge(){
 // Widerhaken als Winkel: wie weit die Flanke seitlich aussteht, bezogen auf
 // die Zapfenlaenge. 0 Grad = gerader Zapfen ohne Haken.
 function zapfenHaken(){
-  const g=(typeof sync==='function' && $('zapfenW')) ? sync('zapfenW','nZapfenW',lastSrc) : 14;
-  const gr=(isNaN(g)||g<0) ? 14 : g;
+  const g=(typeof sync==='function' && $('zapfenW')) ? sync('zapfenW','nZapfenW',lastSrc) : 0;
+  const gr=(isNaN(g)||g<0) ? 0 : g;
   return zapfenLaenge()*Math.tan(gr*Math.PI/180)*0.5;
 }
 function splintAn(){ return false; }
@@ -3788,8 +3881,21 @@ function hakenNaseAnteil(){
 // Hoehe des Hakens (wie weit er ueber die Strebenkante steht). 0 = automatisch
 // das Doppelte der Verbinderstaerke, wie bisher.
 function hakenHoeheMM(){
+  // Seit v320: ohne eigene Eingabe die halbe Strebenbreite.
+  if(!window.__hakenHManuell) return hakenHoeheAuto();
   const v=(typeof sync==='function' && $('hakenH')) ? sync('hakenH','nHakenH',lastSrc) : 0;
-  return (isNaN(v)||v<0.5) ? matThick()*2 : v;
+  return (isNaN(v)||v<0.5) ? hakenHoeheAuto() : v;
+}
+function hakenHoeheAuto(){
+  const b=(typeof strebenBreite==='function') ? strebenBreite() : 6;
+  return Math.max(0.5, Math.round(b/2*10)/10);
+}
+// Zeigt den automatischen Wert im Regler an, solange er nicht selbst gesetzt ist.
+function hakenHoeheAnzeigen(){
+  if(window.__hakenHManuell) return;
+  const sl=$('hakenH'), nf=$('nHakenH'); if(!sl||!nf) return;
+  const v=hakenHoeheAuto();
+  nf.value=v; sl.value=Math.max(+sl.min, Math.min(+sl.max, v));
 }
 function hakenAnzahl(){
   const v=(typeof sync==='function' && $('hakenN')) ? sync('hakenN','nHakenN',lastSrc) : 1;
@@ -3933,11 +4039,46 @@ function buildConnector(ang, rEnd){
                    rot( halb, r+t/2, a-90), rot(-halb, r+t/2, a-90) ]);
     });
   }
+  // Mittelschlitz (seit v320): je Arm ein Schlitz von der Mitte aus in
+  // Armrichtung, zusammen ein kleiner Stern als EIN Umriss.
+  if((zinkenAn()||hakenAn()) && state.cslot>0){
+    const ms=mittelschlitzRing(ang, state.cslot, steckDicke());
+    if(ms) slots.push(ms);
+  }
   const hw=state.wid/2;
   const stab=ang.map(a=>[rot(-hw,rEnd,a-90),rot(hw,rEnd,a-90)]);
   return {rEnd, rings, holes, slots, outer:rEnd+armLenMax(), stab};
 }
 
+// Umriss des Mittelschlitzes: n Schlitze der Breite w und Laenge L (ab der
+// Mitte), die sich in der Mitte treffen. Die Ecken zwischen zwei Armen liegen
+// auf deren Winkelhalbierender; ab 180 Grad Luecke (1 oder 2 Arme) laufen die
+// Schlitzkanten bis zur Mitte.
+function mittelschlitzRing(ang, L, w){
+  const h=w/2;
+  const u=(ang||[]).map(a=>{ const q=rot(0,1,a-90); const l=Math.hypot(q[0],q[1])||1; return [q[0]/l,q[1]/l]; })
+    .sort((p,q)=>Math.atan2(p[1],p[0])-Math.atan2(q[1],q[0]));
+  const n=u.length; if(!n || !(L>0) || !(w>0)) return null;
+  const pts=[];
+  for(let i=0;i<n;i++){
+    const a=u[i], b=u[(i+1)%n];
+    const ccw=[-a[1],a[0]], cw=[a[1],-a[0]];
+    pts.push([a[0]*L+cw[0]*h, a[1]*L+cw[1]*h]);
+    pts.push([a[0]*L+ccw[0]*h, a[1]*L+ccw[1]*h]);
+    let g=Math.atan2(b[1],b[0])-Math.atan2(a[1],a[0]);
+    while(g<=1e-9) g+=2*Math.PI;
+    if(n>1 && g<Math.PI-0.01){
+      const bi=[a[0]+b[0],a[1]+b[1]], bl=Math.hypot(bi[0],bi[1])||1;
+      const d=Math.min(h/Math.sin(g/2), L*0.95);
+      pts.push([bi[0]/bl*d, bi[1]/bl*d]);
+    } else {
+      const bcw=[b[1],-b[0]];
+      pts.push([ccw[0]*h, ccw[1]*h]);
+      pts.push([bcw[0]*h, bcw[1]*h]);
+    }
+  }
+  return pts;
+}
 function starLayerMode(){
   const el=document.querySelector('#starLayerSeg .on');
   return el?el.dataset.v:'both';   // both | inner | outer
@@ -4007,6 +4148,101 @@ function konturRadius(g){
 // Haengt die Streben-Vorschau unter die Verbinder. Aus beiden Ansichtszweigen
 // aufgerufen, damit sie nicht nur in einem erscheint.
 // Abgewaehlte Farbebenen aus einem Export-SVG entfernen.
+// ---- QR-Code mit Link zur aktuellen Einstellung (seit v322 wahlweise) ----
+// Bis v311 wurde er bei JEDEM Zeichnen neu berechnet und Modul fuer Modul als
+// eigenes Rechteck auf jede Seite gelegt - das machte die Plaene langsam.
+// Jetzt: nur wenn eingeschaltet, im Hintergrund gebuendelt berechnet und als
+// EIN Pfad gezeichnet.
+let __qrURL=null, __qrMatrix=null, __qrTimer=null, __qrBusy=false, __qrPfadCache=null;
+function qrAn(){ const b=document.querySelector('#qrSeg .on'); return !!(b && b.dataset.v==='on'); }
+function qrLinkB64(bytes){
+  let s=''; for(const b of bytes) s+=String.fromCharCode(b);
+  return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+// Fuer den QR-Code nur die Werte, die vom Anfangszustand abweichen: der Link
+// wird so viel kuerzer und der Code grob und gut scannbar. Wer ihn oeffnet,
+// startet ohnehin im Anfangszustand.
+function qrEinstellung(){
+  const st=einstellungLesen();
+  if(typeof werksEinstellung==='undefined' || !werksEinstellung) return st;
+  const w=werksEinstellung, gleich=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+  const kurz={werkzeug:st.werkzeug, version:st.version, programm:st.programm,
+              felder:{}, listen:{}, segs:{}};
+  ['felder','listen','segs'].forEach(k=>{
+    Object.entries(st[k]||{}).forEach(([id,v])=>{
+      if(!w[k] || !gleich(w[k][id], v)) kurz[k][id]=v;
+    });
+  });
+  if(!Object.keys(kurz.segs).length) kurz.segs={modeSeg:st.segs.modeSeg||'single'};
+  return kurz;
+}
+async function qrLinkURL(){
+  const roh=new TextEncoder().encode(JSON.stringify(qrEinstellung()));
+  if(typeof CompressionStream==='function'){
+    const cs=new CompressionStream('deflate-raw');
+    const buf=await new Response(new Blob([roh]).stream().pipeThrough(cs)).arrayBuffer();
+    return location.origin+location.pathname+location.search+'#e=z'+qrLinkB64(new Uint8Array(buf));
+  }
+  return location.origin+location.pathname+location.search+'#e=r'+qrLinkB64(roh);
+}
+async function qrAktualisieren(){
+  if(__qrBusy || !qrAn() || typeof qrcode!=='function') return;
+  __qrBusy=true;
+  try{
+    const url=await qrLinkURL();
+    if(url!==__qrURL || !__qrMatrix){
+      const qr=qrcode(0,'L');
+      qr.addData(url); qr.make();
+      const n=qr.getModuleCount(), m=[];
+      for(let r=0;r<n;r++){ const z=[]; for(let k=0;k<n;k++) z.push(qr.isDark(r,k)); m.push(z); }
+      __qrURL=url; __qrMatrix={n, m}; __qrPfadCache=null;
+    }
+  }catch(e){ /* QR ist eine Zugabe - im Fehlerfall bleibt die letzte Matrix */ }
+  __qrBusy=false;
+}
+function qrAktualisierenSpaeter(){
+  if(!qrAn()) return;
+  clearTimeout(__qrTimer);
+  __qrTimer=setTimeout(qrAktualisieren, 350);
+}
+// Kantenlaenge in mm: etwa 0,4 mm je Modul, hoechstens 30 % der kleineren
+// Blattseite; wird es feiner als 0,25 mm je Modul, lieber weglassen.
+function qrSizeMM(vbW, vbH){
+  if(!__qrMatrix) return 0;
+  const total=__qrMatrix.n+8;
+  const s=Math.min(total*0.4, Math.min(Math.abs(vbW),Math.abs(vbH))*0.30);
+  return (s/total)>=0.25 ? s : 0;
+}
+// Ein einziger Pfad, zeilenweise zusammengefasste Module, Ruhezone 4 Module.
+// Der Pfad wird in Moduleinheiten einmal gebaut und nur skaliert.
+function qrGroupSVG(sizeMM){
+  if(!__qrMatrix || !(sizeMM>0)) return '';
+  const n=__qrMatrix.n, total=n+8, cell=sizeMM/total;
+  if(!__qrPfadCache){
+    let d='';
+    for(let r=0;r<n;r++){ let k=0;
+      while(k<n){
+        if(__qrMatrix.m[r][k]){ let k2=k+1; while(k2<n && __qrMatrix.m[r][k2]) k2++;
+          d+=`M${k+4} ${r+4}h${k2-k}v1h${k-k2}z`; k=k2; }
+        else k++;
+      } }
+    __qrPfadCache=d;
+  }
+  return `<g transform="scale(${cell.toFixed(5)})"><path fill="#00a3a3" d="${__qrPfadCache}"/></g>`;
+}
+// QR unten rechts im Bereich (vbX, vbY, vbW, vbH); bottomClear haelt Abstand
+// nach unten (Fusszeile). frei(x,y,w,h) prueft optional, ob der Platz leer ist.
+function qrEckeSVG(forExport, vbX, vbY, vbW, vbH, bottomClear, frei, randMM){
+  if(!forExport || !qrAn()) return '';
+  const size=qrSizeMM(vbW, vbH); if(!size) return '';
+  // Die Ruhezone (4 Module) gehoert zum Code; randMM ist der Abstand der
+  // Ruhezone zum Blattrand, beim Bauplan so, dass er im Rahmen bleibt.
+  const rand=isFinite(randMM) ? randMM : Math.max(1, Math.min(vbW,vbH)*0.015);
+  const x=vbX+vbW-size-rand, y=vbY+vbH-size-rand-(bottomClear||0);
+  if(typeof frei==='function' && !frei(x,y,size,size)) return '';
+  const g=qrGroupSVG(size); if(!g) return '';
+  return `<g transform="translate(${x.toFixed(2)},${y.toFixed(2)})">${g}</g>`;
+}
 function farbenFiltern(svg){
   const aus=[...document.querySelectorAll('#farbSeg button')]
     .filter(b=>!b.classList.contains('on')).map(b=>b.dataset.c);
@@ -4329,6 +4565,267 @@ function meshToSVG(tris, S, opts){
   });
   return g;
 }
+// ====================== 3D-Ansicht mit WebGL (seit v323) ======================
+// Frueher wurde jeder Knoten als SVG aus tausenden Dreiecken gezeichnet, und
+// bei JEDER Mausbewegung wurde die ganze Geometrie neu berechnet. Bei vielen
+// Knotentypen hakte das. Jetzt:
+//  - die Grafikkarte zeichnet (WebGL), schattiert und mit Tiefenpuffer,
+//  - die Geometrie wird nur berechnet, wenn sich eine Einstellung aendert
+//    (Zwischenspeicher je Knotentyp), beim Drehen nur neu gezeichnet,
+//  - mehrere Knotentypen werden nacheinander im Hintergrund berechnet, die
+//    Bedienung bleibt dabei frei.
+// Ohne WebGL (sehr alte Rechner) bleibt die bisherige SVG-Darstellung.
+const Knoti3D=(function(){
+  let canvas=null, gl=null, prog=null, L={}, wrap=null;
+  const cache=new Map();          // Schluessel -> {buf, n, R}
+  let szene=null, gen=0, rafNr=0;
+  const eigenCam={az:-Math.PI/4, el:Math.atan(1/Math.sqrt(2))};
+  const VS=`attribute vec3 aP; attribute vec3 aN;
+    uniform vec3 uR0, uR1, uR2; uniform vec2 uS; uniform float uZ;
+    varying vec3 vN;
+    void main(){
+      vec3 p=vec3(dot(uR0,aP), dot(uR1,aP), dot(uR2,aP));
+      vN=vec3(dot(uR0,aN), dot(uR1,aN), dot(uR2,aN));
+      gl_Position=vec4(p.x*uS.x, -p.y*uS.y, -p.z*uZ, 1.0);
+    }`;
+  // Licht wie in der SVG-Ansicht: Hauptlicht von vorne oben links, ein
+  // schwaches Gegenlicht und ein leichter Glanz - das wirkt wie Kunststoff.
+  const FS=`precision mediump float;
+    varying vec3 vN; uniform vec3 uCol;
+    void main(){
+      vec3 n=normalize(vN); if(n.z<0.0) n=-n;
+      vec3 L1=normalize(vec3(-0.45,-0.65,0.62)), L2=normalize(vec3(0.7,0.25,0.45));
+      float d1=max(dot(n,L1),0.0), d2=max(dot(n,L2),0.0);
+      vec3 H=normalize(L1+vec3(0.0,0.0,1.0));
+      float sp=pow(max(dot(n,H),0.0),48.0);
+      vec3 c=uCol*(0.30+0.62*d1+0.20*d2)+vec3(0.20)*sp;
+      gl_FragColor=vec4(min(c,vec3(1.0)),1.0);
+    }`;
+  function init(){
+    if(gl===false) return false;
+    if(gl) return true;
+    try{
+      canvas=document.createElement('canvas');
+      canvas.className='gl3d';
+      gl=canvas.getContext('webgl',{antialias:true, alpha:true, preserveDrawingBuffer:false})
+        || canvas.getContext('experimental-webgl');
+    }catch(e){ gl=null; }
+    if(!gl){ gl=false; return false; }
+    const sh=(typ,src)=>{ const s=gl.createShader(typ); gl.shaderSource(s,src); gl.compileShader(s);
+      if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
+    try{
+      prog=gl.createProgram();
+      gl.attachShader(prog, sh(gl.VERTEX_SHADER,VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER,FS));
+      gl.linkProgram(prog);
+      if(!gl.getProgramParameter(prog,gl.LINK_STATUS)) throw new Error('link');
+    }catch(e){ gl=false; return false; }
+    ['aP','aN'].forEach(k=>L[k]=gl.getAttribLocation(prog,k));
+    ['uR0','uR1','uR2','uS','uZ','uCol'].forEach(k=>L[k]=gl.getUniformLocation(prog,k));
+    // Mehr als 32 Bit Indizes braucht es nicht - wir zeichnen ohne Index.
+    canvas.addEventListener('webglcontextlost', e=>{ e.preventDefault(); cache.clear(); });
+    canvas.addEventListener('webglcontextrestored', ()=>{ gl=null; init(); zeichnen(); });
+    // Drehen per Maus direkt auf der Flaeche - ohne Neuberechnung.
+    let zieht=false, lx=0, ly=0;
+    canvas.addEventListener('pointerdown', e=>{
+      zieht=true; lx=e.clientX; ly=e.clientY;
+      canvas.setPointerCapture(e.pointerId); canvas.style.cursor='grabbing';
+      e.stopPropagation();
+    });
+    canvas.addEventListener('pointermove', e=>{
+      if(!zieht) return;
+      const dx=e.clientX-lx, dy=e.clientY-ly; lx=e.clientX; ly=e.clientY;
+      const c=kamera();
+      c.az-=dx*0.01; c.el=Math.max(-Math.PI/2+0.05, Math.min(Math.PI/2-0.05, c.el+dy*0.01));
+      kameraSetzen(c);
+      if(typeof clearViewBtn==='function') clearViewBtn();
+      neuZeichnen();
+      e.stopPropagation();
+    });
+    const los=e=>{ zieht=false; canvas.style.cursor=''; };
+    canvas.addEventListener('pointerup', los); canvas.addEventListener('pointercancel', los);
+    // Mausrad: Zoom - nur in der Einzelansicht, sonst wuerde es das Scrollen
+    // durch die Knotenliste blockieren.
+    canvas.addEventListener('wheel', e=>{
+      if(!szene || !szene.radZoom) return;
+      e.preventDefault();
+      szene.zoom=Math.max(0.3, Math.min(8, (szene.zoom||1)*Math.exp(-e.deltaY*0.0015)));
+      neuZeichnen();
+    }, {passive:false});
+    canvas.addEventListener('dblclick', ()=>{ if(szene){ szene.zoom=1; neuZeichnen(); } });
+    return true;
+  }
+  function kamera(){
+    if(szene && szene.eigeneKamera) return {az:eigenCam.az, el:eigenCam.el};
+    return {az:camAz, el:camEl};
+  }
+  function kameraSetzen(c){
+    if(szene && szene.eigeneKamera){ eigenCam.az=c.az; eigenCam.el=c.el; }
+    else { camAz=c.az; camEl=c.el; }
+  }
+  // Dreiecke -> Puffer mit geglaetteten Normalen. Kanten mit mehr als 35 Grad
+  // Knick bleiben scharf, runde Flaechen werden weich schattiert.
+  function hochladen(tris){
+    const nT=tris.length, fn=new Float32Array(nT*3);
+    const key=p=>Math.round(p[0]*1e3)+','+Math.round(p[1]*1e3)+','+Math.round(p[2]*1e3);
+    const ecken=new Map();
+    let R=0;
+    for(let i=0;i<nT;i++){
+      const [a,b,c]=tris[i];
+      const ux=b[0]-a[0], uy=b[1]-a[1], uz=b[2]-a[2], vx=c[0]-a[0], vy=c[1]-a[1], vz=c[2]-a[2];
+      let nx=uy*vz-uz*vy, ny=uz*vx-ux*vz, nz=ux*vy-uy*vx;
+      const l=Math.hypot(nx,ny,nz)||1;            // Laenge = doppelte Flaeche
+      fn[i*3]=nx/l; fn[i*3+1]=ny/l; fn[i*3+2]=nz/l;
+      for(let k=0;k<3;k++){
+        const p=tris[i][k], s=key(p);
+        let e=ecken.get(s); if(!e){ e=[]; ecken.set(s,e); }
+        e.push(i);
+        R=Math.max(R, Math.hypot(p[0],p[1],p[2]));
+      }
+    }
+    const cosK=Math.cos(35*Math.PI/180);
+    const data=new Float32Array(nT*18);
+    for(let i=0;i<nT;i++){
+      const fx=fn[i*3], fy=fn[i*3+1], fz=fn[i*3+2];
+      for(let k=0;k<3;k++){
+        const p=tris[i][k];
+        let sx=0, sy=0, sz=0;
+        for(const j of ecken.get(key(p))){
+          const gx=fn[j*3], gy=fn[j*3+1], gz=fn[j*3+2];
+          if(gx*fx+gy*fy+gz*fz>=cosK){ sx+=gx; sy+=gy; sz+=gz; }
+        }
+        const l=Math.hypot(sx,sy,sz)||1, o=(i*3+k)*6;
+        data[o]=p[0]; data[o+1]=p[1]; data[o+2]=p[2];
+        data[o+3]=sx/l; data[o+4]=sy/l; data[o+5]=sz/l;
+      }
+    }
+    const buf=gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+    return {buf, n:nT*3, R:R||1, tris:nT};
+  }
+  function merken(k, m){
+    cache.set(k, m);
+    // Speicher begrenzen: aelteste Eintraege freigeben.
+    while(cache.size>80){
+      const alt=cache.keys().next().value, e=cache.get(alt);
+      try{ gl.deleteBuffer(e.buf); }catch(err){}
+      cache.delete(alt);
+    }
+  }
+  function neuZeichnen(){
+    if(rafNr) return;
+    rafNr=requestAnimationFrame(()=>{ rafNr=0; zeichnen(); });
+  }
+  function zeichnen(){
+    if(!gl || !szene || !canvas.isConnected) return;
+    const dpr=Math.min(2, window.devicePixelRatio||1);
+    const W=Math.round(szene.w*dpr), H=Math.round(szene.h*dpr);
+    if(canvas.width!==W || canvas.height!==H){ canvas.width=W; canvas.height=H; }
+    gl.viewport(0,0,W,H);
+    gl.disable(gl.SCISSOR_TEST);
+    gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LESS);
+    gl.disable(gl.CULL_FACE);
+    gl.useProgram(prog);
+    const c=kamera(), sa=Math.sin(c.az), ca=Math.cos(c.az), se=Math.sin(c.el), ce=Math.cos(c.el);
+    // Dieselbe Drehung wie rot3() der SVG-Ansicht.
+    gl.uniform3f(L.uR0, ca, 0, sa);
+    gl.uniform3f(L.uR1, sa*se, ce, -ca*se);
+    gl.uniform3f(L.uR2, -sa*ce, se, ca*ce);
+    gl.uniform3fv(L.uCol, szene.farbe);
+    let Rmax=0;
+    szene.zellen.forEach(z=>{ const m=cache.get(z.key); if(m) Rmax=Math.max(Rmax,m.R); });
+    if(szene.R) Rmax=szene.R;
+    if(!Rmax) return;
+    gl.enable(gl.SCISSOR_TEST);
+    const cw=szene.zw*dpr, ch=szene.zh*dpr;
+    szene.zellen.forEach((z,i)=>{
+      const m=cache.get(z.key); if(!m) return;
+      const col=i%szene.spalten, row=Math.floor(i/szene.spalten);
+      // Unten bleibt Platz fuer die Beschriftung der Zelle.
+      const rand=(szene.unten||0)*dpr, zh=ch-rand;
+      const x=Math.round(col*cw), y=Math.round(H-(row+1)*ch+rand);
+      gl.viewport(x,y,Math.round(cw),Math.round(zh)); gl.scissor(x,y,Math.round(cw),Math.round(zh));
+      const pxmm=0.92*Math.min(cw, zh)/2/Rmax*(szene.zoom||1);
+      gl.uniform2f(L.uS, pxmm/(cw/2), pxmm/(zh/2));
+      gl.uniform1f(L.uZ, 0.95/Rmax);
+      gl.bindBuffer(gl.ARRAY_BUFFER, m.buf);
+      gl.enableVertexAttribArray(L.aP); gl.enableVertexAttribArray(L.aN);
+      gl.vertexAttribPointer(L.aP,3,gl.FLOAT,false,24,0);
+      gl.vertexAttribPointer(L.aN,3,gl.FLOAT,false,24,12);
+      gl.drawArrays(gl.TRIANGLES,0,m.n);
+    });
+  }
+  // Berechnet fehlende Knoten nacheinander, je einen pro Durchgang, damit die
+  // Seite waehrend der Rechnung bedienbar bleibt.
+  function pumpen(g){
+    if(g!==gen || !szene) return;
+    const offen=szene.zellen.find(z=>!cache.has(z.key) && !z.fehler);
+    if(!offen){ statusSetzen(''); return; }
+    try{
+      const tris=offen.bauen();
+      merken(offen.key, hochladen(tris));
+      if(szene.nachBau) szene.nachBau(offen, tris);
+    }catch(e){ offen.fehler=true; }
+    zeichnen();
+    const rest=szene.zellen.filter(z=>!cache.has(z.key) && !z.fehler).length;
+    statusSetzen(rest ? rest : '');
+    if(rest) setTimeout(()=>pumpen(g), 0);
+  }
+  function statusSetzen(rest){
+    if(!wrap) return;
+    const s=wrap.querySelector('.gl3d-status'); if(!s) return;
+    const EN=(typeof curLang!=='undefined'&&curLang==='en');
+    s.textContent = rest ? (EN?`computing… ${rest} left`:`wird berechnet … noch ${rest}`) : '';
+  }
+  // Zeigt eine Szene im Platzhalter 'slot'. opts: zellen [{key, bauen, text}],
+  // spalten, zw/zh (Zellgroesse in px), farbe [r,g,b] 0..1, eigeneKamera,
+  // radZoom. Liefert false, wenn WebGL fehlt.
+  function zeigen(slot, opts){
+    if(!init() || !slot) return false;
+    const behaltZoom = szene && szene.radZoom && opts.radZoom ? szene.zoom : 1;
+    gen++;
+    szene={zoom:behaltZoom, ...opts};
+    szene.w=szene.spalten*szene.zw;
+    szene.h=Math.ceil(szene.zellen.length/szene.spalten)*szene.zh;
+    wrap=document.createElement('div');
+    wrap.className='gl3d-wrap';
+    wrap.style.cssText=`position:relative;width:${szene.w}px;height:${szene.h}px;flex:none;margin:0 auto;`;
+    // Auf dem Handy: in der Einzelansicht gehoert die ganze Geste dem Drehen,
+    // im Knotensatz darf man weiter senkrecht durch die Seite wischen.
+    canvas.style.cssText=`width:${szene.w}px;height:${szene.h}px;display:block;cursor:grab;touch-action:${szene.radZoom?'none':'pan-y'};`;
+    wrap.appendChild(canvas);
+    szene.zellen.forEach((z,i)=>{
+      if(!z.text) return;
+      const t=document.createElement('div');
+      const col=i%szene.spalten, row=Math.floor(i/szene.spalten);
+      t.textContent=z.text;
+      t.style.cssText=`position:absolute;left:${col*szene.zw}px;top:${(row+1)*szene.zh-19}px;width:${szene.zw}px;`
+        +`text-align:center;font-size:12px;font-weight:bold;color:#8e44ad;pointer-events:none;`;
+      wrap.appendChild(t);
+    });
+    const st=document.createElement('div');
+    st.className='gl3d-status';
+    st.style.cssText='position:absolute;left:6px;top:4px;font-size:11px;color:#6b6f63;pointer-events:none;';
+    wrap.appendChild(st);
+    slot.innerHTML=''; slot.appendChild(wrap);
+    zeichnen();
+    const g=gen;
+    if(szene.zellen.some(z=>!cache.has(z.key))){
+      statusSetzen(szene.zellen.filter(z=>!cache.has(z.key)).length);
+      setTimeout(()=>pumpen(g), 0);
+    }
+    return true;
+  }
+  function verfuegbar(){ return init(); }
+  function kameraAngleichen(){ eigenCam.az=camAz; eigenCam.el=camEl; }
+  // Zahl der Dreiecke, sobald berechnet (fuer die Infozeile).
+  function dreiecke(k){ const m=cache.get(k); return m ? m.tris : 0; }
+  function bereit(k){ return cache.has(k); }
+  return {zeigen, neuZeichnen, verfuegbar, kameraAngleichen, dreiecke, bereit};
+})();
+// Farbe der 3D-Knoten in der WebGL-Ansicht (helles Gruen der Typfarbe).
+const GL_KNOTEN_FARBE=[0.33,0.64,0.47];
 // Parameter des 3D-Knotens aus den Reglern
 // Export-Auflösung der 3D-Verbinder aus dem Qualitätsschalter.
 // Standard = schnell, Fein = glatt + lesbare Buchstaben.
@@ -4430,14 +4927,35 @@ function renderBall3D(){
   // Vorschau feiner: 56 statt 46. Kostet rund 0,15 s mehr, zeigt die Kanten
   // des eckigen Profils aber deutlich sauberer. Der Export rechnet ohnehin
   // mit 64 bzw. 96, ist also feiner als die Vorschau.
-  const tris=buildBallAdapterSTL(dirs, {...o, res:56});
-  const ext=(o.armLen+o.collar+2+(o.konstruktion==='zapfen'?o.depth:0));
-  const S=Math.min(9, 320/Math.max(ext,1));
-  const g=meshToSVG(tris, S, {base:[128,148,138]});
-  const R=ext*S+8;
-  const vb=`${(-R).toFixed(0)} ${(-R).toFixed(0)} ${(2*R).toFixed(0)} ${(2*R).toFixed(0)}`;
-  $('svgHost').innerHTML=`<svg id="bodySvg" xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${Math.min(660,2*R).toFixed(0)}" style="max-width:96%;max-height:78vh;">`
-    +`<g stroke-linejoin="round">${g}</g></svg>`;
+  const host=$('svgHost');
+  // Seit v323 mit WebGL: berechnet wird nur, wenn sich eine Einstellung
+  // aendert (Schluessel), beim Drehen wird nur neu gezeichnet.
+  const key='einzel|'+JSON.stringify([dirs, o]);
+  let trisN=0;
+  if(Knoti3D.verfuegbar()){
+    const bw=Math.max(260, Math.min(host.clientWidth-60, 820));
+    const bh=Math.max(260, Math.min(host.clientHeight-110, bw));
+    host.innerHTML='<div id="gl3dSlot"></div>';
+    Knoti3D.zeigen($('gl3dSlot'), {zellen:[{key, bauen:()=>buildBallAdapterSTL(dirs, {...o, res:56})}],
+      spalten:1, zw:bw, zh:bh, farbe:GL_KNOTEN_FARBE, eigeneKamera:false, radZoom:true,
+      nachBau:()=>{ try{ if(mode==='ball3d') ballInfoSetzen(Knoti3D.dreiecke(key)); }catch(e){} }});
+    trisN=Knoti3D.dreiecke(key);
+  } else {
+    const tris=buildBallAdapterSTL(dirs, {...o, res:56});
+    trisN=tris.length;
+    const ext=(o.armLen+o.collar+2+(o.konstruktion==='zapfen'?o.depth:0));
+    const S=Math.min(9, 320/Math.max(ext,1));
+    const g=meshToSVG(tris, S, {base:[128,148,138]});
+    const R=ext*S+8;
+    const vb=`${(-R).toFixed(0)} ${(-R).toFixed(0)} ${(2*R).toFixed(0)} ${(2*R).toFixed(0)}`;
+    host.innerHTML=`<svg id="bodySvg" xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${Math.min(660,2*R).toFixed(0)}" style="max-width:96%;max-height:78vh;">`
+      +`<g stroke-linejoin="round">${g}</g></svg>`;
+  }
+  ballInfoSetzen(trisN);
+}
+function ballInfoSetzen(trisN){
+  const o=ballOpts(), dirs=ballDirections();
+  const tris={length: trisN ? trisN : '…'};
   const EN=(typeof curLang!=='undefined'&&curLang==='en');
   // Die Warnung "Bohrung tiefer als Arm" gilt nur im Loch-Modus: dort muss ein
   // Boden im Sackloch bleiben. Beim Zapfen gibt es kein Sackloch - der Zapfen
@@ -4449,6 +4967,41 @@ function renderBall3D(){
   $('info').textContent = EN
     ? `3D node · ${dirs.length} ${teilEN} · rod Ø${o.rodDia.toFixed(1)} mm · wall ${o.collar.toFixed(1)} mm · arm ${o.armLen.toFixed(0)} mm · ${tris.length} triangles${bore}`
     : `3D-Knoten · ${dirs.length} ${teilDE} · Strebe Ø${o.rodDia.toFixed(1)} mm · Wand ${o.collar.toFixed(1)} mm · Arm ${o.armLen.toFixed(0)} mm · ${tris.length} Dreiecke${bore}`;
+}
+// WebGL-Fassung des Knotensatzes (seit v323): jeder Knotentyp in einer eigenen
+// Zelle, alle mit derselben, eigenen Kamera - der Satz dreht sich unabhaengig
+// vom Koerper und wird beim Drehen nicht neu berechnet.
+function knotenSatzGL(body){
+  const o=ballOpts(), fo=flatOpts();
+  const EN=(typeof curLang!=='undefined'&&curLang==='en');
+  const counts={}, rep={};
+  body.nodes.forEach(nd=>{ counts[nd.label]=(counts[nd.label]||0)+1; if(!rep[nd.label]) rep[nd.label]=nd; });
+  const grades=Object.keys(counts).sort();
+  const nT=grades.length;
+  const resSet = nT>24 ? 24 : (nT>12 ? 30 : (nT>6 ? 36 : 44));
+  const MAXT=36;
+  const zellen=grades.slice(0,MAXT).map(lbl=>{
+    const nd=rep[lbl], dirs=nodeDirections(nd);
+    const rund=dirs.map(d=>d.map(v=>Math.round(v*1e5)/1e5));
+    return {key:'knoten|'+JSON.stringify([rund, o, fo, resSet, lbl]),
+            bauen:()=>buildBallAdapterSTL(dirs, {...o, res:resSet, ...fo, label:lbl}),
+            text:`${lbl} · ${counts[lbl]}× · ${nd.n} ${EN?'arms':'Arme'}`};
+  });
+  const host=$('svgHost');
+  const zf=(typeof PX_PER_MM!=='undefined'?PX_PER_MM:4)/4;
+  const zw=Math.round(Math.max(140, Math.min(440, 240*zf)));
+  const breit=Math.max(zw, (host?host.clientWidth:800)-60);
+  const spalten=Math.max(1, Math.min(zellen.length, Math.floor(breit/zw)));
+  const slot=$('gl3dSlot');
+  Knoti3D.zeigen(slot, {zellen, spalten, zw, zh:zw+22, unten:22, farbe:GL_KNOTEN_FARBE,
+    eigeneKamera:true, radZoom:false});
+  if(nT>MAXT){
+    const h=document.createElement('div');
+    h.style.cssText='font-size:12px;color:#b03030;margin-top:4px;text-align:center;';
+    h.textContent=EN?`Showing ${MAXT} of ${nT} node types – export still contains all.`
+                    :`${MAXT} von ${nT} Knotentypen gezeigt – der Export enthält alle.`;
+    slot.appendChild(h);
+  }
 }
 // Im Koerpermodus mit 3D-Knoten: je Knotentyp ein echtes gerendertes Mesh mit
 // den tatsaechlichen 3D-Stabrichtungen und der Stueckzahl.
@@ -4689,6 +5242,8 @@ function renderBody(){
       <g fill="none" stroke="#1a2b22" stroke-linejoin="round" stroke-linecap="round">${lines}</g>${dots}</svg>`;
   }
 
+  // Fuer das Drehen per Maus: nur die Koerperskizze neu zeichnen, nicht alles.
+  window.__bodySkizze=bodySketchSVG;
   if(view==='sheet' && !adapterType3d){
     // Nur Verbinder, flache Abwicklung (Stern/Kegel): maßstäblich mit Raster.
     setGridVisible(true);
@@ -4715,12 +5270,13 @@ function renderBody(){
     // Verbinder-Teil:
     if(showVerb){
       if(view==='both'){
-        const t = ENs ? `Connectors · ${nTypes} ${nTypes===1?'type':'types'}`
-                      : `Verbinder · ${nTypes} ${nTypes===1?'Typ':'Typen'}`;
+        const t = ENs ? `Nodes · ${nTypes} ${nTypes===1?'type':'types'}`
+                      : `Knoten · ${nTypes} ${nTypes===1?'Typ':'Typen'}`;
         html+=sect(t);
       }
       if(adapterType3d){
-        try{ html+=ballNodeSetSVG(body); }catch(e){}
+        if(Knoti3D.verfuegbar()) html+='<div id="gl3dSlot" style="margin-top:8px;"></div>';
+        else { try{ html+=ballNodeSetSVG(body); }catch(e){} }
       } else {
         // Stern/Kegel flache Abwicklung als zweiter Block unter dem Körper.
         // In 'both' auf die Fensterbreite einpassen (in der reinen
@@ -4729,16 +5285,17 @@ function renderBody(){
       }
     }
     $('svgHost').innerHTML=html;
+    if(showVerb && adapterType3d && $('gl3dSlot')){ try{ knotenSatzGL(body); }catch(e){} }
     if(showVerb && !adapterType3d) strebenVorschau();
     if(showVerb && !adapterType3d && view==='sheet'){ updateScalebar(); drawGrid(); }
   }
   const isDouble = document.querySelector('#buildSeg .on') && document.querySelector('#buildSeg .on').dataset.v==='double';
   const EN2=(typeof curLang!=='undefined'&&curLang==='en');
   const typeTxt = grades.length===1
-    ? (EN2 ? `${body.verts.length}× connectors with ${grades[0]} arms`
-           : `${body.verts.length}× Verbinder mit ${grades[0]} Armen`)
-    : (EN2 ? `connector types: ${grades.map(g=>g+' arms').join(', ')}`
-           : `Verbindertypen: ${grades.map(g=>g+' Arme').join(', ')}`);
+    ? (EN2 ? `${body.verts.length}× nodes with ${grades[0]} arms`
+           : `${body.verts.length}× Knoten mit ${grades[0]} Armen`)
+    : (EN2 ? `node types: ${grades.map(g=>g+' arms').join(', ')}`
+           : `Knotentypen: ${grades.map(g=>g+' Arme').join(', ')}`);
   const dblTxt = isDouble ? (EN2?' · double shell (tilt automatic per corner)':' · Doppelschale (Neigung autom. pro Ecke)') : '';
   // --- Sattelpunkt-Pruefung: Knoten mit negativem Winkeldefekt (Segmentsumme
   // > 360°) koennen von 2D-Verbindern nicht echt abgebildet werden. Der Kegel
@@ -4766,7 +5323,7 @@ function renderBody(){
     : '';
   if(key==='stl'){
     if(!stlMesh||!stlRaw){ $('info').textContent=(EN2?'Import STL – no file loaded yet.':'STL importieren – noch keine Datei geladen.'); }
-    else { $('info').textContent=`${stlName} · ${body.edges.length} ${EN2?'rods':'Streben'} · ${body.verts.length} ${EN2?'connectors':'Verbinder'} · ${typeTxt}${dblTxt}${clampTxt}`; }
+    else { $('info').textContent=`${stlName} · ${body.edges.length} ${EN2?'rods':'Streben'} · ${body.verts.length} ${EN2?'nodes':'Knoten'} · ${typeTxt}${dblTxt}${clampTxt}`; }
   } else if(key==='box8'){
     $('info').textContent=`${$('bodySel').selectedOptions[0].text} · ${body.edges.length} ${EN2?'rods':'Streben'} · ${$('nBoxL').value}×${$('nBoxB').value}×${$('nBoxH').value} mm · ${typeTxt}${dblTxt}${clampTxt}`;
   } else {
@@ -4784,8 +5341,8 @@ function renderBody(){
       const EN5=(typeof curLang!=='undefined'&&curLang==='en');
       const bed=window.__armBedarf;
       const h = EN5
-        ? `Note: arms are shortened to fit their edge - the shortest edge is ${window.__armKanteMin.toFixed(1)} mm, while two full connectors plus a rod would need ${bed?bed.toFixed(1):'?'} mm.`
-        : `Hinweis: Die Arme sind an ihre Kante angepasst - die kürzeste Kante misst ${window.__armKanteMin.toFixed(1)} mm, zwei volle Verbinder samt Strebe bräuchten ${bed?bed.toFixed(1):'?'} mm.`;
+        ? `Note: arms are shortened to fit their edge - the shortest edge is ${window.__armKanteMin.toFixed(1)} mm, while two full nodes plus a rod would need ${bed?bed.toFixed(1):'?'} mm.`
+        : `Hinweis: Die Arme sind an ihre Kante angepasst - die kürzeste Kante misst ${window.__armKanteMin.toFixed(1)} mm, zwei volle Knoten samt Strebe bräuchten ${bed?bed.toFixed(1):'?'} mm.`;
       saddleWarn = saddleWarn ? (saddleWarn+' · '+h) : h;
     }
     // Bei stumpfen Ecken bleibt zwischen Sektorende und vollem Kreis kaum Platz.
@@ -5266,18 +5823,14 @@ function buildBallAdapterSTL(dirs, opts){
           const lx = (x*eU[0]+y*eU[1]+z*eU[2]);
           const ly = (x*eV[0]+y*eV[1]+z*eV[2]);
           const dist = textDist(lx, ly);
-          if(dist < eHalf){
-            // groove ist >0 genau im Bereich, der leer werden soll (von surf
-            // bis surf-eDepth) - OHNE Vorzeichenwechsel in max() geben. Das
-            // frueher hier stehende "-groove" war ein Vorzeichenfehler: die
-            // Rille landete dadurch als geschlossener Hohlraum ein Stueck
-            // UNTER der Oberflaeche statt offen AUF ihr (per Sichtprobe am
-            // echten Netz bestaetigt: mit "-groove" mehrere verschachtelte
-            // Oberflaechen, mit "groove" eine einzige, von aussen sichtbare,
-            // saubere Vertiefung bis genau zur Solltiefe eDepth).
-            const groove = (tn-(surf-eDepth));
-            d = Math.max(d, groove);
+          // Rille als Abstandsfeld: innen positiv, am Strichrand 0, aussen
+          // negativ - so liegt die Kante dort, wo sie hingehoert, auch wenn
+          // der Strich schmaler als zwei Gitterweiten ist.
+          if(dist < eHalf+2*step){
+            d = Math.max(d, Math.min(tn-(surf-eDepth), eHalf-dist));
           }
+          // (Vorzeichen: positiv = auszuhoehlen. Ein frueheres "-groove"
+          // erzeugte einen geschlossenen Hohlraum unter der Oberflaeche.)
         }
       }
     }
@@ -5324,8 +5877,15 @@ function buildBallAdapterSTL(dirs, opts){
   // Fleck statt einer klaren Linie. Deshalb Strichbreite (eHalf) UND
   // Buchstabengroesse (textScale) beim Flachdruck deutlich groesser als bei
   // der normalen Gravur.
-  if(aufFlaeche){ eDepth=Math.max(0.35, step*1.0); eHalf=Math.max(0.9, step*2.0); }
-  const textScale = aufFlaeche ? Math.min(coreR*1.7, rOuter*2.0) : Math.min(coreR*1.25, rOuter*1.5);  // Buchstabenhoehe
+  // v324: Die breite, grosse Praegung nahm zu viel Auflageflaeche weg - der
+  // Druck haftete nicht mehr am Bett. Jetzt duenne Striche (rund 0,7 mm) und ein
+  // kleinerer Buchstabe. Damit duenne Striche im Gitter nicht verloren gehen,
+  // ist die Rille unten als echtes Abstandsfeld formuliert (Kanten werden
+  // zwischen den Gitterpunkten interpoliert), und die halbe Strichbreite
+  // bleibt knapp ueber dem groessten Abstand eines Punktes zum naechsten
+  // Gitterpunkt in der Ebene (0,71 Gitterweiten).
+  if(aufFlaeche){ eDepth=Math.max(0.35, step*1.0); eHalf=Math.max(0.35, step*0.62); }
+  const textScale = aufFlaeche ? Math.min(coreR*0.85, rOuter*1.0) : Math.min(coreR*1.25, rOuter*1.5);  // Buchstabenhoehe
   if(engrave){
     const cand=[];
     for(let a=0;a<12;a++)for(let b2=1;b2<6;b2++){
@@ -5525,6 +6085,13 @@ function packTiles(tiles, fmtW, fmtH, gap, forExport){
     const oy=kopfBand+s*(fmtH+sheetGap);
     out+=`<rect x="0" y="${oy}" width="${fmtW}" height="${fmtH}" fill="none" stroke="#CBC9C2" stroke-width="0.6" stroke-dasharray="4,3"/>`;
     out+=`<text x="0.5" y="${(oy-1.6).toFixed(1)}" font-size="3.2" fill="#8e44ad">Blatt ${s+1} · ${fmtW}×${fmtH} mm</text>`;
+    // QR-Code je Blatt unten rechts - aber nur, wenn dort kein Teil liegt.
+    const sNr=s;
+    out+=qrEckeSVG(forExport, 0, oy, fmtW, fmtH, 0, (qx,qy,qw,qh)=>placed.every(pl=>{
+      if(pl.sheetIdx!==sNr) return true;
+      const py=oy+pl.y;
+      return pl.x>qx+qw+1 || pl.x+pl.t.w<qx-1 || py>qy+qh+1 || py+pl.t.h<qy-1;
+    }));
   }
   placed.forEach(pl=>{
     const oy=kopfBand+pl.sheetIdx*(fmtH+sheetGap);
@@ -5589,6 +6156,8 @@ function farbebenen(){
 function render(){
   if(typeof kegelArmbreiteNachfuehren==='function') kegelArmbreiteNachfuehren();
   renderIntern();
+  try{ hakenHoeheAnzeigen(); }catch(e){}
+  try{ qrAktualisierenSpaeter(); }catch(e){}
   // Nach jedem Zeichnen die Hilfslinien nach hinten legen.
   try{ farbebenen(); }catch(e){}
   try{ if(typeof mehrBoxenAktualisieren==='function') mehrBoxenAktualisieren(); }catch(e){}
@@ -5709,6 +6278,13 @@ function einstellungLesen(){
   });
   document.querySelectorAll('aside .seg').forEach(seg=>{
     if(!seg.id) return;
+    // Mehrfachauswahl (Verbindung, Farben): ALLE aktiven Knoepfe merken.
+    // Frueher nur den ersten - beim Zuruecksetzen blieben dadurch z. B.
+    // Zapfen oder Haken eingeschaltet.
+    if(seg.classList.contains('multi')){
+      st.segs[seg.id] = [...seg.querySelectorAll('button.on')].map(b=>(b.dataset.v!==undefined)?b.dataset.v:b.dataset.c);
+      return;
+    }
     const on=seg.querySelector('.on');
     if(on) st.segs[seg.id] = (on.dataset.v!==undefined) ? on.dataset.v : (on.dataset.lang||'');
   });
@@ -5720,6 +6296,14 @@ function einstellungSetzen(st){
   const segsSetzen=()=>{
     Object.entries(st.segs||{}).forEach(([id,v])=>{
       const seg=document.getElementById(id); if(!seg) return;
+      if(Array.isArray(v)){
+        // Mehrfachauswahl genau so herstellen, wie sie gemerkt wurde.
+        seg.querySelectorAll('button').forEach(b=>{
+          const soll=v.indexOf((b.dataset.v!==undefined)?b.dataset.v:b.dataset.c)>=0;
+          if(soll!==b.classList.contains('on')) b.click();
+        });
+        return;
+      }
       const b=[...seg.querySelectorAll('button')].find(x=>x.dataset &&
               (x.dataset.v===v || x.dataset.lang===v));
       if(b && !b.classList.contains('on')) b.click();
@@ -6372,16 +6956,16 @@ function currentCutlist(){
   if(mode==='body') return bodyCutlist();
   if(mode==='single'){
     const g=lastGeom; if(!g) return '';
-    let txt=`${EN?'Cut list':'Schnittliste'} – ${EN?'Single adapter':'Einzeladapter'}\n${g.ang.length} ${g.ang.length===1?(EN?'arm':'Arm'):(EN?'arms':'Arme')}\n\n`;
-    txt+=`${EN?'Adapter bearing length per arm':'Adapter-Auflagelänge je Arm'}: ${state.len} mm\n`;
+    let txt=`${EN?'Cut list':'Schnittliste'} – ${EN?'Single node':'Einzelknoten'}\n${g.ang.length} ${g.ang.length===1?(EN?'arm':'Arm'):(EN?'arms':'Arme')}\n\n`;
+    txt+=`${EN?'Node bearing length per arm':'Knoten-Auflagelänge je Arm'}: ${state.len} mm\n`;
     txt+=`${EN?'Fold line':'Knicklinie'} ${g.rEnd.toFixed(1)} mm ${EN?'from the centre':'von der Mitte'}\n`;
     txt+=`${EN?'Arm width':'Armbreite'} ${state.wid} mm, ${EN?'holes/arm':'Löcher/Arm'} ${state.holes} (Ø ${state.hd} mm)\n`;
     txt+=`${EN?'Rod spacing (gap)':'Abstand Streben (Spalt)'}: ${state.gap} mm\n`;
-    txt+=`\n${EN?'Note: for the single adapter the tool does not fix a rod length – you':'Hinweis: Beim Einzeladapter legt das Tool keine Strebenlänge fest – die'}\n`;
+    txt+=`\n${EN?'Note: for the single node the tool does not fix a rod length – you':'Hinweis: Beim Einzelknoten legt das Tool keine Strebenlänge fest – die'}\n`;
     txt+=`${EN?'plug in rods as needed. The fold line sits '+g.rEnd.toFixed(1)+' mm from the':'Streben steckst du nach Bedarf ein. Die Knicklinie sitzt '+g.rEnd.toFixed(1)+' mm vom'}\n`;
     txt+=`${EN?'centre; the rod starts there. In body mode the rod length then':'Mittelpunkt entfernt; ab dort beginnt die Strebe. Im Körper-Modus ergibt'}\n`;
     txt+=`${EN?'results as edge length minus the fold-line setbacks':'sich die Strebenlänge dann als Kantenlänge minus die Knicklinien-Rückzüge'}\n`;
-    txt+=`${EN?'of the two connected adapters.':'der beiden verbundenen Adapter.'}\n`;
+    txt+=`${EN?'of the two connected nodes.':'der beiden verbundenen Knoten.'}\n`;
     return txt;
   }
   if(mode==='cone'){
@@ -6641,7 +7225,7 @@ function buildBauplanSVG(forExport){
   const typBez = adapterType==='cone' ? (EN?'Cone':'Kegel')
                : adapterType==='ball3d' ? (EN?'3D node':'3D-Knoten')
                : (EN?'Star':'Stern');
-  const meta=`${EN?'Connector type':'Verbindertyp'}: ${typBez}${isDouble?(EN?' · double':' · Doppel'):''}`;
+  const meta=`${EN?'Node type':'Knotentyp'}: ${typBez}${isDouble?(EN?' · double':' · Doppel'):''}`;
 
   // --- Seitenaufteilung: erste Seite hat die Skizze, danach beginnen die Listen.
   // Passt eine Liste nicht mehr, laeuft sie auf Folgeseiten weiter. ---
@@ -6673,7 +7257,7 @@ function buildBauplanSVG(forExport){
     if(pageIdx>=verbPages.length) return '';
     const pg=verbPages[pageIdx];
     const y0=(pg.first?listStartY1:listStartYn);
-    let g=`<text x="${M}" y="${y0}" font-size="5" font-weight="bold" fill="#1a2b22">${EN?'Connectors':'Verbinder'} (${body.verts.length})${verbPages.length>1?` · S.${pageIdx+1}/${verbPages.length}`:''}</text>`;
+    let g=`<text x="${M}" y="${y0}" font-size="5" font-weight="bold" fill="#1a2b22">${EN?'Nodes':'Knoten'} (${body.verts.length})${verbPages.length>1?` · S.${pageIdx+1}/${verbPages.length}`:''}</text>`;
     let y=y0+headH;
     for(let i=pg.start;i<pg.end;i++){
       const it=verbItems[i];
@@ -6734,7 +7318,7 @@ function buildBauplanSVG(forExport){
   // --- Seiten zusammenbauen. Seite 1 mit Skizze, Folgeseiten nur Listen. ---
   const pageSVGs=[];
   for(let pi=0;pi<pageCount;pi++){
-    const footer=`<text x="${M}" y="${A4H-11}" font-size="2.8" fill="#6b6f63">${pageCount>1?`${EN?'Page':'Seite'} ${pi+1}/${pageCount} · `:''}${EN?'Colours mark identical connector types and rod lengths. ':'Farben markieren gleiche Verbindertypen und Strebenlängen. '}${strebenMassText()}</text>`
+    const footer=`<text x="${M}" y="${A4H-11}" font-size="2.8" fill="#6b6f63">${pageCount>1?`${EN?'Page':'Seite'} ${pi+1}/${pageCount} · `:''}${EN?'Colours mark identical node types and rod lengths. ':'Farben markieren gleiche Knotentypen und Strebenlängen. '}${strebenMassText()}</text>`
       + `<text x="${A4W-M}" y="${A4H-11}" font-size="2.8" text-anchor="end" fill="#9a9e95">`
       + `© 2026 Peter Hausegger · CC BY-SA 4.0</text>`;
     let inner=border+footer;
@@ -6848,7 +7432,8 @@ function buildBauplanSVG(forExport){
   const sizeAttr=forExport?`width="${A4W}mm" height="${totalH}mm"`:`width="${(A4W*2.4).toFixed(0)}"`;
   let pagesG='';
   for(let pi=0;pi<pageCountAll;pi++){
-    pagesG+=`<g transform="translate(0,${A4H*pi})">${pageSVGs[pi]}</g>`;
+    // QR-Code (wenn eingeschaltet) unten rechts, ueber der Fusszeile.
+    pagesG+=`<g transform="translate(0,${A4H*pi})">${pageSVGs[pi]}${qrEckeSVG(true,0,0,A4W,A4H,13,null,6)}</g>`;
   }
   return `<svg id="bauplanSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${A4W} ${totalH}" ${sizeAttr} font-family="Segoe UI Rounded, SF Pro Rounded, Trebuchet MS, Segoe UI, Verdana, sans-serif" style="max-width:70%;max-height:80vh;">
     ${pagesG}
@@ -6932,7 +7517,10 @@ function buildStaebeSVG(forExport){
     const rin=CG.rin;
     offsets = CG.holeRadii.map(r=> r - rin);
   } else {
-    for(let k=0;k<nHoles;k++){ offsets.push(auflage*(k+1)/(nHoles+1)); }
+    // Seit v319 dieselbe Verteilung wie auf dem Knotenarm (holeDistances):
+    // bei "fester Abstand" wanderten die Loecher in der Strebe vorher nicht
+    // mit, weil hier immer gleichmaessig verteilt wurde.
+    offsets = (nHoles>0) ? holeDistances(auflage, nHoles) : [];
   }
   // Farbebenen: Knotenbuchstaben (bleiben) vs Zusatzinfo (kann weggelassen werden)
   const C_NODE='#8e44ad';   // lila: Knotenbuchstaben A/B -> wohin die Strebe gehoert
@@ -7122,7 +7710,7 @@ function buildStaebeSVG(forExport){
         const mitFase = fs>0.2;
         const doppelH = (typeof bauartDoppel==='function') && bauartDoppel();
         const nachAussen0 = (typeof hakenRichtung==='function') && hakenRichtung()==='aussen';
-        pts.push([r,0]);
+        pts.push([0,0,r]);
         if(doppelH){
           // Oberkante von links nach rechts, mit Haken nach oben
           stellen.forEach(x0=>{
@@ -7143,7 +7731,7 @@ function buildStaebeSVG(forExport){
             }
           });
         }
-        pts.push([L-r,0],[L,r],[L,H-r],[L-r,H]);
+        pts.push([L,0,r],[L,H,r]);
         // Unterkante von RECHTS nach LINKS
         const nachAussen = (typeof hakenRichtung==='function') && hakenRichtung()==='aussen';
         const jsR=document.querySelector('#joinSeg .on');
@@ -7169,8 +7757,8 @@ function buildStaebeSVG(forExport){
                           [x-hl, H+spalt], [x-nw, H+spalt], [x-nw, H]);
           }
         });
-        pts.push([r,H],[0,H-r],[0,r]);
-        const d='M '+pts.map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(' L ')+' Z';
+        pts.push([0,H,r]);
+        const d='M '+eckenBoegen(pts).map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(' L ')+' Z';
         stueck+=`<path d="${d}" fill="${forExport?'none':'#FAF9F6'}" stroke="#FF0000" stroke-width="0.4"/>`;
       } else if(vZapfen){
         // Gegenstueck zum Verbinder: an JEDEM Strebenende ein Pfeil mit
@@ -7202,38 +7790,38 @@ function buildStaebeSVG(forExport){
         // Umriss in einem Zug: oben entlang -> rechter Pfeil -> unten zurueck
         // -> linker Pfeil. Punktliste statt Stueckwerk, das ist weniger
         // fehleranfaellig als das Zusammensetzen von Teilstrings.
+        // Pfeil bzw. Trapez: Spitze, Widerhaken und Absatz werden wie am
+        // Knoten mit der Eckenabrundung gerundet (seit v321; vorher blieb die
+        // Spitze spitz). Der Ansatz an der vollen Breite bleibt scharf.
+        const rp=eckenRadius(breite);
         const pts=[];
-        pts.push([r,0],[L-r,0]);
-        pts.push([L,r]);
+        pts.push([0,0,r],[L,0,r]);
         pts.push([L,cyM-hb]);
         if(trapez){
-          pts.push([L+lg, cyM-hb-hk]);
-          pts.push([L+lg, cyM+hb+hk]);
+          pts.push([L+lg, cyM-hb-hk, rp]);
+          pts.push([L+lg, cyM+hb+hk, rp]);
         } else {
-          pts.push([L+lg*0.30, cyM-hb]);
-          pts.push([L+lg*0.42, cyM-hb-hk]);
-          pts.push([L+lg,      cyM]);
-          pts.push([L+lg*0.42, cyM+hb+hk]);
-          pts.push([L+lg*0.30, cyM+hb]);
+          pts.push([L+lg*0.30, cyM-hb, rp]);
+          pts.push([L+lg*0.42, cyM-hb-hk, rp]);
+          pts.push([L+lg,      cyM, rp]);
+          pts.push([L+lg*0.42, cyM+hb+hk, rp]);
+          pts.push([L+lg*0.30, cyM+hb, rp]);
         }
         pts.push([L, cyM+hb]);
-        pts.push([L, breite-r]);
-        pts.push([L-r, breite],[r, breite]);
-        pts.push([0, breite-r]);
+        pts.push([L, breite, r],[0, breite, r]);
         pts.push([0, cyM+hb]);
         if(trapez){
-          pts.push([-lg, cyM+hb+hk]);
-          pts.push([-lg, cyM-hb-hk]);
+          pts.push([-lg, cyM+hb+hk, rp]);
+          pts.push([-lg, cyM-hb-hk, rp]);
         } else {
-          pts.push([-lg*0.30, cyM+hb]);
-          pts.push([-lg*0.42, cyM+hb+hk]);
-          pts.push([-lg,      cyM]);
-          pts.push([-lg*0.42, cyM-hb-hk]);
-          pts.push([-lg*0.30, cyM-hb]);
+          pts.push([-lg*0.30, cyM+hb, rp]);
+          pts.push([-lg*0.42, cyM+hb+hk, rp]);
+          pts.push([-lg,      cyM, rp]);
+          pts.push([-lg*0.42, cyM-hb-hk, rp]);
+          pts.push([-lg*0.30, cyM-hb, rp]);
         }
         pts.push([0, cyM-hb]);
-        pts.push([0, r]);
-        const d='M '+pts.map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(' L ')+' Z';
+        const d='M '+eckenBoegen(pts).map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(' L ')+' Z';
         stueck+=`<path d="${d}" fill="${forExport?'none':'#FAF9F6'}" stroke="#FF0000" stroke-width="0.4"/>`;
         // Schlitze symmetrisch von beiden Enden, damit jede Einbaurichtung
         // passt. Position so waehlen, dass sie KEINE Bohrung anschneidet.
@@ -7406,7 +7994,15 @@ function buildStaebeSVG(forExport){
     const EN=(typeof curLang!=='undefined'&&curLang==='en');
     if(!werksEinstellung){ presetHinweis(EN?'Initial state not known yet.':'Anfangszustand noch nicht bekannt.'); return; }
     if(!confirm(EN?'Reset all settings to the initial state?':'Alle Einstellungen auf den Anfangszustand zurücksetzen?')) return;
-    einstellungSetzen(werksEinstellung); verlaufMerken();
+    // Automatische Werte (Strebenbreite, Hakenhoehe, Schlitzabstand,
+    // Ueberlappung) folgen nach dem Zuruecksetzen wieder ihren Bezugsgroessen.
+    ['__strebBManuell','__hakenHManuell','__zapfenAManuell','__ovManuell',
+     '__ovManuellBody','__coneStabWManuell'].forEach(k=>{ window[k]=false; });
+    einstellungSetzen(werksEinstellung);
+    ['__strebBManuell','__hakenHManuell','__zapfenAManuell','__ovManuell',
+     '__ovManuellBody','__coneStabWManuell'].forEach(k=>{ window[k]=false; });
+    if(typeof updateLockOpt==='function') updateLockOpt();
+    render(); verlaufMerken();
     const sel=document.getElementById('presetSel'); if(sel) sel.value='';
     presetHinweis(EN?'Reset to initial state.':'Auf Anfangszustand zurückgesetzt.');
   });
@@ -7943,14 +8539,9 @@ function updateStepsAndJoin(){
     // Bezugsgroesse fuer alle Verbindungsarten (Zapfen, Haken, Kegelnaht,
     // Doppellage) und gehoeren deshalb ganz nach oben, statt versteckt in
     // den Reglern der jeweiligen Verbindungsart aufzutauchen.
-    const mw=$('matWrap');
-    if(mw){
-      const nachJoin = jm ? jm.nextSibling : j.nextSibling;
-      if(nachJoin!==mw) j.parentNode.insertBefore(mw, nachJoin);
-    }
+    // Seit v319 stehen die Materialstaerken nicht mehr hier: die der Streben
+    // im eigenen Abschnitt "Streben", die der Knoten bei der Verbindung.
   })();
-  // Die Materialstaerken gelten IMMER, auch im Einzelmodus.
-  if($('matWrap')) $('matWrap').style.display='block';
   // Ansicht-Umschalter (Körper/Verbinder/beide) bei ALLEN Körper-Typen zeigen,
   // auch beim Knotenpunkt.
   if($('viewBar')) $('viewBar').style.display = inBody?'block':'none';
@@ -8199,7 +8790,7 @@ function updateZoomVis(){
   const lab=$('zoomSheetGrp') ? $('zoomSheetGrp').querySelector('.zoomlab') : null;
   if(lab){
     const EN=(typeof curLang!=='undefined'&&curLang==='en');
-    lab.textContent = (mode==='body') ? (EN?'Zoom connectors and rods':'Zoom Verbinder und Streben') : (EN?'Zoom':'Zoom');
+    lab.textContent = (mode==='body') ? (EN?'Zoom nodes and rods':'Zoom Knoten und Streben') : (EN?'Zoom':'Zoom');
   }
 }
 // Passt beide Zoomstufen so an, dass Koerper und Verbindersatz in die Breite
@@ -8285,10 +8876,10 @@ function applyMode(){
   // Im Knotenpunkt-Modus gibt es keine flache Verbinder-Abwicklung zum Lasern.
   updateExportVisByType();
   if($('dlStl')) $('dlStl').style.display='inline-block';
-  const subDE = mode==='body'?'Körper · Verbindersatz + Schnittliste'
+  const subDE = mode==='body'?'Körper · Knotensatz + Schnittliste'
               : mode==='cone'?'Kegelecke · Abwicklung'
               : mode==='ball3d'?(ballKonstruktion()==='zapfen'?'3D-Knoten · Kragen mit Zapfen':'3D-Knoten · Kragen mit Bohrungen')
-              : 'Sternverbinder · 2D';
+              : 'Sternknoten · 2D';
   { const sub=$('subtitle'); if(sub) sub.textContent = (typeof curLang!=='undefined' && curLang==='en' && typeof I18N!=='undefined' && I18N[subDE]) ? I18N[subDE] : subDE; }
   if(inBody) updateBodyAdapterVis();
   if(typeof brickInfoAktualisieren==='function') try{ brickInfoAktualisieren(); }catch(e){}
@@ -8315,6 +8906,13 @@ function updateConeCustomVis(){
 $('coneSel').addEventListener('change',()=>{ updateConeCustomVis(); render(); });
 // Taillentiefe auf tangentialen Standard setzen (Wert 0 = Automatik im Code)
 // ---- Autolayout-Steuerung ----
+// QR-Code an/aus. Beim Einschalten sofort berechnen, damit ein gleich
+// danach gestarteter Export ihn schon enthaelt.
+document.querySelectorAll('#qrSeg button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#qrSeg button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  if(qrAn()) qrAktualisieren();
+}));
 document.querySelectorAll('#layoutSeg button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('#layoutSeg button').forEach(x=>x.classList.remove('on'));
   b.classList.add('on');
@@ -8753,6 +9351,7 @@ function buildEinzelBauplanSVG(){
                  (typeof holeCountPerArm==='function')?holeCountPerArm():state.holes]);
     zeilen.push([EN?'Hole Ø':'Lochdurchmesser', n(state.hd)]);
     if(state.center>0) zeilen.push([EN?'Centre hole':'Mittelloch Ø', n(state.center)]);
+    if(state.cslot>0 && (zinkenAn()||hakenAn())) zeilen.push([EN?'Centre slot':'Mittelschlitz', n(state.cslot)]);
     zeilen.push([EN?'Rod length':'Strebenlänge', n(sync('stab','nStab',lastSrc))]);
   }
 
@@ -8823,14 +9422,14 @@ function buildEinzelBauplanSVG(){
     + `<g stroke-width="6" stroke-linecap="round" fill="none"><line x1="0.0" y1="0.0" x2="32.9" y2="19.0" stroke="#1a2b22"/><line x1="32.9" y1="19.0" x2="0.0" y2="38.0" stroke="#1a2b22"/><line x1="0.0" y1="38.0" x2="-32.9" y2="19.0" stroke="#1a2b22"/><line x1="-32.9" y1="19.0" x2="0.0" y2="0.0" stroke="#1a2b22"/><line x1="0.0" y1="-38.0" x2="32.9" y2="-19.0" stroke="#1a2b22"/><line x1="32.9" y1="-19.0" x2="0.0" y2="0.0" stroke="#1a2b22"/><line x1="0.0" y1="0.0" x2="-32.9" y2="-19.0" stroke="#1a2b22"/><line x1="-32.9" y1="-19.0" x2="0.0" y2="-38.0" stroke="#1a2b22"/><line x1="0.0" y1="0.0" x2="0.0" y2="-38.0" stroke="#1a2b22"/><line x1="32.9" y1="19.0" x2="32.9" y2="-19.0" stroke="#1a2b22"/><line x1="0.0" y1="38.0" x2="0.0" y2="0.0" stroke="#1a2b22"/><line x1="-32.9" y1="19.0" x2="-32.9" y2="-19.0" stroke="#1a2b22"/><line x1="0.0" y1="0.0" x2="32.9" y2="19.0" stroke="#00873C"/><line x1="0.0" y1="0.0" x2="-32.9" y2="-19.0" stroke="#00873C"/><line x1="0.0" y1="0.0" x2="0.0" y2="38.0" stroke="#0A32C8"/><line x1="0.0" y1="0.0" x2="0.0" y2="-38.0" stroke="#0A32C8"/><line x1="0.0" y1="0.0" x2="-32.9" y2="19.0" stroke="#E00000"/><line x1="0.0" y1="0.0" x2="32.9" y2="-19.0" stroke="#E00000"/></g>`
     + `<circle cx="0.0" cy="0.0" r="8" fill="#1a2b22"/><circle cx="32.9" cy="19.0" r="8" fill="#1a2b22"/><circle cx="0.0" cy="38.0" r="8" fill="#1a2b22"/><circle cx="-32.9" cy="19.0" r="8" fill="#1a2b22"/><circle cx="0.0" cy="-38.0" r="8" fill="#1a2b22"/><circle cx="32.9" cy="-19.0" r="8" fill="#1a2b22"/><circle cx="0.0" cy="0.0" r="8" fill="#1a2b22"/><circle cx="-32.9" cy="-19.0" r="8" fill="#1a2b22"/><circle cx="0.0" cy="0.0" r="8" fill="#1a2b22"/><circle cx="-2.2" cy="-2.2" r="2.6" fill="#ffffff"/><circle cx="30.7" cy="16.8" r="2.6" fill="#ffffff"/><circle cx="-2.2" cy="35.8" r="2.6" fill="#ffffff"/><circle cx="-35.1" cy="16.8" r="2.6" fill="#ffffff"/><circle cx="-2.2" cy="-40.2" r="2.6" fill="#ffffff"/><circle cx="30.7" cy="-21.2" r="2.6" fill="#ffffff"/><circle cx="-2.2" cy="-2.2" r="2.6" fill="#ffffff"/><circle cx="-35.1" cy="-21.2" r="2.6" fill="#ffffff"/><circle cx="-2.2" cy="-2.2" r="2.6" fill="#ffffff"/></g>`;
   const kopf=`<text x="${M}" y="${M+6}" font-size="7" font-weight="bold" fill="#1a2b22">${EN?'Build plan':'Bauplan'} – ${typName}</text>
-    <text x="${M}" y="${M+12}" font-size="3.4" fill="#6b6f63">${EN?'single part':'Einzelverbinder'} · ${exportBaseName()}</text>
+    <text x="${M}" y="${M+12}" font-size="3.4" fill="#6b6f63">${EN?'single node':'Einzelknoten'} · ${exportBaseName()}</text>
     ${ikon}<text x="${A4W-M-21}" y="${M+11}" font-size="4.6" text-anchor="end" fill="#1a2b22" font-weight="bold">KNOTI</text>`;
   const rahmen=`<rect x="5" y="5" width="${A4W-10}" height="${A4H-10}" fill="none" stroke="#DEDCD5" stroke-width="0.5"/>`;
   const fuss=`<text x="${M}" y="${A4H-11}" font-size="2.8" fill="#6b6f63">${massstabTxt}</text>`
     + `<text x="${A4W-M}" y="${A4H-11}" font-size="2.8" text-anchor="end" fill="#9a9e95">`
     + `© 2026 Peter Hausegger · CC BY-SA 4.0</text>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${A4W} ${A4H}" width="${A4W}mm" height="${A4H}mm" font-family="Segoe UI Rounded, SF Pro Rounded, Trebuchet MS, Segoe UI, Verdana, sans-serif">
-    ${rahmen}${kopf}${bild}${tabelle}${fuss}</svg>`;
+    ${rahmen}${kopf}${bild}${tabelle}${fuss}${qrEckeSVG(true,0,0,A4W,A4H,13,null,6)}</svg>`;
 }
 function openBauplanPrint(svg, name){
   const A4W=210, A4H=297;
@@ -9063,8 +9662,7 @@ function updateLockOpt(){
   const nb=document.querySelector('#lockSeg button[data-v="naht"]');
   if(nb) nb.style.display = istKegel ? '' : 'none';
   // Materialstaerken immer zeigen; ohne Staebe entfaellt deren Staerke.
-  const mb=document.getElementById('matWrap');
-  if(mb) mb.style.display='block';
+  // (matWrap: Sichtbarkeit ergibt sich seit v319 aus den enthaltenen Reglern.)
   const ohneStaebe = document.querySelector('#joinSeg .on')
     && document.querySelector('#joinSeg .on').dataset.v==='direct';
   ['matArm','nMatArm'].forEach(id=>{
@@ -9101,15 +9699,18 @@ function updateLockOpt(){
   // das nicht mit der uebrigen Sichtbarkeitslogik beisst.
   window.__zapfenKollision=false;
   // Regler auf den idealen Wert einstellen, solange der Nutzer ihn nicht
-  // selbst bedient hat. Sein Hoechstwert ist zugleich die passende Lage.
+  // selbst bedient hat.
   (function(){
     if(typeof zapfenAbstandIdeal!=='function') return;
     const ideal=Math.round(zapfenAbstandIdeal()*10)/10;
     const sl=$('zapfenA'), nf=$('nZapfenA');
     if(!sl||!nf) return;
-    sl.max=nf.max=ideal;
+    // Hoechstwert seit v319: beim Stern bis in die Mitte (zapfenAbstandMax),
+    // vorbelegt bleibt die ideale Lage knapp vor der Knicklinie.
+    const maxA=Math.max(ideal, Math.floor(zapfenAbstandMax()*10)/10);
+    sl.max=nf.max=maxA;
     if(!window.__zapfenAManuell){ sl.value=nf.value=ideal; }
-    else if(parseFloat(nf.value)>ideal){ sl.value=nf.value=ideal; }
+    else if(parseFloat(nf.value)>maxA){ sl.value=nf.value=maxA; }
   })();
   document.body.classList.toggle('ohneLoecher', !loecherAn());
   (function(){
@@ -9239,7 +9840,14 @@ function updateLockOpt(){
   const zeig=(id,an)=>{ const e=document.getElementById(id); if(e) e.style.display= an?'block':'none'; };
   // Die Gruppe legt die Positionen auf dem Arm fest - Bohrungen UND
   // Hakenschlitze. Sie wird deshalb auch bei Haken gebraucht.
-  zeig('lochWrap',   loecherAn() || lockAktiv('haken'));
+  // Locheinstellungen (seit v319 mit Mittelloch): bei Loechern - und beim
+  // Stern auch, solange ein Mittelloch eingestellt ist, damit es nicht
+  // unsichtbar weiterwirkt. Die Hakenschlitze haben ihre eigene Verteilung.
+  { const subS=(mode==='body' && document.querySelector('#bodyAdapterSeg .on')) ? document.querySelector('#bodyAdapterSeg .on').dataset.v : null;
+    const sternJ = mode==='single' || subS==='star';
+    const mitte = sternJ && $('nCenter') && parseFloat($('nCenter').value)>0;
+    zeig('lochWrap', loecherAn() || mitte);
+    zeig('grpMittelschlitz', sternJ && (zinkenAn() || hakenAn())); }
   // Innerhalb der Gruppe die reinen Loch-Regler nur bei Loechern zeigen.
   ['nHoles','holes','nHd','hd'].forEach(id=>{
     const e=document.getElementById(id); if(!e) return;
@@ -9283,7 +9891,7 @@ function updateLockOpt(){
     // nicht erst wenn eine bestimmte Verbindungsart das noetig macht.
     const jsMat=document.querySelector('#joinSeg .on');
     const mitStrebenMat = mode!=='body' || !(jsMat && jsMat.dataset.v==='direct');
-    zeig('matWrap', brauchtVerb || brauchtStreb || mitStrebenMat);
+    zeig('matWrap', brauchtStreb || mitStrebenMat);
     // Die VERBINDER-Staerke wird nur fuer Zapfen und Haken gebraucht. Die
     // STREBEN-Staerke zusaetzlich fuer Kegelnaht und Doppellage, weil sie dort
     // den Abstand zwischen Innen- und Aussenschale bestimmt.
@@ -9296,7 +9904,9 @@ function updateLockOpt(){
     // Schlitze nehmen dann Verbinderarme bzw. Hakenklammern auf, also
     // Verbindermaterial. Der Regler bliebe wirkungslos und wird ausgeblendet -
     // ausser bei Doppellage, wo er den Abstand der beiden Schalen bestimmt.
-    const zeigStreb = mitStrebenMat || !!dopp;
+    // Seit v320 steht sie in der Verbindung unter der Knotenstaerke und ist
+    // nur noch zu sehen, wenn eine Steckverbindung sie braucht.
+    const zeigStreb = (mitStrebenMat || !!dopp) && brauchtStreb;
     ['matArm','nMatArm'].forEach(id=>{ const e=document.getElementById(id); if(!e) return;
       const lab=e.closest('label'); if(lab) lab.style.display = zeigStreb?'':'none';
       if(e.type==='range') e.style.display = zeigStreb?'':'none';
@@ -9317,6 +9927,18 @@ function updateLockOpt(){
       const hb=lab?lab.querySelector('.help-btn'):null;
       if(hb) hb.style.display = mitStrebenB ? '' : 'none';
     });
+  })();
+  // Seit v319 steckt jeder Materialregler in einer eigenen Gruppe: die Gruppe
+  // folgt dem (oben ein- oder ausgeblendeten) Label, der Abschnitt "Streben"
+  // ist sichtbar, solange darin etwas zu sehen ist.
+  (function(){
+    [['grpMatKnoten','nMat'],['grpMatArm','nMatArm'],['grpStrebB','nStrebB']].forEach(([g,i])=>{
+      const G=$(g), e=$(i); if(!G||!e) return;
+      const lab=e.closest('label');
+      G.style.display = (lab && lab.style.display==='none') ? 'none' : '';
+    });
+    const mw=$('matWrap');
+    if(mw) mw.style.display = ($('grpStrebB') && $('grpStrebB').style.display!=='none') ? '' : 'none';
   })();
 }
 function updateZapfenOpt(){ updateLockOpt(); }
@@ -9364,6 +9986,10 @@ document.querySelectorAll('#joinSeg button').forEach(b=>b.addEventListener('clic
 ['strebB','nStrebB'].forEach(id=>{
   const e=$(id);
   if(e) e.addEventListener('input',()=>{ window.__strebBManuell=true; }, true);
+});
+['hakenH','nHakenH'].forEach(id=>{
+  const e=$(id);
+  if(e) e.addEventListener('input',()=>{ window.__hakenHManuell=true; }, true);
 });
 [['strebB','nStrebB']].forEach(([sid,nid])=>{
   // Sobald der Nutzer hier selbst dreht, gilt sein Wert.
@@ -9596,7 +10222,7 @@ $('stlExport').addEventListener('click',async ()=>{
   // Koerpermodus: pro Knotentyp eine eigene Datei, zusammen als ZIP-Ordner.
   if(mode==='body' && lastBody){
     const list=bodyAdapterGeometryList();
-    if(!list || list.unsupported || !list.length){ const EN=(typeof curLang!=='undefined'&&curLang==='en'); alert(EN?'STL export for body connector sets is not supported for the current connector type.':'STL-Export für Körper-Verbindersätze wird für den aktuellen Verbindertyp nicht unterstützt.'); return; }
+    if(!list || list.unsupported || !list.length){ const EN=(typeof curLang!=='undefined'&&curLang==='en'); alert(EN?'STL export for body node sets is not supported for the current node type.':'STL-Export für Körper-Knotensätze wird für den aktuellen Knotentyp nicht unterstützt.'); return; }
     const files=[];
     for(const item of list){
       const o={...opts, foldCircles:item.geo.foldCircles, foldLines:item.geo.foldLines};
@@ -9610,7 +10236,7 @@ $('stlExport').addEventListener('click',async ()=>{
   }
   // Einzeladapter / Kegel: eine Datei.
   const geo=currentAdapterGeometry();
-  if(!geo){ const EN=(typeof curLang!=='undefined'&&curLang==='en'); alert(EN?'STL export is available for single adapters, the cone corner, and body adapter sets.':'STL-Export ist für Einzeladapter, Kegelecke und Körper-Adaptersätze verfügbar.'); return; }
+  if(!geo){ const EN=(typeof curLang!=='undefined'&&curLang==='en'); alert(EN?'STL export is available for single nodes, the cone corner, and body node sets.':'STL-Export ist für Einzelknoten, Kegelecke und Körper-Knotensätze verfügbar.'); return; }
   const o={...opts, foldCircles:geo.foldCircles, foldLines:geo.foldLines};
   const tris=buildAdapterSTL(geo.rings, geo.holes, o);
   dlBlobNow(trisToSTL(tris), adapterFileName('stl', o));
@@ -9663,6 +10289,7 @@ function buildCode(){
     t.push('AL'+n(state.len), 'AB'+n(state.wid), 'AS'+n(state.gap),
            'ECK'+n(state.fil), 'L'+n(holeCountPerArm()), 'LD'+n(state.hd));
     if(state.center>0) t.push('MI'+n(state.center));
+    if(state.cslot>0 && (zinkenAn()||hakenAn())) t.push('MS'+n(state.cslot));
   }
   return t.join('_');
 }
@@ -9741,6 +10368,16 @@ $('panReset').addEventListener('click',()=>{ const h=$('svgHost'); if(h){ h.scro
 
 // ---- 3D-Vorschau: Maus-Drehung + Ansichts-Knoepfe ----
 function clearViewBtn(){ document.querySelectorAll('.viewbtn').forEach(b=>b.classList.remove('on')); }
+// Beim Drehen nicht alles neu berechnen: im Koerpermodus nur die Skizze
+// austauschen, beim Einzel-3D-Knoten nur neu zeichnen (seit v323).
+function drehenSchnell(){
+  if(mode==='body' && typeof window.__bodySkizze==='function'){
+    const el=$('bodySvg');
+    if(el){ try{ el.outerHTML=window.__bodySkizze(); return; }catch(e){} }
+  }
+  if(mode==='ball3d' && $('gl3dSlot') && Knoti3D.verfuegbar()){ Knoti3D.neuZeichnen(); return; }
+  render();
+}
 function is3DView(){
   if(mode==='ball3d') return true;
   const v=(document.querySelector('#viewSeg .on')?document.querySelector('#viewSeg .on').dataset.v:'both');
@@ -9761,7 +10398,7 @@ function is3DView(){
     camEl += dy*0.01;
     camEl=Math.max(-Math.PI/2+0.05, Math.min(Math.PI/2-0.05, camEl));
     clearViewBtn();
-    render();
+    drehenSchnell();
   });
   const stop=e=>{ dragging=false; host.classList.remove('grabbing'); };
   host.addEventListener('pointerup',stop);
@@ -9772,6 +10409,8 @@ document.querySelectorAll('.viewbtn').forEach(btn=>btn.addEventListener('click',
   if(v==='front'){ camAz=0; camEl=0; }
   else if(v==='top'){ camAz=0; camEl=Math.PI/2-0.05; }
   else { camAz=-Math.PI/4; camEl=Math.atan(1/Math.sqrt(2)); }   // echte Isometrie (35.264°, 45°)
+  // Der Knotensatz hat eine eigene Kamera; die Ansichtsknoepfe stellen beide.
+  if(typeof Knoti3D!=='undefined') Knoti3D.kameraAngleichen();
   markViewBtn(v);
   render();
 }));
@@ -9793,20 +10432,21 @@ const I18N = {
   'Als Link teilen':'Share as link',
   'Einzeladapter':'Single adapter','Körper':'Body','Stern':'Star','Kegel':'Cone','3D-Knoten':'3D node',
   'Kragendicke ':'Collar thickness ','Armlänge ':'Arm length ',
-  'echte mm':'real mm','auf Kantenlänge':'to edge length','Verbindersatz':'Connector set',
+  'echte mm':'real mm','auf Kantenlänge':'to edge length','Verbindersatz':'Node set','Knotensatz':'Node set',
   'eine Lage':'one layer','innen+außen':'inner+outer','mit':'with','ohne':'without','+ Falz':'+ tab',
   'gleichmäßig':'even','eigene Winkel':'custom angles','definiert':'defined',
   'Einfach':'Single','Doppel (innen+außen)':'Double (inner+outer)',
   'Konstruktion ':'Construction ',
-  'ohne Streben':'without rods','Verbinder + Streben':'Connectors + rods','Verbinder + Streben':'Connectors + rods','ohne Streben':'without rods',
+  'ohne Streben':'without rods','Knoten + Streben':'Nodes + rods','ohne Streben':'without rods',
   'Ohne Streben':'Without rods','mittig stoßend':'butt at center','überlappend':'overlapping',
   'Überlappende Löcher ':'Overlapping holes ',
-  'help_join':'With rods: the connectors sit at the corners and rods span between them. Plugged directly: the connectors are built onto each other without rods, their arms form the edges. You set the edge length, the arm length follows. The arms either butt at the center or overlap.',
-  'help_joinholes':'How many holes should line up exactly when overlapping. The hole spacing is chosen automatically so the patterns of both connectors coincide. That way you can push a pin through, rivet and glue.',
+  'help_join':'With rods: the nodes sit at the corners and rods span between them. Without rods: the nodes are built onto each other without rods, their arms form the edges. You set the edge length, the arm length follows. The arms either butt at the center or overlap.',
+  'help_joinholes':'How many holes should line up exactly when overlapping. The hole spacing is chosen automatically so the patterns of both nodes coincide. That way you can push a pin through, rivet and glue.',
   'beide':'both','nur innen':'inner only','nur außen':'outer only',
-  'links':'left','rechts':'right','Verbinder':'Connectors',
-  'Verbindungsart':'Joint type','Ausgabe':'Output',
-  'Materialstärke Verbinder ':'Material thickness connector ','Materialstärke Streben ':'Material thickness rods ',
+  'links':'left','rechts':'right','Knoten':'Nodes','Zoom Knoten':'Zoom nodes','Knoten (SVG)':'Nodes (SVG)',
+  'Verbindungsart':'Connection','Verbindung':'Connection','Knotenform':'Node shape','Streben':'Rods','Locheinstellungen':'Hole settings','Mittelschlitz ':'Centre slot ',
+  'help_cslot':'Draws one slot per arm in the centre of the star, pointing along the arm. Together they form a small star you can plug something into. The value is the length from the centre, 0 switches it off. The slot width matches the other slots (rod material thickness, or the node thickness without rods).','Ausgabe':'Output',
+  'Materialstärke Knoten ':'Material thickness nodes ','Materialstärke Streben ':'Material thickness rods ',
   'Steckfalz':'Slot-in seam',
   'Art wählen (mehrere möglich) ':'Choose type (multiple possible) ','Form':'Shape',
   'Doppellage & Knickflächen':'Double layer & fold faces',
@@ -9823,19 +10463,21 @@ const I18N = {
   'Zapfenbreite ':'Tab width ','Abstand Zapfen–Schlitz ':'Tab to slot ','Strebenlänge':'Rod length',
   'Schlitze pro Arm ':'Slots per arm ',
   'Nasenüberstand ':'Nose overhang ',
-  'Ebenen im Export':'Layers in export','Schnitt':'Cut','Knicklinie':'Fold line','Falz':'Crease','Bohrung':'Hole','Beschriftung':'Labels','Zusatzinfo':'Extra info',
+  'Ebenen im Export':'Layers in export','Schnitt':'Cut','QR-Code ':'QR code ','aus':'off','an':'on',
+  'help_qr':'Prints a QR code with a link to the current settings on the build plan and on the sheets in auto layout. Scanning it opens KNOTI with exactly these values. It sits in the extra info layer (teal) and is only drawn where it does not cover any parts. Off by default because it slows down creating the plans a little.','Knicklinie':'Fold line','Falz':'Crease','Bohrung':'Hole','Beschriftung':'Labels','Zusatzinfo':'Extra info',
   'Hakenrichtung':'Hook direction','zur Mitte':'towards centre','nach außen':'outwards','Schlitzlänge ':'Slot length ','Hakengröße ':'Hook size ',
   'help_haken':'The rod stands on edge and is pushed into the longitudinal slot from outside. A hook nose on the rod protrudes by one material thickness beyond the rod edge and then reaches back towards the middle of the rod, so it can no longer slip out. Slot width equals material thickness. With the double build the rod gets hooks on both edges. Slot distribution: automatic spreads the slots evenly along the arm; with fixed spacing you set the spacing and the position of the first slot (centre, measured from the fold line) yourself, independent of the holes.',
   'Schlitzverteilung':'Slot distribution','Schlitzabstand ':'Slot spacing ','1. Schlitz ab Knicklinie ':'1st slot from fold line ',
   'Zapfenlänge ':'Tab length ','Widerhaken-Winkel ':'Barb angle ',
   'Nicht möglich: Die Überlappung ist breiter als der Arm. Überlappung verkleinern oder Strebenbreite erhöhen.':'Not possible: the overlap is wider than the arm. Reduce the overlap or increase the rod width.',
   'help_matarm':'Thickness of the rods: needed for slot joints and double shells.',
-  'help_mat':'Thickness of the material you cut from. Needed for the locking tabs: the slot must match the material thickness exactly, otherwise the tab will not hold or will not fit through. Typically 3 mm plywood or 1 mm cardboard.',
+  'help_mat':'Nodes and rods can be made of different materials, for example nodes from 0.5 mm kraft paper and rods from 3 mm plywood. The material thickness sets the dimensions of the plug-in joints.',
+  'help_customlen':'One length per arm, in the same order as the angles. If values are missing, the remaining arms use the set arm length. That way you can build a node that sits on edges of different length.',
   'help_lock':'Holes: plain drilled holes, joined with screws, rivets or glue - works with any material. Tabs: the rod lies flat on the arm, aligned like the star or cone arms. An arrow at the arm end engages a slot in the mating part; the material has to give a little, so rather thin - paper, card, thin plywood. Hooks: the rod stands on edge. A tenon at the rod end carries a nose hanging downwards. It is pushed through the slot and the rod is dropped, so the nose catches behind the plate. Nothing has to bend, so this also suits thicker material such as wood or sheet metal. Cone seam additionally closes the cone. Pegs and hooks can be combined, e.g. for a building block that needs both slot types. The rod sheet then shows two rod types: hook rods and peg rods.',
   'Begrenzt: tiefer würde der Schnitt eine Bohrung öffnen.':'Limited: cutting deeper would open a bore.',
   'Begrenzt: tiefer würde der Schnitt den Verbindungskern durchtrennen.':'Limited: cutting deeper would cut through the connecting core.',
   'Druckbett-Fläche ':'Bed contact face ',
-  'Zoom Körper':'Zoom structure','Zoom Verbinder und Streben':'Zoom connectors and rods',
+  'Zoom Körper':'Zoom structure','Zoom Knoten und Streben':'Zoom nodes and rods',
   'Blickwinkel':'Camera',
   'Setzt Armzahl und Winkel auf eine gängige Konfiguration.':'Sets arm count and angles to a common configuration.',
   'Export-Qualität':'Export quality','Stern als STL':'Star as STL','Kegel als STL':'Cone as STL',
@@ -9844,7 +10486,7 @@ const I18N = {
   'Verjüngung ':'Taper ','Seitenflächen ':'Side faces ','Kappung oben ':'Top truncation ',
   'Länge L ':'Length L ','Breite B ':'Width B ','Höhe H ':'Height H ','Neigungswinkel ':'Tilt angle ',
   'STL-Datei':'STL file','Kanten-Schwelle ':'Edge threshold ','Skalierung':'Scaling',
-  'Kantenlänge ':'Edge length ','Welcher Verbinder? ':'Which connector? ','Ansicht':'View',
+  'Kantenlänge ':'Edge length ','Welcher Knotentyp? ':'Which node type? ','Ansicht':'View',
   'Mittelloch Ø ':'Center hole Ø ',
   'Breite Streben ':'Rod width ',
   'Armwinkel ':'Arm angles ','exakt':'exact','proportional (bis v313)':'proportional (up to v313)',
@@ -9867,7 +10509,7 @@ const I18N = {
   'Duplo (Raster 16 mm, Ø 9,4 mm)':'Duplo (grid 16 mm, Ø 9.4 mm)',
   '3D-Knoten als STL':'3D node as STL','Höhe (Extrusion)':'Height (extrusion)',
   'Knickfläche (Resthöhe an der Rinne)':'Fold face (remaining height at groove)','Rinnenbreite':'Groove width',
-  'Abbrechen':'Cancel','STL erzeugen':'Generate STL','Verbinder 3D (STL)':'Connector 3D (STL)','Verbinder (SVG)':'Connector (SVG)',
+  'Abbrechen':'Cancel','STL erzeugen':'Generate STL','Knoten 3D (STL)':'Node 3D (STL)',
   'help_stl':'The red area is extruded, black holes are cut out. The blue fold line becomes a recessed groove with 45° chamfers so it can be folded there.',
   'Eckenabrundung ':'Corner rounding ','Verteilung Arme':'Arm distribution',
   'Winkel (Grad, kommagetrennt)':'Angles (degrees, comma-separated)','Bauart':'Build type',
@@ -9881,15 +10523,15 @@ const I18N = {
   'Export-Qualität ':'Export quality ','Standard':'Standard','Fein':'Fine',
   'help_ballquality':'Sets the resolution of the exported STL. Standard is fast and fine for testing. Fine makes the surface smoother and the embossed letters legible, but takes longer to export, especially when a body has several connector types. The preview always stays fast.',
 
-  'Was bauen? ':'What to build? ','Was bauen?':'What to build?','Einzelverbinder':'Single connector',
+  'Was bauen? ':'What to build? ','Was bauen?':'What to build?','Einzelknoten':'Single node',
   'Verbindung ':'Connection ','mit Streben':'with rods','direkt gesteckt':'plugged directly',
   'Direkt gesteckt':'Plugged directly','Deckungsgleiche Löcher ':'Aligned holes ',
   
   'help_types2':'2D star: flat star part for laser cutting, folded. Simple and light, good for kits and quick prototyping, but less rigid. For bendable materials like cardboard or thin wood. 2D cone corner: flat part folded into a cone. More rigid, represents spatial angles truly. Limited at saddle points. 3D node: printed body with collars for plugging in the rods. Needs a 3D printer, very stable and the most accurate on angles.',
 '3D-Knoten · Kragen mit Bohrungen':'3D node · collars with holes',
 '3D-Knoten · Kragen mit Zapfen':'3D node · collars with pegs',
-  'Verbindertyp ':'Connector type ',
-  'help_mode':'Single connector creates one part that you set up freely. Body builds a complete kit for a geometric solid, all connectors and rods at once, one connector per corner.',
+  'Knotentyp ':'Node type ',
+  'help_mode':'Single node creates one part that you set up freely. Body builds a complete kit for a geometric solid, all nodes and rods at once, one node per corner.',
   'help_types':'Star: flat part for laser cutting, folded at the fold lines. Simple and fast, but less rigid and only approximates spatial angles. Cone: flat part folded into a cone. More rigid and true to the angles, but harder to fold. Not buildable at saddle points. 3D node: printed body with collars for plugging in the rods. Very stable and accurate on angles, but needs a printer. Edge cases: saddle points (angle sum over 360 degrees) are only reproduced exactly by the 3D node, the tool warns. Angles below about 15 degrees are hard to make with any type. With many rods per corner the 3D node is the most robust.',
   'Schnell-Winkel':'Quick angles','in der Ebene':'in one plane','im Raum':'in space',
   '90° (4 in Ebene)':'90° (4 in plane)','120° (3 in Ebene)':'120° (3 in plane)','60° (6 in Ebene)':'60° (6 in plane)',
@@ -9916,12 +10558,12 @@ const I18N = {
   'Beschriftung (lila)':'Label (purple)',
   'Zusatzinfo (türkis)':'Extra info (teal)',
   'Knoten-Beschriftung (lila)':'Node label (purple)',
-  'Sternverbinder · 2D':'Star connector · 2D','Kegelecke · Abwicklung':'Cone corner · unrolled',
-  'Körper · Verbindersatz + Schnittliste':'Body · connector set + cut list',
+  'Sternknoten · 2D':'Star node · 2D','Kegelecke · Abwicklung':'Cone corner · unrolled',
+  'Körper · Knotensatz + Schnittliste':'Body · node set + cut list',
   'help_weld':'Connecting tab: an extra inner strip of this width is added to both shells. The previous inner edge becomes the green fold line; the strip is folded over so inner and outer shell can be glued/riveted flat together.',
   'help_gap':'Spacing 0 = the blue fold lines meet at the center (rods converge to a point). Larger spacing pushes the rods apart. The button sets the value so the rods just touch without the fold lines crossing.',
   'help_holespacing':'Fixed spacing: hole centers sit at exactly equal spacing along the arm, measured from the fold line outward. For Lego e.g. 8 mm. If a hole lands beyond the arm length, the arm is too short – increase arm length or reduce spacing.',
-  'help_double':'Double adapter: the rod is clamped between an inner and an outer plate. The two plates keep the same distance everywhere: the rod width with hook joints (the rod stands on edge), otherwise the rod material thickness. Because the rods are tilted, the fold line of the outer plate sits further out than the inner one, by distance times tan(half the rod tilt). "both" lays inner and outer plate side by side for cutting.',
+  'help_double':'Double node: the rod is clamped between an inner and an outer plate. The two plates keep the same distance everywhere: the rod width with hook joints (the rod stands on edge), otherwise the rod material thickness. Because the rods are tilted, the fold line of the outer plate sits further out than the inner one, by distance times tan(half the rod tilt). "both" lays inner and outer plate side by side for cutting.',
   'help_strebbreite':'Width of the rods. It follows the arm width automatically until you set it yourself. With hooks the rod stands on edge in the slot and is its own part - there the link is released, and on a double-layer cone this width is also the gap between the inner and outer shell.',
   'help_kerf':'Compensates for the material width the laser burns away. Outer contours are offset outward by half the value, holes inward, so parts stay dimensionally accurate and rods fit snugly. Typically 0.1–0.2 mm, determine on a test piece. 0 = off.',
   'Anordnung ':'Arrangement ','Raster':'Grid','Autolayout':'Auto layout','Format ':'Format ','Mindestabstand ':'Min. spacing ',
@@ -9966,6 +10608,11 @@ function applyLang(lang){
     }
   };
   document.querySelectorAll('label, .viewbar-label, .sect-txt, .subsect, .zoomlab, .seg button, option, .legend div, .copyright, #dlAdapter,#dlCut,#dlStaebe,#dlBauplan,#dlStl,#gapTouch,#ballDepthTouch,#btnPresetSave,#btnPresetDel,#btnPresetFile,#btnPresetLoad,#btnPresetLink,#btnMerkenAuf,.stl-i18n').forEach(translateNode);
+  // "Zapfen" heisst beim 3D-Knoten "Pegs" (Steckzapfen), bei der flachen
+  // Verbindung aber "Tabs" - derselbe deutsche Schluessel, darum hier gezielt.
+  { const zb=document.querySelector('#lockSeg button[data-v="zinken"]');
+    const tn=zb ? [...zb.childNodes].find(n=>n.nodeType===3 && n.nodeValue.trim()) : null;
+    if(tn && lang==='en') tn.nodeValue='Tabs'; }
   document.querySelectorAll('.help-text').forEach(h=>{
     const k=h.getAttribute('data-i18n');
     if(!HELP_DE[k]) HELP_DE[k]=h.textContent.trim();
@@ -10074,9 +10721,9 @@ function kegelArmbreiteNachfuehren(){
   const sc=document.getElementById('starControls');
   if(sc) mehrBox('sternMehr', [grpVon('grpVerteilung'), document.getElementById('customWrap'),
     grpVon('grpBuild'), document.getElementById('doubleControls'), grpVon('grpSternWinkel')], sc, null);
-  // Loecher: Lochverteilung samt festem Abstand und Lego/Duplo-Vorlage.
-  const hm=document.getElementById('grpHoleMode');
-  if(hm && hm.parentNode) mehrBox('lochMehr', [hm, document.getElementById('holeSpacingWrap')], hm.parentNode, hm);
+  // Lochverteilung: KEINE eigene Box - sie steckt schon im Klappmenue
+  // "Positionen auf dem Arm" und waere sonst ein Untermenue im Untermenue
+  // (so in v317, war zu versteckt).
   // Einzel-Kegel: Armbreite, Taillentiefe, Ueberlappung, Doppellage, Knickflaeche.
   const cc=document.getElementById('coneControls');
   if(cc) mehrBox('coneMehr', [grpVon('coneStabW'), grpVon('coneWaist'), grpVon('overlap'),
