@@ -239,7 +239,7 @@
 <div class="huelle">
 
   <header>
-    <a class="marke" id="markeLink" href="#">
+    <a class="marke" id="markeLink" href="#" target="_blank" rel="noopener">
       <svg viewBox="-46.9 -52.0 93.8 104.0" aria-hidden="true"><g stroke-width="6" stroke-linecap="round" fill="none"><line x1="0" y1="0" x2="32.9" y2="19" stroke="#1a2b22"/><line x1="32.9" y1="19" x2="0" y2="38" stroke="#1a2b22"/><line x1="0" y1="38" x2="-32.9" y2="19" stroke="#1a2b22"/><line x1="-32.9" y1="19" x2="0" y2="0" stroke="#1a2b22"/><line x1="0" y1="-38" x2="32.9" y2="-19" stroke="#1a2b22"/><line x1="32.9" y1="-19" x2="0" y2="0" stroke="#1a2b22"/><line x1="0" y1="0" x2="-32.9" y2="-19" stroke="#1a2b22"/><line x1="-32.9" y1="-19" x2="0" y2="-38" stroke="#1a2b22"/><line x1="0" y1="0" x2="0" y2="-38" stroke="#1a2b22"/><line x1="32.9" y1="19" x2="32.9" y2="-19" stroke="#1a2b22"/><line x1="0" y1="38" x2="0" y2="0" stroke="#1a2b22"/><line x1="-32.9" y1="19" x2="-32.9" y2="-19" stroke="#1a2b22"/><line x1="0" y1="0" x2="32.9" y2="19" stroke="#00873C"/><line x1="0" y1="0" x2="-32.9" y2="-19" stroke="#00873C"/><line x1="0" y1="0" x2="0" y2="38" stroke="#0A32C8"/><line x1="0" y1="0" x2="0" y2="-38" stroke="#0A32C8"/><line x1="0" y1="0" x2="-32.9" y2="19" stroke="#E00000"/><line x1="0" y1="0" x2="32.9" y2="-19" stroke="#E00000"/></g><circle cx="0" cy="0" r="8" fill="#1a2b22"/><circle cx="32.9" cy="19" r="8" fill="#1a2b22"/><circle cx="0" cy="38" r="8" fill="#1a2b22"/><circle cx="-32.9" cy="19" r="8" fill="#1a2b22"/><circle cx="0" cy="-38" r="8" fill="#1a2b22"/><circle cx="32.9" cy="-19" r="8" fill="#1a2b22"/><circle cx="-32.9" cy="-19" r="8" fill="#1a2b22"/><circle cx="-2.2" cy="-2.2" r="2.6" fill="#FBFAF7"/><circle cx="30.7" cy="16.8" r="2.6" fill="#FBFAF7"/><circle cx="-2.2" cy="35.8" r="2.6" fill="#FBFAF7"/><circle cx="-35.1" cy="16.8" r="2.6" fill="#FBFAF7"/><circle cx="-2.2" cy="-40.2" r="2.6" fill="#FBFAF7"/><circle cx="30.7" cy="-21.2" r="2.6" fill="#FBFAF7"/><circle cx="-35.1" cy="-21.2" r="2.6" fill="#FBFAF7"/></svg>
       <h1 id="tTitel">KNOTI-PROJECTS</h1>
     </a>
@@ -942,7 +942,7 @@ $("filterWeg").addEventListener("click", ()=>{
   $("suche").value=""; fuelleFilter(); zeichneRaster();
 });
 $("neuAuf").addEventListener("click", ()=>$("neu").classList.add("offen"));
-$("zumWerkzeug").addEventListener("click", ()=>{ window.location.href = WERKZEUG_URL; });
+$("zumWerkzeug").addEventListener("click", ()=>{ window.open(WERKZEUG_URL, "_blank", "noopener"); });
 $("markeLink").href = WERKZEUG_URL;
 $("fBilderFeld").addEventListener("click", ()=>$("fBilder").click());
 $("fDateienFeld").addEventListener("click", ()=>$("fDateien").click());
