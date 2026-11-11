@@ -387,7 +387,7 @@
         <option value="antiprism">Antiprisma (einstellbar)</option>
         <option value="bipyramid">Bipyramide / Doppelpyramide</option>
         <option value="grid">Raumgitter (Felder x/y/z)</option>
-        <option value="stl">STL importieren</option>
+        <option value="stl">Datei importieren (STL/OBJ)</option>
       </select>
     </div>
     <div id="geoControls" style="display:none;">
@@ -484,11 +484,31 @@
     </div>
     <div id="stlControls" style="display:none;">
       <div class="grp">
-        <label>STL-Datei</label>
-        <input type="file" id="stlFile" accept=".stl" style="width:100%;font-size:12px;">
+        <label>Datei (STL oder OBJ)</label>
+        <input type="file" id="stlFile" accept=".stl,.obj" style="width:100%;font-size:12px;">
         <div id="stlInfo" style="font-size:10px;color:var(--muted);margin-top:6px;line-height:1.5;">Noch keine Datei geladen.</div>
       </div>
-      <div class="grp">
+      <div class="grp" id="grpObjKanten" style="display:none;">
+        <label>Kanten <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
+        <div class="seg" id="objKantenSeg">
+          <button data-v="modell" class="on">wie im Modell</button>
+          <button data-v="knick">am Knick erkennen</button>
+        </div>
+        <div class="help-text" data-i18n="help_objkanten">
+          Eine OBJ-Datei speichert die Flächen als echte Vielecke und auch
+          reine Linien. „Wie im Modell“ übernimmt jede Kante genau so, wie sie
+          modelliert wurde: jeder Punkt wird ein Knoten, jede Kante eine
+          Strebe, ohne Schwelle. So lassen sich auch Drahtmodelle aus Linien
+          bauen (z. B. aus Rhino, Grasshopper oder Blender).
+
+          „Am Knick erkennen“ behandelt die Datei wie eine STL: Flächen werden
+          in Dreiecke zerlegt, Kanten nach der Kanten-Schwelle gefunden.
+
+          Blender speichert OBJ meist in Metern. Ist das Modell dann winzig,
+          stelle die Skalierung auf „längste Kante“ oder „Gesamtgröße“.
+        </div>
+      </div>
+      <div class="grp" id="grpStlAngle">
         <label>Kanten-Schwelle <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nStlAngle" min="1" max="89" step="1" value="20"><span class="unit">°</span><span class="help-btn" onclick="toggleHelp(this)">?</span></span></label>
         <input type="range" id="stlAngle" min="1" max="89" value="20" step="1">
         <div class="help-text" data-i18n="help_stlangle">
@@ -513,8 +533,7 @@
           <button data-v="size">Gesamtgröße</button>
         </div>
         <div id="stlSizeWrap" style="display:none;margin-top:8px;">
-          <label>Achse
-            <span style="display:flex;align-items:center;gap:6px;">
+          <label>Achse <span style="display:flex;align-items:center;gap:6px;">
               <select class="numfield" id="stlAxis" style="width:auto;">
                 <option value="x">X (Breite)</option>
                 <option value="y">Y (Tiefe)</option>
@@ -906,6 +925,24 @@
   </div>
   </div>
   <div class="sect" data-sect="streben"><span class="stepno"></span><span class="sect-txt">Streben</span><span class="chev">▾</span></div>
+  <div class="grp" id="grpStrebModus" style="display:none;">
+    <label>Haken- und Zapfenstreben <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
+    <div class="seg" id="strebModusSeg">
+      <button data-v="getrennt" class="on">getrennt</button>
+      <button data-v="kombi">kombiniert</button>
+    </div>
+    <div class="help-text" data-i18n="help_strebmodus">
+      Sind Zapfen und Haken beide aktiv, gibt es zwei Möglichkeiten.
+
+      Getrennt: zwei eigene Strebensätze, Zapfenstreben und Hakenstreben.
+      Breite und Materialstärke lassen sich für beide getrennt einstellen.
+
+      Kombiniert: ein Strebensatz. Die Zapfenstreben bekommen zusätzlich
+      Haken. Der Spalt zwischen Haken und Strebe beträgt dann
+      Materialstärke Knoten plus Materialstärke Streben, weil Knoten und
+      Strebe gemeinsam darin sitzen.
+    </div>
+  </div>
   <div class="grp" id="matWrap">
     <div class="grp" id="grpStrebB">
       <label>Breite Streben <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nStrebB" min="2" max="60" step="0.5" value="0"><span class="unit">mm</span><span class="help-btn" onclick="toggleHelp(this)">?</span></span></label>
@@ -916,6 +953,14 @@
         ist ein eigenes Bauteil - dort löst sich die Kopplung, und beim Kegel
         mit Doppellage ist diese Breite zugleich der Abstand zwischen Innen-
         und Außenschale.
+      </div>
+    </div>
+    <div class="grp" id="grpStrebBZ" style="display:none;">
+      <label>Breite Zapfenstreben <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nStrebBZ" min="2" max="60" step="0.5" value="6"><span class="unit">mm</span><span class="help-btn" onclick="toggleHelp(this)">?</span></span></label>
+      <input type="range" id="strebBZ" min="2" max="60" value="6" step="0.5">
+      <div class="help-text" data-i18n="help_strebbreitez">
+        Breite der Zapfenstreben, wenn Haken- und Zapfenstreben getrennt sind.
+        Sie folgt der Armbreite, bis du sie selbst einstellst.
       </div>
     </div>
   </div>
@@ -955,8 +1000,8 @@
         oder Metall.
 
         Zapfen und Haken lassen sich kombinieren, etwa für einen Baustein,
-        der beide Schlitzarten braucht. Das Strebenblatt zeigt dann zwei
-        Strebentypen: Haken-Streben und Zapfen-Streben.
+        der beide Schlitzarten braucht. Unter Streben wählst du dann, ob es
+        zwei getrennte Strebensätze gibt oder Zapfenstreben mit Haken.
       </div>
     <div id="zapfenWarn" style="display:none;font-size:11px;color:#b8541b;
       background:rgba(184,84,27,0.08);border-radius:6px;padding:7px 9px;margin-bottom:8px;">
@@ -981,6 +1026,15 @@
     <input type="range" id="matArm" min="0.1" max="12" value="0.5" step="0.1">
     <div class="help-text" data-i18n="help_matarm">
       Dicke der Streben: Sie wird bei Schlitzverbindungen und Doppelschalen benötigt.
+    </div>
+  </div>
+  <div class="grp" id="grpMatArmZ" style="display:none;">
+    <label>Materialstärke Zapfenstreben <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nMatArmZ" min="0.1" max="12" step="0.1" value="0.5"><span class="unit">mm</span></span><span class="help-btn" onclick="toggleHelp(this)">?</span></label>
+    <input type="range" id="matArmZ" min="0.1" max="12" value="0.5" step="0.1">
+    <div class="help-text" data-i18n="help_matarmz">
+      Dicke der Zapfenstreben, wenn Haken- und Zapfenstreben getrennt sind.
+      Danach richtet sich die Breite der Zapfenschlitze im Knoten. Sie folgt
+      der Materialstärke Streben, bis du sie selbst einstellst.
     </div>
   </div>
 <div class="grp" id="lochWrap">
@@ -1460,7 +1514,7 @@ function toggleHelp(btn){
 // Programmversion. Sie steht in der Fusszeile, auf jedem Export und in der
 // Einstellungsdatei - bei einer Rueckmeldung ist damit sofort klar, welche
 // Fassung gemeint ist.
-const KNOTI_VERSION='324';
+const KNOTI_VERSION='326';
 let PX_PER_MM=4;
 let BODY_PX=4;      // eigener Zoom fuer die 3D-Koerperzeichnung
 const state={};
@@ -1982,6 +2036,81 @@ function parseSTL(buffer){
   return tris;
 }
 
+// ====================== OBJ-Import (seit v325) ======================
+// OBJ speichert Punkte (v), Flaechen als Vielecke (f) und Linienzuege (l).
+// Anders als bei STL sind die Kanten damit bekannt und muessen nicht aus
+// Knickwinkeln erraten werden.
+let importTyp='stl';       // 'stl' oder 'obj'
+let objRaw=null;           // {verts:[[x,y,z]], faces:[[i,...]], lines:[[i,j,...]]}
+function parseOBJ(text){
+  const verts=[], faces=[], lines=[];
+  // Index aufloesen: 1-basiert, negativ = vom Ende gezaehlt, "v/vt/vn" -> v
+  const idx=tok=>{ const n=parseInt(tok.split('/')[0],10);
+    if(!isFinite(n) || n===0) return -1;
+    return n>0 ? n-1 : verts.length+n; };
+  text.split(/\r?\n/).forEach(roh=>{
+    let z=roh.trim();
+    if(!z || z[0]==='#') return;
+    const t=z.split(/\s+/);
+    if(t[0]==='v' && t.length>=4){
+      verts.push([parseFloat(t[1]), parseFloat(t[2]), parseFloat(t[3])]);
+    } else if(t[0]==='f' && t.length>=4){
+      const f=t.slice(1).map(idx).filter(i=>i>=0 && i<verts.length);
+      if(f.length>=3) faces.push(f);
+    } else if(t[0]==='l' && t.length>=3){
+      const l=t.slice(1).map(idx).filter(i=>i>=0 && i<verts.length);
+      if(l.length>=2) lines.push(l);
+    }
+  });
+  if(!verts.length) throw new Error('keine Punkte (v) gefunden');
+  if(!faces.length && !lines.length) throw new Error('keine Flächen (f) oder Linien (l) gefunden');
+  return {verts, faces, lines};
+}
+// Flaechen als Faecher in Dreiecke zerlegen - fuer die Knickerkennung.
+function objZuDreiecken(o){
+  const tris=[];
+  o.faces.forEach(f=>{ for(let k=1;k+1<f.length;k++) tris.push([o.verts[f[0]], o.verts[f[k]], o.verts[f[k+1]]]); });
+  return tris;
+}
+// Kanten "wie im Modell": jede Vieleckkante und jedes Linienstueck wird eine
+// Strebe. Doppelte Punkte (gleiche Lage) werden verschmolzen, unbenutzte
+// Punkte fallen weg.
+function objGraph(o){
+  let minp=[1e30,1e30,1e30], maxp=[-1e30,-1e30,-1e30];
+  o.verts.forEach(p=>{ for(let i=0;i<3;i++){ minp[i]=Math.min(minp[i],p[i]); maxp[i]=Math.max(maxp[i],p[i]); } });
+  const diag=Math.hypot(maxp[0]-minp[0],maxp[1]-minp[1],maxp[2]-minp[2])||1;
+  const inv=1/(diag*1e-5);
+  const vmap=new Map(), verts=[], neu=[];
+  o.verts.forEach((p,i)=>{
+    const k=`${Math.round(p[0]*inv)}_${Math.round(p[1]*inv)}_${Math.round(p[2]*inv)}`;
+    if(!vmap.has(k)){ vmap.set(k, verts.length); verts.push(p.slice()); }
+    neu[i]=vmap.get(k);
+  });
+  const ek=new Set(), edges=[];
+  const add=(a,b)=>{ a=neu[a]; b=neu[b]; if(a===b) return;
+    const k=a<b?a+'_'+b:b+'_'+a; if(ek.has(k)) return; ek.add(k); edges.push([a,b]); };
+  o.faces.forEach(f=>{ for(let k=0;k<f.length;k++) add(f[k], f[(k+1)%f.length]); });
+  o.lines.forEach(l=>{ for(let k=0;k+1<l.length;k++) add(l[k], l[k+1]); });
+  const used=new Set(); edges.forEach(([a,b])=>{ used.add(a); used.add(b); });
+  const remap={}, vout=[];
+  verts.forEach((v,i)=>{ if(used.has(i)){ remap[i]=vout.length; vout.push(v); } });
+  return {verts:vout, edges:edges.map(([a,b])=>[remap[a],remap[b]]),
+          triCount:o.faces.length, vCount:o.verts.length};
+}
+function objKantenModus(){
+  const b=document.querySelector('#objKantenSeg .on');
+  return b ? b.dataset.v : 'modell';
+}
+// Sichtbarkeit: Kantenwahl nur bei OBJ mit Flaechen, Schwelle nur dann,
+// wenn tatsaechlich am Knick erkannt wird.
+function importBedienung(){
+  const obj = importTyp==='obj' && !!objRaw;
+  const mitFlaechen = obj && objRaw.faces.length>0;
+  if($('grpObjKanten')) $('grpObjKanten').style.display = mitFlaechen ? '' : 'none';
+  const knick = !obj || (mitFlaechen && objKantenModus()==='knick');
+  if($('grpStlAngle')) $('grpStlAngle').style.display = knick ? '' : 'none';
+}
+
 // --- Mesh-Graph bauen: Vertices verschmelzen + Kanten per Dihedralwinkel ---
 // thresholdDeg: Mindest-Knickwinkel zwischen zwei Flaechen, damit die gemeinsame
 // Kante als echte Modellkante zaehlt. Diagonalen innerhalb einer flachen Flaeche
@@ -2096,7 +2225,10 @@ function buildMeshGraph(tris, thresholdDeg){
 function applyStlScale(){
   if(!stlRaw) return;
   const thr=sync('stlAngle','nStlAngle',lastSrc);
-  const g=buildMeshGraph(stlRaw, thr);
+  // OBJ "wie im Modell": Kanten direkt aus der Datei; sonst Knickerkennung.
+  const g=(importTyp==='obj' && objRaw && (objKantenModus()==='modell' || !objRaw.faces.length))
+    ? objGraph(objRaw)
+    : buildMeshGraph(stlRaw, thr);
   const scaleMode=document.querySelector('#stlScaleSeg .on')?document.querySelector('#stlScaleSeg .on').dataset.v:'mm';
   let verts=g.verts;
   if(scaleMode==='size'){
@@ -2683,6 +2815,42 @@ function kegelVersatz(gap, sektor){
   const t=Math.tan(phi);
   return (t>1e-6) ? gap/t : 0;
 }
+// ---- Haken + Zapfen gemeinsam (seit v326) ----
+// 'getrennt': zwei Strebensaetze mit eigener Breite und Dicke,
+// 'kombi': ein Satz Zapfenstreben, die zusaetzlich Haken tragen.
+// Ist nur eine der beiden Arten aktiv, gilt 'einzeln'.
+function strebModus(){
+  if(!(hakenAn() && zinkenAn())) return 'einzeln';
+  const b=document.querySelector('#strebModusSeg .on');
+  return b ? b.dataset.v : 'getrennt';
+}
+// Dicke der Strebe, die den ZAPFEN traegt. Nur bei getrennten Saetzen eigen.
+function matArmeZapfen(){
+  if(strebModus()!=='getrennt' || !window.__matArmZManuell) return matArme();
+  const v=(typeof sync==='function' && $('matArmZ')) ? sync('matArmZ','nMatArmZ',lastSrc) : 3;
+  return (isNaN(v)||v<=0) ? matArme() : v;
+}
+// Breite der Zapfenstrebe. Getrennt: eigener Regler, sonst die Armbreite.
+function strebenBreiteZapfen(){
+  if(strebModus()!=='getrennt') return strebenBreite();
+  if(!window.__strebBZManuell) return armBreiteAktuell();
+  const v=(typeof sync==='function' && $('strebBZ')) ? sync('strebBZ','nStrebBZ',lastSrc) : 0;
+  return (!isNaN(v) && v>=2) ? v : armBreiteAktuell();
+}
+// Schlitzbreite fuer den Zapfen im Knoten: die Zapfenstrebe (ohne Streben
+// der Arm eines anderen Knotens).
+function steckDickeZapfen(){
+  const js=document.querySelector('#joinSeg .on');
+  return (js && js.dataset.v==='direct') ? matThick() : matArmeZapfen();
+}
+// Wie weit die Zapfenstrebe ueber die Knicklinie hinaus auf dem Arm endet:
+// ihr Ende sitzt am Zapfenschlitz des Knotens, nicht an der Knicklinie.
+function zapfenStrebenVersatz(){
+  if(!zinkenAn()) return 0;
+  const L=(typeof armLenMin==='function') ? armLenMin() : 0;
+  const z=(typeof zapfenAbstandEff==='function') ? zapfenAbstandEff() : L;
+  return (L>0 && isFinite(z)) ? Math.max(0, L-z) : 0;
+}
 function matArme(){
   const v=(typeof sync==='function' && $('matArm')) ? sync('matArm','nMatArm',lastSrc) : 3;
   return (isNaN(v)||v<=0) ? 3 : v;
@@ -2828,7 +2996,9 @@ function coneSectorGroup(cg, Ruse, dx, label, forExport, isOuter){
     if(zinkenAn()){
       // Pfeil mit Widerhaken mittig am Armende: erst Bogen bis kurz vor die
       // Armachse, dann der Pfeil, dann Bogen weiter.
-      const t=(typeof matThick==='function')?matThick():3;
+      // Schlitzbreite = Dicke der Zapfenstrebe, die darin steckt (wie beim
+      // Stern). Bis v325 stand hier die Knotendicke.
+      const t=(typeof steckDickeZapfen==='function')?steckDickeZapfen():3;
       const lg=zapfenLaenge();                           // Laenge des Zapfens
       const hk=zapfenHaken();                            // Widerhaken
       const trapez=(typeof zapfenForm==='function' && zapfenForm()==='trapez');
@@ -3667,7 +3837,7 @@ function zapfenSchlitzPos(auflage, lochAbstaende, t, lochRad, imVerbinder){
   // Der Abstand wird IMMER vom Ende gemessen, an dem der Zapfen sitzt: beim
   // Verbinder von der Armspitze, bei der Strebe vom Strebenende. Nur so
   // treffen Zapfen und Schlitz beim Zusammenbau aufeinander.
-  const tRef=Math.max(matThick(), matArme(), t||0);
+  const tRef=Math.max(matThick(), matArmeZapfen(), t||0);
   t=tRef;
   // Im KOERPERMODUS ist die Kantenlaenge fuehrend und die Loecher sind bereits
   // deckungsgleich gesetzt. Der Schlitz wird deshalb automatisch dorthin
@@ -3728,7 +3898,7 @@ function armLenMin(){
 // Der ideale Abstand: eine halbe Zapfenlaenge hinter der Knicklinie. Er ist
 // zugleich der groesste sinnvolle Wert, deshalb Voreinstellung und Obergrenze.
 function zapfenAbstandIdeal(){
-  const t=Math.max(matThick(), matArme());
+  const t=Math.max(matThick(), matArmeZapfen());
   // Der Schlitz sitzt zapfenAbstand VOR der Armspitze. Er braucht zur
   // Knicklinie hin noch Platz - frueher blieben rechnerisch nur Bruchteile
   // eines Millimeters, der Arm klemmte seinen Schlitz dann auf 2 mm ab,
@@ -4012,7 +4182,7 @@ function buildConnector(ang, rEnd){
     });
   }
   if(zinkenAn()){
-    const t=steckDicke();              // Schlitzbreite: Strebe bzw. Verbinderarm
+    const t=steckDickeZapfen();        // Schlitzbreite: Zapfenstrebe bzw. Knotenarm
     const halb=zinkeBreite(state.wid)/2;
     // Schlitz moeglichst weit innen setzen, dort ist Platz und er stoert die
     // Loecher nicht.
@@ -4306,6 +4476,14 @@ function zeigeBanner(text){
     `<div style="position:absolute;top:44px;left:50%;transform:translateX(-50%);z-index:4;`
     + `max-width:90%;background:#fff3cd;border:1px solid #e0a800;border-radius:4px;`
     + `padding:6px 12px;font-size:12px;color:#7a5c00;box-shadow:0 1px 4px rgba(0,0,0,0.12);">${text}</div>`);
+}
+// Ueberschrift ueber dem Knoten im Sichtfeld - wie "Streben" ueber den Streben.
+function knotenKopf(nTypen){
+  const EN=(typeof curLang!=='undefined'&&curLang==='en');
+  let t=EN?'Nodes':'Knoten';
+  if(nTypen) t+= EN ? ` · ${nTypen} ${nTypen===1?'type':'types'}` : ` · ${nTypen} ${nTypen===1?'Typ':'Typen'}`;
+  else if(mode!=='body') t=EN?'Node':'Knoten';
+  return `<div class="sect-head" style="margin-top:4px;"><span>${t}</span></div>`;
 }
 function strebenVorschau(){
   const seg=document.querySelector('#joinSeg .on');
@@ -4935,7 +5113,7 @@ function renderBall3D(){
   if(Knoti3D.verfuegbar()){
     const bw=Math.max(260, Math.min(host.clientWidth-60, 820));
     const bh=Math.max(260, Math.min(host.clientHeight-110, bw));
-    host.innerHTML='<div id="gl3dSlot"></div>';
+    host.innerHTML=knotenKopf()+'<div id="gl3dSlot"></div>';
     Knoti3D.zeigen($('gl3dSlot'), {zellen:[{key, bauen:()=>buildBallAdapterSTL(dirs, {...o, res:56})}],
       spalten:1, zw:bw, zh:bh, farbe:GL_KNOTEN_FARBE, eigeneKamera:false, radZoom:true,
       nachBau:()=>{ try{ if(mode==='ball3d') ballInfoSetzen(Knoti3D.dreiecke(key)); }catch(e){} }});
@@ -4948,7 +5126,7 @@ function renderBall3D(){
     const g=meshToSVG(tris, S, {base:[128,148,138]});
     const R=ext*S+8;
     const vb=`${(-R).toFixed(0)} ${(-R).toFixed(0)} ${(2*R).toFixed(0)} ${(2*R).toFixed(0)}`;
-    host.innerHTML=`<svg id="bodySvg" xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${Math.min(660,2*R).toFixed(0)}" style="max-width:96%;max-height:78vh;">`
+    host.innerHTML=knotenKopf()+`<svg id="bodySvg" xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${Math.min(660,2*R).toFixed(0)}" style="max-width:96%;max-height:78vh;">`
       +`<g stroke-linejoin="round">${g}</g></svg>`;
   }
   ballInfoSetzen(trisN);
@@ -5249,7 +5427,7 @@ function renderBody(){
     setGridVisible(true);
     if($('view3dBar')) $('view3dBar').style.display='none';
     $('svgHost').classList.remove('grabbable');
-    $('svgHost').innerHTML=bodyAdapterSheet(false);
+    $('svgHost').innerHTML=knotenKopf(new Set(body.nodes.map(nd=>nd.label)).size)+bodyAdapterSheet(false);
     strebenVorschau();
     updateScalebar(); drawGrid();
   } else {
@@ -5322,7 +5500,7 @@ function renderBody(){
           :` · Arm autom. auf ${state.len} mm gekürzt (Strebe sonst zu kurz)`)
     : '';
   if(key==='stl'){
-    if(!stlMesh||!stlRaw){ $('info').textContent=(EN2?'Import STL – no file loaded yet.':'STL importieren – noch keine Datei geladen.'); }
+    if(!stlMesh||!stlRaw){ $('info').textContent=(EN2?'Import file (STL/OBJ) – no file loaded yet.':'Datei importieren (STL/OBJ) – noch keine Datei geladen.'); }
     else { $('info').textContent=`${stlName} · ${body.edges.length} ${EN2?'rods':'Streben'} · ${body.verts.length} ${EN2?'nodes':'Knoten'} · ${typeTxt}${dblTxt}${clampTxt}`; }
   } else if(key==='box8'){
     $('info').textContent=`${$('bodySel').selectedOptions[0].text} · ${body.edges.length} ${EN2?'rods':'Streben'} · ${$('nBoxL').value}×${$('nBoxB').value}×${$('nBoxH').value} mm · ${typeTxt}${dblTxt}${clampTxt}`;
@@ -6157,6 +6335,7 @@ function render(){
   if(typeof kegelArmbreiteNachfuehren==='function') kegelArmbreiteNachfuehren();
   renderIntern();
   try{ hakenHoeheAnzeigen(); }catch(e){}
+  try{ zapfenStrebenAnzeigen(); }catch(e){}
   try{ qrAktualisierenSpaeter(); }catch(e){}
   // Nach jedem Zeichnen die Hilfslinien nach hinten legen.
   try{ farbebenen(); }catch(e){}
@@ -6175,7 +6354,7 @@ function renderIntern(){
     window.__taillenR=Infinity;
     const cg=coneGeometry(); lastCone=cg;
     const layers=document.querySelector('#coneLayerSeg .on')?document.querySelector('#coneLayerSeg .on').dataset.v:'one';
-      $('svgHost').innerHTML=buildConeSVG(cg,false);
+      $('svgHost').innerHTML=knotenKopf()+buildConeSVG(cg,false);
       strebenVorschau();
       zeigeBanner(taillenWarnText(cg));
     const sel=$('coneSel').selectedOptions[0].text;
@@ -6190,7 +6369,7 @@ function renderIntern(){
   }
   setGridVisible(true);
   const g=buildGeometry(); lastGeom=g;
-  $('svgHost').innerHTML=geomToSVG(g,false);
+  $('svgHost').innerHTML=knotenKopf()+geomToSVG(g,false);
   strebenVorschau();
   const EN=(typeof curLang!=='undefined'&&curLang==='en');
   const gapTxt = g.rEnd<=0
@@ -6651,7 +6830,7 @@ function bodyAdapterSheet(forExport){
         (cg.holeRadii||[]).forEach(r=>{ if(r>cg.rin && r<rAussen) sperr.push([r-rLoch-luft, r+rLoch+luft]); });
         if(typeof zinkenAn==='function' && zinkenAn() && typeof zapfenAbstand==='function'){
           const rs=rAussen-zapfenAbstand();
-          const halb=((typeof matArme==='function')?matArme():3)/2+luft;
+          const halb=((typeof matArmeZapfen==='function')?matArmeZapfen():3)/2+luft;
           if(rs>cg.rin && rs<rAussen) sperr.push([rs-halb, rs+halb]);
         }
         sperr.sort((x,y)=>x[0]-y[0]);
@@ -6878,7 +7057,7 @@ function bodyCutlist(){
   } else if(key==='stl'){
     const sm = stlMesh&&stlMesh.stats ? stlMesh.stats : null;
     const scaleMode=document.querySelector('#stlScaleSeg .on')?document.querySelector('#stlScaleSeg .on').dataset.v:'mm';
-    txt+=`${EN?'Import':'Import'}: ${stlName||'STL'} · ${sm?sm.verts+(EN?' vertices, ':' Ecken, ')+sm.edges+(EN?' edges':' Kanten'):''}\n`;
+    txt+=`${EN?'Import':'Import'}: ${stlName||(importTyp==='obj'?'OBJ':'STL')} · ${sm?sm.verts+(EN?' vertices, ':' Ecken, ')+sm.edges+(EN?' edges':' Kanten'):''}\n`;
     txt+=`${EN?'Size':'Maße'} ${scaleMode==='mm'?(EN?'in real mm from the file':'in echten mm aus der Datei'):(EN?'scaled to edge length '+state.edge+' mm':'auf Kantenlänge '+state.edge+' mm skaliert')}\n\n`;
   } else {
     txt+=`${EN?'Edge length (reference)':'Kantenlänge (Referenz)'} ${body.edgeLen} mm\n\n`;
@@ -6912,21 +7091,24 @@ function bodyCutlist(){
     }
     txt+=`  ${body.edges.length} ${EN?'edges at':'Kanten à'} ${body.edgeLen} mm\n`;
   } else {
-    txt+=`${EN?'RODS':'STÄBE'} (${body.edges.length} ${EN?'piece(s),':'Stück,'} ${keys.length} ${EN?'length(s)':'Länge'+(keys.length>1?'n':'')}):\n`;
+    txt+=`${EN?'RODS':'STREBEN'} (${body.edges.length} ${EN?'piece(s),':'Stück,'} ${keys.length} ${EN?'length(s)':'Länge'+(keys.length>1?'n':'')}):\n`;
     keys.forEach(k=>{
       txt+=`  ${k} mm × ${groups[k].length} ${EN?'piece(s)':'Stück'}: ${groups[k].join(', ')}\n`;
     });
     // Haken + Zapfen gemeinsam: das Strebenblatt enthaelt dann zwei
     // vollstaendige Saetze, die Zapfen-Streben mit eigener Laenge.
-    if(typeof hakenAn==='function' && hakenAn() && zinkenAn()){
-      txt+=EN ? `  Hooks and pegs are both active: the rod sheet contains one full set of hook rods and one of peg rods (peg rods with their own length).\n`
-              : `  Haken und Zapfen sind beide aktiv: das Strebenblatt enthält je einen vollständigen Satz Haken-Streben und Zapfen-Streben (Zapfen-Streben mit eigener Länge).\n`;
+    if(typeof strebModus==='function' && strebModus()==='getrennt'){
+      txt+=EN ? `  Hooks and tabs are both active (separate): the rod sheet contains one full set of hook rods and one of tab rods (tab rods with their own length).\n`
+              : `  Haken und Zapfen sind beide aktiv (getrennt): das Strebenblatt enthält je einen vollständigen Satz Hakenstreben und Zapfenstreben (Zapfenstreben mit eigener Länge).\n`;
+    } else if(typeof strebModus==='function' && strebModus()==='kombi'){
+      txt+=EN ? `  Hooks and tabs combined: one set of tab rods that also carry hooks.\n`
+              : `  Haken und Zapfen kombiniert: ein Satz Zapfenstreben, die zusätzlich Haken tragen.\n`;
     }
   }
   const typen={};
   body.nodes.forEach(nd=>{ (typen[nd.label]=typen[nd.label]||[]).push(nd); });
   const typKeys=Object.keys(typen).sort();
-  txt+=`\n${EN?'CONNECTORS':'VERBINDER'} (${body.verts.length} ${EN?'piece(s),':'Stück,'} ${typKeys.length} ${EN?'type(s)':'Typ'+(typKeys.length>1?'en':'')}):\n`;
+  txt+=`\n${EN?'NODES':'KNOTEN'} (${body.verts.length} ${EN?'piece(s),':'Stück,'} ${typKeys.length} ${EN?'type(s)':'Typ'+(typKeys.length>1?'en':'')}):\n`;
   // Der Buchstabe sagt, welche Teile gleich geschnitten sind - die Nummer sagt,
   // wohin das einzelne Teil gehoert. Beides wird gebraucht: das erste fuer den
   // Zuschnitt, das zweite fuer den Zusammenbau.
@@ -7505,7 +7687,9 @@ function buildStaebeSVG(forExport){
   // Haken aus ist UND der Nutzer die Strebenbreite nie selbst angefasst hat.
   const armB = isCone ? CG.stabW : (state.wid||6);
   const folgtArmbreite = !hakenAn() && !window.__strebBManuell;
-  const breite = strebenBreite();   // gemeinsame Quelle, auch fuer den Schalenabstand
+  // let: bei getrennten Haken-/Zapfenstreben hat jeder Satz seine eigene Breite.
+  let breite = strebenBreite();     // gemeinsame Quelle, auch fuer den Schalenabstand
+  const breiteHaken = breite;
   // Anzeige mitfuehren, solange die Kopplung aktiv ist (kein Haken, kein
   // manueller Eingriff). Sobald Haken aktiviert wird, friert der zuletzt
   // gezeigte Wert ein und ist ab dann frei einstellbar.
@@ -7522,6 +7706,13 @@ function buildStaebeSVG(forExport){
     // mit, weil hier immer gleichmaessig verteilt wurde.
     offsets = (nHoles>0) ? holeDistances(auflage, nHoles) : [];
   }
+  // Bohrungen ab Knicklinie. Zapfenstreben enden aber am Zapfenschlitz, der
+  // um zapfenStrebenVersatz() weiter aussen liegt - dort muessen die Loecher
+  // um genau diesen Betrag zum Strebenende hin wandern (seit v326; vorher
+  // lagen sie bei Zapfen um diesen Betrag daneben).
+  const offsetsBasis = offsets.slice();
+  const versatzZ = zapfenStrebenVersatz();
+  const offsetsZapfen = offsetsBasis.map(o=>o-versatzZ).filter(o=>o>0.5);
   // Farbebenen: Knotenbuchstaben (bleiben) vs Zusatzinfo (kann weggelassen werden)
   const C_NODE='#8e44ad';   // lila: Knotenbuchstaben A/B -> wohin die Strebe gehoert
   const C_INFO='#00a3a3';   // zweite Beschriftungsfarbe: Nummer + Laenge
@@ -7533,8 +7724,12 @@ function buildStaebeSVG(forExport){
   // Strebentypen: sind Haken UND Zapfen aktiv, gibt es zwei vollstaendige
   // Saetze - Haken-Streben (hochkant, ohne Zapfen-Laengenkorrektur) und
   // Zapfen-Streben (flach, mit Pfeilen und Schlitzen).
-  const beideTypen = hakenAn() && zinkenAn();
-  const varianten = beideTypen ? ['haken','zapfen'] : [hakenAn()?'haken':(zinkenAn()?'zapfen':'plain')];
+  // Seit v326 waehlbar: getrennt (zwei Saetze) oder kombiniert (ein Satz
+  // Zapfenstreben mit zusaetzlichen Haken).
+  const modusS = strebModus();
+  const beideTypen = modusS==='getrennt';
+  const varianten = modusS==='kombi' ? ['kombi']
+    : beideTypen ? ['haken','zapfen'] : [hakenAn()?'haken':(zinkenAn()?'zapfen':'plain')];
   const gruppenFuer=(ohneZapfen)=>{
   let groupsArr=[];
   if(mode==='body' && lastBody){
@@ -7567,8 +7762,8 @@ function buildStaebeSVG(forExport){
   return groupsArr;
   };
   const EN_S=(typeof curLang!=='undefined'&&curLang==='en');
-  const typName={haken:EN_S?'Hook':'Haken', zapfen:EN_S?'Peg':'Zapfen'};
-  const variantGruppen = varianten.map(v=>({v, groups:gruppenFuer(v!=='zapfen')}));
+  const typName={haken:EN_S?'Hook':'Haken', zapfen:EN_S?'Tab':'Zapfen', kombi:''};
+  const variantGruppen = varianten.map(v=>({v, groups:gruppenFuer(!(v==='zapfen'||v==='kombi'))}));
   groupsArr = variantGruppen[0].groups;
   if(!groupsArr.length) return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 40"><text x="4" y="20" font-size="6" fill="#6b6f63">${(typeof curLang!=='undefined'&&curLang==='en')?'No rod data':'Keine Strebendaten'}</text></svg>`;
   const headH=6;
@@ -7577,9 +7772,68 @@ function buildStaebeSVG(forExport){
   const zapfenLg = zinkenAn() ? zapfenLaenge()+zapfenHaken()+2 : 0;
   // Haken stehen ueber die Strebenkante hinaus: Zeilenhoehe und oberer Rand
   // muessen das aufnehmen, sonst ueberlappen sich die Zeilen.
-  const hakT = hakenAn() ? (((typeof matThick==='function')?matThick():3)*2+3) : 0;
+  // Kombiniert sitzen Knoten UND Strebe im Hakenspalt - er wird breiter.
+  const spaltHaken = ((typeof matThick==='function')?matThick():3)+0.3;
+  const spaltKombi = ((typeof matThick==='function')?matThick():3)+matArmeZapfen()+0.3;
+  const hakT = hakenAn()
+    ? Math.max(((typeof matThick==='function')?matThick():3)*2+3,
+               Math.max((modusS==='kombi'?spaltKombi:spaltHaken)+0.8, hakenHoeheMM())+1.5)
+    : 0;
   const hakDop = 1;   // die Nase haengt nach unten, das braucht Hoehe
-  const rowH=breite+6+hakT*hakDop, padL=4+zapfenLg, padT=4+hakT, colGap=16+2*zapfenLg;
+  let rowH=breite+6+hakT*hakDop;
+  const padL=4+zapfenLg, padT=4+hakT, colGap=16+2*zapfenLg;
+  // Hakenzacken einer Strebenkante. Liefert die Punktfolge fuer die Unterkante
+  // (von rechts nach links) und - bei Doppelbauart - die Oberkante (links nach
+  // rechts). Gemeinsam fuer reine Hakenstreben und kombinierte Streben.
+  const hakenZacken=(L, H, stellen, hl, nw, spalt, hd)=>{
+    const fs = Math.max(0, Math.min(hd/2, hl/2-0.2, (hd-spalt)-0.2));
+    const mitFase = fs>0.2;
+    const doppelH = (typeof bauartDoppel==='function') && bauartDoppel();
+    const nachAussen = (typeof hakenRichtung==='function') && hakenRichtung()==='aussen';
+    const oben=[], unten=[];
+    if(doppelH){
+      stellen.forEach(x0=>{
+        const s2 = ((x0 < L/2) ? -1 : +1) * (nachAussen ? 1 : -1);
+        const x = x0 - s2*hl/2;
+        if(s2>0){
+          if(mitFase) oben.push([x, 0], [x, -hd+fs], [x+fs, -hd], [x+hl-fs, -hd],
+                               [x+hl, -hd+fs], [x+hl, -spalt], [x+nw, -spalt], [x+nw, 0]);
+          else oben.push([x, 0], [x, -hd], [x+hl, -hd], [x+hl, -spalt], [x+nw, -spalt], [x+nw, 0]);
+        } else {
+          if(mitFase) oben.push([x-nw, 0], [x-nw, -spalt], [x-hl, -spalt], [x-hl, -hd+fs],
+                               [x-hl+fs, -hd], [x-fs, -hd], [x, -hd+fs], [x, 0]);
+          else oben.push([x-nw, 0], [x-nw, -spalt], [x-hl, -spalt], [x-hl, -hd], [x, -hd], [x, 0]);
+        }
+      });
+    }
+    stellen.slice().reverse().forEach(x0=>{
+      const s = ((x0 < L/2) ? -1 : +1) * (nachAussen ? 1 : -1);
+      const x = x0 - s*hl/2;
+      if(s>0){
+        if(mitFase) unten.push([x+nw, H], [x+nw, H+spalt], [x+hl, H+spalt], [x+hl, H+hd-fs],
+                               [x+hl-fs, H+hd], [x+fs, H+hd], [x, H+hd-fs], [x, H]);
+        else unten.push([x+nw, H], [x+nw, H+spalt], [x+hl, H+spalt], [x+hl, H+hd], [x, H+hd], [x, H]);
+      } else {
+        if(mitFase) unten.push([x, H], [x, H+hd-fs], [x-fs, H+hd], [x-hl+fs, H+hd],
+                               [x-hl, H+hd-fs], [x-hl, H+spalt], [x-nw, H+spalt], [x-nw, H]);
+        else unten.push([x, H], [x, H+hd], [x-hl, H+hd], [x-hl, H+spalt], [x-nw, H+spalt], [x-nw, H]);
+      }
+    });
+    return {oben, unten};
+  };
+  // Hakenstellen ab Strebenende; 'versatz' verschiebt sie zum Ende hin.
+  const hakenStellen=(L, versatz)=>{
+    const aufH = (isCone && CG) ? (CG.Rinner-CG.rin) : auflage;
+    const jsH2=document.querySelector('#joinSeg .on');
+    const jmH2=document.querySelector('#joinModeSeg .on');
+    const uebH2 = jsH2 && jsH2.dataset.v==='direct' && jmH2 && jmH2.dataset.v==='overlap';
+    const st=[];
+    hakenPositionen(aufH, hakenAnzahl(), uebH2).forEach(d0=>{
+      const d=d0-(versatz||0);
+      if(d>1 && d<L/2){ st.push(d); st.push(L-d); }
+    });
+    return st.sort((x,y)=>x-y);
+  };
   const drawHoles=(len, vHaken)=>{
     const cy=breite/2; let out='';
     // Bei HAKEN steht die Strebe hochkant im Schlitz. Eine Bohrung quer durch
@@ -7620,7 +7874,11 @@ function buildStaebeSVG(forExport){
   let svg=''; let colX=padL; let maxY=0;
   const teile=[];        // Einzelteile fuer das Autolayout
   variantGruppen.forEach(({v:variante, groups})=>{
-  const vHaken = variante==='haken', vZapfen = variante==='zapfen';
+  const vHaken = variante==='haken', vKombi = variante==='kombi';
+  const vZapfen = variante==='zapfen' || vKombi;
+  breite = vZapfen ? strebenBreiteZapfen() : breiteHaken;
+  offsets = vZapfen ? offsetsZapfen : offsetsBasis;
+  rowH=breite+6+hakT*hakDop;
   if(ohneStreben0) groups=[];
   groups.forEach(g=>{
     const cy=breite/2;
@@ -7688,75 +7946,16 @@ function buildStaebeSVG(forExport){
         // Bezug ist die AUFLAGELAENGE der Strebe auf dem Arm - dieselbe
         // Groesse, aus der auch die Lochabstaende entstehen. Damit liegen die
         // Haken exakt dort, wo die Loecher waeren.
-        const nH=hakenAnzahl();
-        // DIESELBE Verteilung wie im Verbinder benutzen. Frueher verteilte die
-        // Strebe die Haken gleichmaessig und ignorierte dabei Lochstart und
-        // Lochabstand, wodurch Haken und Schlitze auseinanderliefen.
-        const stellen=[];
-        const aufH = (isCone && CG) ? (CG.Rinner-CG.rin) : auflage;
-        const jsH2=document.querySelector('#joinSeg .on');
-        const jmH2=document.querySelector('#joinModeSeg .on');
-        const uebH2 = jsH2 && jsH2.dataset.v==='direct' && jmH2 && jmH2.dataset.v==='overlap';
-        hakenPositionen(aufH, nH, uebH2).forEach(d=>{
-          if(d>1 && d<L/2){ stellen.push(d); stellen.push(L-d); }
-        });
-        stellen.sort((x,y)=>x-y);
+        // Hakenstellen und Zacken: dieselbe Rechnung wie bei den kombinierten
+        // Streben (hakenStellen/hakenZacken oben). Bezug ist die Auflagelaenge,
+        // gleiche Verteilung wie die Schlitze im Knoten.
+        const stellen=hakenStellen(L, 0);
+        const zack=hakenZacken(L, H, stellen, hl, nw, spalt, hd);
         const pts=[];
-        // Fase an den vorlaufenden Hakenecken: 45 Grad, Schenkel = halbe
-        // Hakenhoehe. Beim Einfaedeln in den Schlitz stoesst dann keine
-        // scharfe Ecke mehr an, die Strebe laesst sich schraeg einfuehren.
-        // Begrenzt, damit die Fase weder die Nase noch den Spalt auffrisst.
-        const fs = Math.max(0, Math.min(hd/2, hl/2-0.2, (hd-spalt)-0.2));
-        const mitFase = fs>0.2;
-        const doppelH = (typeof bauartDoppel==='function') && bauartDoppel();
-        const nachAussen0 = (typeof hakenRichtung==='function') && hakenRichtung()==='aussen';
         pts.push([0,0,r]);
-        if(doppelH){
-          // Oberkante von links nach rechts, mit Haken nach oben
-          stellen.forEach(x0=>{
-            const s2 = ((x0 < L/2) ? -1 : +1) * (nachAussen0 ? 1 : -1);
-            const x = x0 - s2*hl/2;
-            // Gleiche Richtung wie unten; die Punktfolge ist nur gespiegelt,
-            // weil die Oberkante von links nach rechts durchlaufen wird.
-            if(s2>0){
-              if(mitFase) pts.push([x, 0], [x, -hd+fs], [x+fs, -hd], [x+hl-fs, -hd],
-                                   [x+hl, -hd+fs], [x+hl, -spalt], [x+nw, -spalt], [x+nw, 0]);
-              else pts.push([x, 0], [x, -hd], [x+hl, -hd],
-                            [x+hl, -spalt], [x+nw, -spalt], [x+nw, 0]);
-            } else {
-              if(mitFase) pts.push([x-nw, 0], [x-nw, -spalt], [x-hl, -spalt], [x-hl, -hd+fs],
-                                   [x-hl+fs, -hd], [x-fs, -hd], [x, -hd+fs], [x, 0]);
-              else pts.push([x-nw, 0], [x-nw, -spalt], [x-hl, -spalt],
-                            [x-hl, -hd], [x, -hd], [x, 0]);
-            }
-          });
-        }
+        zack.oben.forEach(q=>pts.push(q));
         pts.push([L,0,r],[L,H,r]);
-        // Unterkante von RECHTS nach LINKS
-        const nachAussen = (typeof hakenRichtung==='function') && hakenRichtung()==='aussen';
-        const jsR=document.querySelector('#joinSeg .on');
-        const jmR=document.querySelector('#joinModeSeg .on');
-        const ueberlappendR = jsR && jsR.dataset.v==='direct' && jmR && jmR.dataset.v==='overlap';
-        stellen.slice().reverse().forEach(x0=>{
-          // Nase zum nahen Ende (aussen) oder zur Mitte, je nach Einstellung.
-          const s = ((x0 < L/2) ? -1 : +1) * (nachAussen ? 1 : -1);
-          // Der Haken sitzt IMMER mittig auf der Lochposition. Beim Einhaengen
-          // wandert die Strebe um den Nasenueberstand; der Schlitz ist um genau
-          // diesen Betrag versetzt, sodass sich beides aufhebt. Deshalb ist die
-          // Richtung bei 0 % ohne Wirkung und die Strebe liegt immer gleich.
-          const x = x0 - s*hl/2;
-          if(s>0){
-            if(mitFase) pts.push([x+nw, H], [x+nw, H+spalt], [x+hl, H+spalt], [x+hl, H+hd-fs],
-                                 [x+hl-fs, H+hd], [x+fs, H+hd], [x, H+hd-fs], [x, H]);
-            else pts.push([x+nw, H], [x+nw, H+spalt], [x+hl, H+spalt],
-                          [x+hl, H+hd], [x, H+hd], [x, H]);
-          } else {
-            if(mitFase) pts.push([x, H], [x, H+hd-fs], [x-fs, H+hd], [x-hl+fs, H+hd],
-                                 [x-hl, H+hd-fs], [x-hl, H+spalt], [x-nw, H+spalt], [x-nw, H]);
-            else pts.push([x, H], [x, H+hd], [x-hl, H+hd],
-                          [x-hl, H+spalt], [x-nw, H+spalt], [x-nw, H]);
-          }
-        });
+        zack.unten.forEach(q=>pts.push(q));
         pts.push([0,H,r]);
         const d='M '+eckenBoegen(pts).map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(' L ')+' Z';
         stueck+=`<path d="${d}" fill="${forExport?'none':'#FAF9F6'}" stroke="#FF0000" stroke-width="0.4"/>`;
@@ -7794,8 +7993,20 @@ function buildStaebeSVG(forExport){
         // Knoten mit der Eckenabrundung gerundet (seit v321; vorher blieb die
         // Spitze spitz). Der Ansatz an der vollen Breite bleibt scharf.
         const rp=eckenRadius(breite);
+        // Kombiniert: zusaetzlich Haken an den Kanten. Der Spalt nimmt Knoten
+        // UND Strebe auf (Materialstaerke Knoten + Materialstaerke Streben).
+        let zackK={oben:[], unten:[]};
+        if(vKombi){
+          const armRefK = (isCone && lastCone) ? (lastCone.Rinner-lastCone.rin) : auflage;
+          const hlK=hakenLaengeEff(armRefK);
+          const nwK=hlK*(1-hakenNaseAnteil());
+          const hdK=Math.max(spaltKombi+0.8, hakenHoeheMM());
+          zackK=hakenZacken(L, breite, hakenStellen(L, versatzZ), hlK, nwK, spaltKombi, hdK);
+        }
         const pts=[];
-        pts.push([0,0,r],[L,0,r]);
+        pts.push([0,0,r]);
+        zackK.oben.forEach(q=>pts.push(q));
+        pts.push([L,0,r]);
         pts.push([L,cyM-hb]);
         if(trapez){
           pts.push([L+lg, cyM-hb-hk, rp]);
@@ -7808,7 +8019,9 @@ function buildStaebeSVG(forExport){
           pts.push([L+lg*0.30, cyM+hb, rp]);
         }
         pts.push([L, cyM+hb]);
-        pts.push([L, breite, r],[0, breite, r]);
+        pts.push([L, breite, r]);
+        zackK.unten.forEach(q=>pts.push(q));
+        pts.push([0, breite, r]);
         pts.push([0, cyM+hb]);
         if(trapez){
           pts.push([-lg, cyM+hb+hk, rp]);
@@ -7996,11 +8209,11 @@ function buildStaebeSVG(forExport){
     if(!confirm(EN?'Reset all settings to the initial state?':'Alle Einstellungen auf den Anfangszustand zurücksetzen?')) return;
     // Automatische Werte (Strebenbreite, Hakenhoehe, Schlitzabstand,
     // Ueberlappung) folgen nach dem Zuruecksetzen wieder ihren Bezugsgroessen.
-    ['__strebBManuell','__hakenHManuell','__zapfenAManuell','__ovManuell',
-     '__ovManuellBody','__coneStabWManuell'].forEach(k=>{ window[k]=false; });
+    const autoFlags=['__strebBManuell','__hakenHManuell','__zapfenAManuell','__ovManuell',
+     '__ovManuellBody','__coneStabWManuell','__strebBZManuell','__matArmZManuell'];
+    autoFlags.forEach(k=>{ window[k]=false; });
     einstellungSetzen(werksEinstellung);
-    ['__strebBManuell','__hakenHManuell','__zapfenAManuell','__ovManuell',
-     '__ovManuellBody','__coneStabWManuell'].forEach(k=>{ window[k]=false; });
+    autoFlags.forEach(k=>{ window[k]=false; });
     if(typeof updateLockOpt==='function') updateLockOpt();
     render(); verlaufMerken();
     const sel=document.getElementById('presetSel'); if(sel) sel.value='';
@@ -8168,10 +8381,19 @@ $('stlFile').addEventListener('change',ev=>{
   const reader=new FileReader();
   reader.onload=e=>{
     try{
-      stlRaw=parseSTL(e.target.result);
+      if(/\.obj$/i.test(f.name)){
+        importTyp='obj';
+        objRaw=parseOBJ(new TextDecoder().decode(new Uint8Array(e.target.result)));
+        stlRaw=objZuDreiecken(objRaw);
+      } else {
+        importTyp='stl'; objRaw=null;
+        stlRaw=parseSTL(e.target.result);
+      }
+      importBedienung();
       applyStlScale();
       updateStlInfo();
-      render();
+      // Neues Modell: Zoom passend einstellen, sonst ist es oft riesig oder winzig.
+      if(typeof renderAndFit==='function') renderAndFit(); else render();
     }catch(err){
       const EN=(typeof curLang!=='undefined'&&curLang==='en');
       $('stlInfo').textContent=(EN?'Error while reading: ':'Fehler beim Lesen: ')+err.message;
@@ -8185,12 +8407,38 @@ function updateStlInfo(){
   const EN=(typeof curLang!=='undefined'&&curLang==='en');
   if(!stlMesh){ $('stlInfo').textContent=EN?'No file loaded yet.':'Noch keine Datei geladen.'; return; }
   const s=stlMesh.stats;
-  $('stlInfo').textContent=EN
+  // Sehr kleine Modelle stammen meist aus Programmen, die in Metern speichern.
+  let klein='';
+  if(document.querySelector('#stlScaleSeg .on') && document.querySelector('#stlScaleSeg .on').dataset.v==='mm' && stlMesh.verts.length){
+    const mn=[Infinity,Infinity,Infinity], mx=[-Infinity,-Infinity,-Infinity];
+    stlMesh.verts.forEach(v=>{ for(let i=0;i<3;i++){ mn[i]=Math.min(mn[i],v[i]); mx[i]=Math.max(mx[i],v[i]); } });
+    const g=Math.max(mx[0]-mn[0], mx[1]-mn[1], mx[2]-mn[2]);
+    if(g<15) klein = EN ? ` Model is only ${g.toFixed(1)} mm – probably saved in metres; choose “longest edge” or “overall size”.`
+                        : ` Modell ist nur ${g.toFixed(1)} mm groß – vermutlich in Metern gespeichert; „längste Kante“ oder „Gesamtgröße“ wählen.`;
+  }
+  if(importTyp==='obj' && objRaw){
+    const modell = objKantenModus()==='modell' || !objRaw.faces.length;
+    const quelle = EN
+      ? `${objRaw.faces.length} faces, ${objRaw.lines.length} lines`
+      : `${objRaw.faces.length} Flächen, ${objRaw.lines.length} Linien`;
+    $('stlInfo').textContent=(EN
+      ? `${stlName}: ${quelle} → ${s.verts} vertices, ${s.edges} edges ${modell?'as in the model':'detected'}.`
+      : `${stlName}: ${quelle} → ${s.verts} Ecken, ${s.edges} Kanten ${modell?'wie im Modell':'erkannt'}.`)+klein;
+    return;
+  }
+  $('stlInfo').textContent=(EN
     ? `${stlName}: ${s.tris} triangles → ${s.verts} vertices, ${s.edges} edges detected.`
-    : `${stlName}: ${s.tris} Dreiecke → ${s.verts} Ecken, ${s.edges} Kanten erkannt.`;
+    : `${stlName}: ${s.tris} Dreiecke → ${s.verts} Ecken, ${s.edges} Kanten erkannt.`)+klein;
 }
 // Schwelle / Skalierung neu anwenden
 $('stlAngle').addEventListener('input',()=>{ if(stlRaw){ lastSrc='stlAngle'; applyStlScale(); updateStlInfo(); render(); } });
+document.querySelectorAll('#objKantenSeg button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#objKantenSeg button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  importBedienung();
+  if(stlRaw){ applyStlScale(); updateStlInfo(); }
+  render();
+}));
 document.querySelectorAll('#stlScaleSeg button').forEach(b=>b.addEventListener('click',()=>{
   const w=$('stlSizeWrap');
   if(w) w.style.display = (b.dataset.v==='size') ? 'block' : 'none';
@@ -9937,11 +10185,54 @@ function updateLockOpt(){
       const lab=e.closest('label');
       G.style.display = (lab && lab.style.display==='none') ? 'none' : '';
     });
+    // Haken + Zapfen: Wahl getrennt/kombiniert und bei "getrennt" eigene
+    // Regler fuer die Zapfenstreben (seit v326).
+    const jsS=document.querySelector('#joinSeg .on');
+    const mitStr = mode!=='body' || !(jsS && jsS.dataset.v==='direct');
+    const beide = hakenAn() && zinkenAn() && mitStr;
+    const getr = beide && strebModus()==='getrennt';
+    if($('grpStrebModus')) $('grpStrebModus').style.display = beide ? '' : 'none';
+    if($('grpStrebBZ')) $('grpStrebBZ').style.display = (getr && $('grpStrebB') && $('grpStrebB').style.display!=='none') ? '' : 'none';
+    if($('grpMatArmZ')) $('grpMatArmZ').style.display = (getr && $('grpMatArm') && $('grpMatArm').style.display!=='none') ? '' : 'none';
+    labelSetzen('nStrebB', getr ? 'Breite Hakenstreben ' : 'Breite Streben ');
+    labelSetzen('nMatArm', getr ? 'Materialstärke Hakenstreben ' : 'Materialstärke Streben ');
     const mw=$('matWrap');
     if(mw) mw.style.display = ($('grpStrebB') && $('grpStrebB').style.display!=='none') ? '' : 'none';
   })();
 }
 function updateZapfenOpt(){ updateLockOpt(); }
+// Setzt den ersten Text eines Labels (deutsch merken, englisch anzeigen),
+// so dass die Sprachumschaltung den Text weiter richtig uebersetzt.
+function labelSetzen(inputId, de){
+  const e=$(inputId); const lab=e && e.closest('label'); if(!lab) return;
+  const tn=[...lab.childNodes].find(n=>n.nodeType===3 && n.nodeValue.trim()); if(!tn) return;
+  let en=null;
+  try{ if(typeof curLang!=='undefined' && curLang==='en' && I18N[de]!==undefined) en=I18N[de]; }catch(err){}
+  tn.__de=de; tn.nodeValue = en!==null ? en : de;
+}
+// Automatische Werte der Zapfenstreben anzeigen, solange nicht selbst gesetzt.
+function zapfenStrebenAnzeigen(){
+  if(!window.__strebBZManuell && $('nStrebBZ')){
+    const v=armBreiteAktuell(); $('nStrebBZ').value=v; $('strebBZ').value=Math.max(+$('strebBZ').min, Math.min(+$('strebBZ').max, v));
+  }
+  if(!window.__matArmZManuell && $('nMatArmZ')){
+    const v=matArme(); $('nMatArmZ').value=v; $('matArmZ').value=Math.max(+$('matArmZ').min, Math.min(+$('matArmZ').max, v));
+  }
+}
+document.querySelectorAll('#strebModusSeg button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#strebModusSeg button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  updateLockOpt(); render();
+}));
+[['strebBZ','__strebBZManuell'],['nStrebBZ','__strebBZManuell'],['matArmZ','__matArmZManuell'],['nMatArmZ','__matArmZManuell']].forEach(([id,f])=>{
+  const e=$(id); if(e) e.addEventListener('input',()=>{ window[f]=true; }, true);
+});
+[['strebBZ','nStrebBZ'],['matArmZ','nMatArmZ']].forEach(([sid,nid])=>{
+  const sl=$(sid), nf=$(nid); if(!sl||!nf) return;
+  sl.addEventListener('input',()=>{ nf.value=sl.value; lastSrc=sid; render(); });
+  nf.addEventListener('input',()=>{ const v=parseFloat(nf.value);
+    if(!isNaN(v)) sl.value=Math.max(+sl.min,Math.min(+sl.max,v)); lastSrc=nid; render(); });
+});
 document.querySelectorAll('#zapfenFormSeg button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('#zapfenFormSeg button').forEach(x=>x.classList.remove('on'));
   b.classList.add('on'); render();
@@ -10473,7 +10764,7 @@ const I18N = {
   'help_matarm':'Thickness of the rods: needed for slot joints and double shells.',
   'help_mat':'Nodes and rods can be made of different materials, for example nodes from 0.5 mm kraft paper and rods from 3 mm plywood. The material thickness sets the dimensions of the plug-in joints.',
   'help_customlen':'One length per arm, in the same order as the angles. If values are missing, the remaining arms use the set arm length. That way you can build a node that sits on edges of different length.',
-  'help_lock':'Holes: plain drilled holes, joined with screws, rivets or glue - works with any material. Tabs: the rod lies flat on the arm, aligned like the star or cone arms. An arrow at the arm end engages a slot in the mating part; the material has to give a little, so rather thin - paper, card, thin plywood. Hooks: the rod stands on edge. A tenon at the rod end carries a nose hanging downwards. It is pushed through the slot and the rod is dropped, so the nose catches behind the plate. Nothing has to bend, so this also suits thicker material such as wood or sheet metal. Cone seam additionally closes the cone. Pegs and hooks can be combined, e.g. for a building block that needs both slot types. The rod sheet then shows two rod types: hook rods and peg rods.',
+  'help_lock':'Holes: plain drilled holes, joined with screws, rivets or glue - works with any material. Tabs: the rod lies flat on the arm, aligned like the star or cone arms. An arrow at the arm end engages a slot in the mating part; the material has to give a little, so rather thin - paper, card, thin plywood. Hooks: the rod stands on edge. A tenon at the rod end carries a nose hanging downwards. It is pushed through the slot and the rod is dropped, so the nose catches behind the plate. Nothing has to bend, so this also suits thicker material such as wood or sheet metal. Cone seam additionally closes the cone. Pegs and hooks can be combined, e.g. for a building block that needs both slot types. The rod sheet then shows Under Rods you then choose between two separate rod sets or tab rods with hooks.',
   'Begrenzt: tiefer würde der Schnitt eine Bohrung öffnen.':'Limited: cutting deeper would open a bore.',
   'Begrenzt: tiefer würde der Schnitt den Verbindungskern durchtrennen.':'Limited: cutting deeper would cut through the connecting core.',
   'Druckbett-Fläche ':'Bed contact face ',
@@ -10485,7 +10776,13 @@ const I18N = {
   'Körper ':'Body ','Seiten ':'Sides (n-gon) ','Höhe ':'Height ',
   'Verjüngung ':'Taper ','Seitenflächen ':'Side faces ','Kappung oben ':'Top truncation ',
   'Länge L ':'Length L ','Breite B ':'Width B ','Höhe H ':'Height H ','Neigungswinkel ':'Tilt angle ',
-  'STL-Datei':'STL file','Kanten-Schwelle ':'Edge threshold ','Skalierung':'Scaling',
+  'STL-Datei':'STL file','Datei (STL oder OBJ)':'File (STL or OBJ)','wie im Modell':'as in the model','Kanten ':'Edges ','Haken- und Zapfenstreben ':'Hook and tab rods ','getrennt':'separate','kombiniert':'combined',
+  'Breite Zapfenstreben ':'Tab rod width ','Breite Hakenstreben ':'Hook rod width ',
+  'Materialstärke Zapfenstreben ':'Material thickness tab rods ','Materialstärke Hakenstreben ':'Material thickness hook rods ',
+  'help_strebmodus':'If tabs and hooks are both active there are two options.\n\nSeparate: two rod sets of their own, tab rods and hook rods. Width and material thickness can be set separately for each.\n\nCombined: one rod set. The tab rods also get hooks. The gap between hook and rod is then node thickness plus rod thickness, because node and rod sit in it together.',
+  'help_strebbreitez':'Width of the tab rods when hook and tab rods are separate. It follows the arm width until you set it yourself.',
+  'help_matarmz':'Thickness of the tab rods when hook and tab rods are separate. It sets the width of the tab slots in the node. It follows the rod material thickness until you set it yourself.','längste Kante':'longest edge','Gesamtgröße':'overall size','größte Ausdehnung':'largest extent','Z (Höhe)':'Z (height)','Y (Tiefe)':'Y (depth)','X (Breite)':'X (width)','Maß ':'Size ','Achse ':'Axis ','am Knick erkennen':'detect at creases',
+  'help_objkanten':'An OBJ file stores faces as real polygons and also plain lines. “As in the model” takes every edge exactly as it was modelled: every point becomes a node, every edge a rod, no threshold. This also lets you build wire models made of lines (e.g. from Rhino, Grasshopper or Blender).\n\n“Detect at creases” treats the file like an STL: faces are split into triangles and edges are found by the edge threshold.\n\nBlender usually saves OBJ in metres. If the model then looks tiny, set scaling to “longest edge” or “overall size”.','Kanten-Schwelle ':'Edge threshold ','Skalierung':'Scaling',
   'Kantenlänge ':'Edge length ','Welcher Knotentyp? ':'Which node type? ','Ansicht':'View',
   'Mittelloch Ø ':'Center hole Ø ',
   'Breite Streben ':'Rod width ',
@@ -10545,7 +10842,7 @@ const I18N = {
   'Antiprisma (einstellbar)':'Antiprism (adjustable)','Bipyramide / Doppelpyramide':'Bipyramid / double pyramid',
   'Raumgitter (Felder x/y/z)':'Space grid (cells x/y/z)',
   'Höhe ':'Height ','Felder X ':'Cells X ','Felder Y ':'Cells Y ','Felder Z ':'Cells Z ',
-  'STL importieren':'Import STL',
+  'STL importieren':'Import STL','Datei importieren (STL/OBJ)':'Import file (STL/OBJ)',
   'Ikosaeder-Ecke (5 Streben, fehlt 60°)':'Icosahedron corner (5 rods, 60° missing)',
   'Würfel-Ecke (3 Streben, fehlt 90°)':'Cube corner (3 rods, 90° missing)',
   'Tetraeder-Ecke (3 Streben, fehlt 180°)':'Tetrahedron corner (3 rods, 180° missing)',
