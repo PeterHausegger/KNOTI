@@ -91,8 +91,9 @@
   body.mitArmLaengen #grpArmLenMode{display:block !important;}
   body.mitArmListe   #customLenWrap{display:block !important;}
   body.ohneFlachSachen .legend, body.ohneFlachSachen #grpFarben,
-  body.ohneFlachSachen #grpKerf,
-  body.ohneFlachSachen .sect[data-sect="ausgabe"]{display:none !important;}
+  body.ohneFlachSachen #grpKerf, body.ohneFlachSachen #grpLayout{display:none !important;}
+  /* (seit v330 bleibt der Abschnitt Ausgabe beim 3D-Knoten sichtbar - fuer
+     den QR-Schalter; Ebenen, Kerf und Anordnung betreffen nur Flachteile) */
   body.ohneVerbindungsart .sect[data-sect="loecher"],
   body.ohneVerbindungsart #lochWrap, body.ohneVerbindungsart #matWrap,
   body.ohneVerbindungsart #zapfenWrap, body.ohneVerbindungsart #hakenWrap,
@@ -1293,11 +1294,11 @@
       <button data-v="on">an</button>
     </div>
     <div class="help-text" data-i18n="help_qr">
-      Druckt einen QR-Code mit einem Link zur aktuellen Einstellung auf den
-      Bauplan und auf die Blätter im Autolayout. Wer ihn scannt, öffnet KNOTI
-      mit genau diesen Werten. Er liegt in der Ebene Zusatzinfo (türkis) und
-      wird nur gezeichnet, wo er keine Teile überdeckt. Standardmäßig aus, weil
-      er das Erzeugen der Pläne etwas verlangsamt.
+      Setzt einen QR-Code mit einem Link zur aktuellen Einstellung auf den
+      Bauplan und in die exportierten SVG-Dateien (Knoten, Streben). Wer ihn
+      scannt, öffnet KNOTI mit genau diesen Werten. In den SVG-Dateien steht
+      er unter den Teilen in der Ebene Zusatzinfo (türkis), auf dem Bauplan
+      dunkel. Standardmäßig aus.
     </div>
   </div>
   <div class="grp" id="grpKerf" style="border-top:1px solid var(--grid);padding-top:14px;">
@@ -1538,7 +1539,7 @@ function toggleHelp(btn){
 // Programmversion. Sie steht in der Fusszeile, auf jedem Export und in der
 // Einstellungsdatei - bei einer Rueckmeldung ist damit sofort klar, welche
 // Fassung gemeint ist.
-const KNOTI_VERSION='328';
+const KNOTI_VERSION='330';
 let PX_PER_MM=4;
 let BODY_PX=4;      // eigener Zoom fuer die 3D-Koerperzeichnung
 const state={};
@@ -4358,11 +4359,25 @@ function konturRadius(g){
 // aufgerufen, damit sie nicht nur in einem erscheint.
 // Abgewaehlte Farbebenen aus einem Export-SVG entfernen.
 // ---- QR-Code mit Link zur aktuellen Einstellung (seit v322 wahlweise) ----
+// Auf dem Bauplan (Papier) fast schwarz: Tuerkis wird auf Schwarzweiss-
+// Druckern zu hellem Grau und laesst sich dann schlecht scannen. Auf den
+// Laserblaettern bleibt er tuerkis (Ebene Zusatzinfo), damit er nicht als
+// Schnitt (schwarz = Bohrung) gelesen wird.
+const QR_PAPIER='#1a2b22';
 // Bis v311 wurde er bei JEDEM Zeichnen neu berechnet und Modul fuer Modul als
 // eigenes Rechteck auf jede Seite gelegt - das machte die Plaene langsam.
 // Jetzt: nur wenn eingeschaltet, im Hintergrund gebuendelt berechnet und als
 // EIN Pfad gezeichnet.
 let __qrURL=null, __qrMatrix=null, __qrTimer=null, __qrBusy=false, __qrPfadCache=null;
+// Adresse, unter der KNOTI fuer andere erreichbar ist. Laeuft KNOTI als
+// Datei vom eigenen Rechner (file://), fuehrte der Link bisher auf genau diese
+// Datei - auf einem Handy oder einem anderen Rechner gibt es die nicht, der
+// gescannte QR-Code ging ins Leere. Dann gilt die oeffentliche Adresse.
+const KNOTI_OEFFENTLICH='https://peterhausegger.github.io/KNOTI/index.html';
+function knotiBasisURL(){
+  if(/^https?:$/.test(location.protocol)) return location.origin+location.pathname+location.search;
+  return KNOTI_OEFFENTLICH;
+}
 function qrAn(){ const b=document.querySelector('#qrSeg .on'); return !!(b && b.dataset.v==='on'); }
 function qrLinkB64(bytes){
   let s=''; for(const b of bytes) s+=String.fromCharCode(b);
@@ -4390,9 +4405,9 @@ async function qrLinkURL(){
   if(typeof CompressionStream==='function'){
     const cs=new CompressionStream('deflate-raw');
     const buf=await new Response(new Blob([roh]).stream().pipeThrough(cs)).arrayBuffer();
-    return location.origin+location.pathname+location.search+'#e=z'+qrLinkB64(new Uint8Array(buf));
+    return knotiBasisURL()+'#e=z'+qrLinkB64(new Uint8Array(buf));
   }
-  return location.origin+location.pathname+location.search+'#e=r'+qrLinkB64(roh);
+  return knotiBasisURL()+'#e=r'+qrLinkB64(roh);
 }
 async function qrAktualisieren(){
   if(__qrBusy || !qrAn() || typeof qrcode!=='function') return;
@@ -4424,7 +4439,7 @@ function qrSizeMM(vbW, vbH){
 }
 // Ein einziger Pfad, zeilenweise zusammengefasste Module, Ruhezone 4 Module.
 // Der Pfad wird in Moduleinheiten einmal gebaut und nur skaliert.
-function qrGroupSVG(sizeMM){
+function qrGroupSVG(sizeMM, farbe){
   if(!__qrMatrix || !(sizeMM>0)) return '';
   const n=__qrMatrix.n, total=n+8, cell=sizeMM/total;
   if(!__qrPfadCache){
@@ -4437,11 +4452,11 @@ function qrGroupSVG(sizeMM){
       } }
     __qrPfadCache=d;
   }
-  return `<g transform="scale(${cell.toFixed(5)})"><path fill="#00a3a3" d="${__qrPfadCache}"/></g>`;
+  return `<g transform="scale(${cell.toFixed(5)})"><path fill="${farbe||'#00a3a3'}" d="${__qrPfadCache}"/></g>`;
 }
 // QR unten rechts im Bereich (vbX, vbY, vbW, vbH); bottomClear haelt Abstand
 // nach unten (Fusszeile). frei(x,y,w,h) prueft optional, ob der Platz leer ist.
-function qrEckeSVG(forExport, vbX, vbY, vbW, vbH, bottomClear, frei, randMM){
+function qrEckeSVG(forExport, vbX, vbY, vbW, vbH, bottomClear, frei, randMM, farbe){
   if(!forExport || !qrAn()) return '';
   const size=qrSizeMM(vbW, vbH); if(!size) return '';
   // Die Ruhezone (4 Module) gehoert zum Code; randMM ist der Abstand der
@@ -4449,8 +4464,33 @@ function qrEckeSVG(forExport, vbX, vbY, vbW, vbH, bottomClear, frei, randMM){
   const rand=isFinite(randMM) ? randMM : Math.max(1, Math.min(vbW,vbH)*0.015);
   const x=vbX+vbW-size-rand, y=vbY+vbH-size-rand-(bottomClear||0);
   if(typeof frei==='function' && !frei(x,y,size,size)) return '';
-  const g=qrGroupSVG(size); if(!g) return '';
+  const g=qrGroupSVG(size, farbe); if(!g) return '';
   return `<g transform="translate(${x.toFixed(2)},${y.toFixed(2)})">${g}</g>`;
+}
+// QR-Code an eine exportierte SVG-Datei anhaengen (seit v330): unter dem
+// Inhalt, rechts, die Zeichenflaeche wird dafuer verlaengert. So liegt er nie
+// auf einem Teil. Bisher bekamen nur Bauplan und Autolayout-Blaetter einen
+// QR-Code, der normale Export (Raster) nicht. Steckt schon einer drin
+// (Autolayout), bleibt es dabei.
+function qrAnhaengen(svg){
+  if(!qrAn() || !__qrMatrix || typeof svg!=='string') return svg;
+  qrGroupSVG(1);                                   // Pfad-Cache sicher anlegen
+  if(__qrPfadCache && svg.indexOf(__qrPfadCache)>=0) return svg;
+  const kopf=svg.match(/<svg\b[^>]*>/); if(!kopf) return svg;
+  const vbM=kopf[0].match(/viewBox="([^"]+)"/); if(!vbM) return svg;
+  const vb=vbM[1].trim().split(/[\s,]+/).map(Number); if(vb.length!==4 || vb.some(v=>!isFinite(v))) return svg;
+  const total=__qrMatrix.n+8;
+  const size=Math.max(18, Math.min(total*0.4, 40));   // gut scannbar, nicht riesig
+  const rand=4;
+  const neuH=vb[3]+size+2*rand, neuW=Math.max(vb[2], size+2*rand);
+  const x=vb[0]+neuW-size-rand, y=vb[1]+vb[3]+rand;
+  let neuKopf=kopf[0].replace(vbM[0], `viewBox="${vb[0]} ${vb[1]} ${neuW.toFixed(2)} ${neuH.toFixed(2)}"`);
+  // Breite/Hoehe in mm mitziehen, damit der Massstab erhalten bleibt.
+  neuKopf=neuKopf.replace(/height="([0-9.]+)(mm)?"/, (m,v,u)=>`height="${(parseFloat(v)*neuH/vb[3]).toFixed(1)}${u||''}"`);
+  neuKopf=neuKopf.replace(/width="([0-9.]+)(mm)?"/, (m,v,u)=>`width="${(parseFloat(v)*neuW/vb[2]).toFixed(1)}${u||''}"`);
+  const g=`<g transform="translate(${x.toFixed(2)},${y.toFixed(2)})">${qrGroupSVG(size)}</g>`;
+  const ende=svg.lastIndexOf('</svg>'); if(ende<0) return svg;
+  return svg.slice(0,kopf.index)+neuKopf+svg.slice(kopf.index+kopf[0].length, ende)+g+svg.slice(ende);
 }
 function farbenFiltern(svg){
   const aus=[...document.querySelectorAll('#farbSeg button')]
@@ -7654,7 +7694,7 @@ function buildBauplanSVG(forExport){
   let pagesG='';
   for(let pi=0;pi<pageCountAll;pi++){
     // QR-Code (wenn eingeschaltet) unten rechts, ueber der Fusszeile.
-    pagesG+=`<g transform="translate(0,${A4H*pi})">${pageSVGs[pi]}${qrEckeSVG(true,0,0,A4W,A4H,13,null,6)}</g>`;
+    pagesG+=`<g transform="translate(0,${A4H*pi})">${pageSVGs[pi]}${qrEckeSVG(true,0,0,A4W,A4H,13,null,6,QR_PAPIER)}</g>`;
   }
   return `<svg id="bauplanSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${A4W} ${totalH}" ${sizeAttr} font-family="Segoe UI Rounded, SF Pro Rounded, Trebuchet MS, Segoe UI, Verdana, sans-serif" style="max-width:70%;max-height:80vh;">
     ${pagesG}
@@ -8317,7 +8357,7 @@ function buildStaebeSVG(forExport){
       } else {
         txt='r'+linkB64(roh);
       }
-      const url=location.origin+location.pathname+location.search+'#e='+txt;
+      const url=knotiBasisURL()+'#e='+txt;
       let kopiert=false;
       try{ await navigator.clipboard.writeText(url); kopiert=true; }catch(e){}
       if(!kopiert){
@@ -9268,7 +9308,7 @@ function currentAdapterSVG(){
   return geomToSVG(lastGeom,true);
 }
 $('dlAdapter').addEventListener('click',()=>{
-  { const nm=exportBaseName(); download(nm+'.svg', stampFilename(farbenFiltern(currentAdapterSVG()), nm), 'image/svg+xml'); }
+  { const nm=exportBaseName(); download(nm+'.svg', stampFilename(farbenFiltern(qrAnhaengen(currentAdapterSVG())), nm), 'image/svg+xml'); }
 });
 $('dlCut').addEventListener('click',()=>{
   const EN=(typeof curLang!=='undefined'&&curLang==='en');
@@ -9276,7 +9316,7 @@ $('dlCut').addEventListener('click',()=>{
 });
 $('dlStaebe').addEventListener('click',()=>{
   const EN=(typeof curLang!=='undefined'&&curLang==='en');
-  { const nm=exportBaseName()+'_'+(EN?'rods':'streben'); download(nm+'.svg', stampFilename(farbenFiltern(buildStaebeSVG(true)), nm), 'image/svg+xml'); }
+  { const nm=exportBaseName()+'_'+(EN?'rods':'streben'); download(nm+'.svg', stampFilename(farbenFiltern(qrAnhaengen(buildStaebeSVG(true))), nm), 'image/svg+xml'); }
 });
 $('dlBauplan').addEventListener('click',()=>{
   const EN=(typeof curLang!=='undefined'&&curLang==='en');
@@ -9717,7 +9757,7 @@ function buildEinzelBauplanSVG(){
     + `<text x="${A4W-M}" y="${A4H-11}" font-size="2.8" text-anchor="end" fill="#9a9e95">`
     + `© 2026 Peter Hausegger · CC BY-SA 4.0</text>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${A4W} ${A4H}" width="${A4W}mm" height="${A4H}mm" font-family="Segoe UI Rounded, SF Pro Rounded, Trebuchet MS, Segoe UI, Verdana, sans-serif">
-    ${rahmen}${kopf}${bild}${tabelle}${fuss}${qrEckeSVG(true,0,0,A4W,A4H,13,null,6)}</svg>`;
+    ${rahmen}${kopf}${bild}${tabelle}${fuss}${qrEckeSVG(true,0,0,A4W,A4H,13,null,6,QR_PAPIER)}</svg>`;
 }
 function openBauplanPrint(svg, name){
   const A4W=210, A4H=297;
@@ -10367,7 +10407,7 @@ function updateBallRodBtns(){
   zeig('dlBallAdStl',  istBall && ohneStreben && !zapfenModus);
 }
 if($('dlBallRodSvg')) $('dlBallRodSvg').addEventListener('click',()=>{
-  const svg=ballRodSVG(true);
+  const svg=qrAnhaengen(ballRodSVG(true));
   const li=ballStrebenListe();
   const name = li.length===1
     ? `${(curLang==='en'?'rods':'streben')}_${li[0].len.toFixed(0)}mm.svg`
@@ -10807,7 +10847,7 @@ const I18N = {
   'Schlitze pro Arm ':'Slots per arm ',
   'Nasenüberstand ':'Nose overhang ',
   'Ebenen im Export':'Layers in export','Schnitt':'Cut','QR-Code ':'QR code ','aus':'off','an':'on',
-  'help_qr':'Prints a QR code with a link to the current settings on the build plan and on the sheets in auto layout. Scanning it opens KNOTI with exactly these values. It sits in the extra info layer (teal) and is only drawn where it does not cover any parts. Off by default because it slows down creating the plans a little.','Knicklinie':'Fold line','Falz':'Crease','Bohrung':'Hole','Beschriftung':'Labels','Zusatzinfo':'Extra info',
+  'help_qr':'Adds a QR code with a link to the current settings to the build plan and to the exported SVG files (nodes, rods). Scanning it opens KNOTI with exactly these values. In the SVG files it sits below the parts in the extra info layer (teal), on the build plan it is dark. Off by default.','Knicklinie':'Fold line','Falz':'Crease','Bohrung':'Hole','Beschriftung':'Labels','Zusatzinfo':'Extra info',
   'Hakenrichtung':'Hook direction','zur Mitte':'towards centre','nach außen':'outwards','Schlitzlänge ':'Slot length ','Hakengröße ':'Hook size ',
   'help_haken':'The rod stands on edge and is pushed into the longitudinal slot from outside. A hook nose on the rod protrudes by one material thickness beyond the rod edge and then reaches back towards the middle of the rod, so it can no longer slip out. Slot width equals material thickness. With the double build the rod gets hooks on both edges. Slot distribution: automatic spreads the slots evenly along the arm; with fixed spacing you set the spacing and the position of the first slot (centre, measured from the fold line) yourself, independent of the holes.',
   'Schlitzverteilung':'Slot distribution','Schlitzabstand ':'Slot spacing ','1. Schlitz ab Knicklinie ':'1st slot from fold line ',
