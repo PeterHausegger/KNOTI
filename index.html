@@ -322,6 +322,7 @@
         <span id="presetInfo" style="font-size:10px;color:var(--muted);line-height:1.5;"></span>
         <span class="help-btn" onclick="toggleHelp(this)">?</span>
       </div>
+      <input type="text" id="teilLinkFeld" readonly style="display:none;width:100%;margin-top:5px;font-size:10px;padding:3px 5px;border:1px solid var(--grid);border-radius:6px;background:var(--paper);color:var(--ink);">
       <div class="help-text" data-i18n="help_merken">
         ↶ und ↷ nehmen einzelne Änderungen zurück oder holen sie wieder, auch
         mit Strg+Z und Strg+Umschalt+Z. ⟳ setzt alles auf den Anfangszustand.
@@ -988,6 +989,79 @@
     <label>Strebenlänge <span><input class="numfield" type="number" id="nStab" min="20" max="2000" step="0.1" value="200"><span class="unit">mm</span></span></label>
     <input type="range" id="stab" min="20" max="600" value="200" step="0.1">
   </div>
+  <div class="grp" id="grpProfil">
+    <label>Strebenprofil <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
+    <div class="seg" id="profilSeg">
+      <button data-v="flach" class="on">flach</button>
+      <button data-v="L">L</button>
+      <button data-v="U">U</button>
+      <button data-v="dreieck">Dreieck</button>
+      <button data-v="Q">Vierkant</button>
+      <button data-v="O">rund</button>
+    </div>
+    <div class="help-text" data-i18n="help_profil">
+      Nur für dünne, faltbare Materialien wie Papier, Karton oder Folie: Die
+      Strebe wird im freien Mittelteil zu einem Profil gefaltet und dadurch
+      um ein Vielfaches steifer. Die Enden, die auf dem Knotenarm aufliegen,
+      bleiben flach - Löcher und Zapfen funktionieren wie bisher. Faltlinien
+      sind blau.
+
+      L: eine Kante wird hochgefaltet. U: beide Kanten. Dreieck: je eine
+      Seitenfläche ober- und unterhalb der Strebe, geschlossen mit Klebelasche
+      oder steckbar, am steifsten, auch gegen Verdrehen. Rund: die Strebe wird
+      zum Rohr gerollt, für Materialien, die sich rollen, aber nicht falten
+      lassen. Die Profilhöhe ist dann der Durchmesser.
+
+      Vierkant: geschlossenes Rechteckrohr, der Deckel bekommt dieselben
+      Löcher wie die Strebe.
+
+      Steckbar: statt der Klebelasche gerade Zähne wie bei der Kegelnaht. Sie
+      werden am Ansatz umgefaltet, von innen durch die Schlitze der Gegenseite
+      gesteckt und dahinter umgelegt. Zahnlänge 0 = automatisch.
+
+      Doppellage: L, Vierkant und rund. Das Profil liegt auf ganzer Länge
+      zwischen den beiden Schalen, seine Höhe bestimmt den Schalenabstand.
+
+      Bei Haken gibt es L und U: L faltet die Oberkante der hochkant stehenden
+      Strebe um, der Knoten bleibt gleich. U hat zwei Wände mit Haken und einen
+      Steg dazwischen, der Knoten bekommt je Stelle zwei Schlitze im
+      Stegabstand.
+
+      Faltung ab Strebenende: 0 = über die ganze Länge. Sollen Löcher oder
+      Zapfen frei bleiben, hier die Auflage auf dem Arm eintragen.
+      Abschrägung: Winkel der Seitenteile an den Enden, 90 Grad = rechtwinklig.
+    </div>
+    <div id="profilOpts" style="display:none;margin-top:8px;">
+      <label>Profilhöhe <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nProfilH" min="0" max="60" step="0.5" value="0"><span class="unit">mm</span></span></label>
+      <input type="range" id="profilH" min="0" max="40" value="0" step="0.5">
+      <div id="profilAbWrap">
+      <label style="margin-top:9px;">Faltung ab Strebenende <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nProfilAb" min="0" max="200" step="0.5" value="0"><span class="unit">mm</span></span></label>
+      <input type="range" id="profilAb" min="0" max="60" value="0" step="0.5">
+      </div>
+      <div id="profilWinkelWrap">
+      <label style="margin-top:9px;">Abschrägung <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nProfilWinkel" min="15" max="90" step="1" value="45"><span class="unit">°</span></span></label>
+      <input type="range" id="profilWinkel" min="15" max="90" value="45" step="1">
+      </div>
+      <div id="profilVerschlussWrap">
+        <label style="margin-top:9px;">Verschluss</label>
+        <div class="seg" id="profilVerschlussSeg">
+          <button data-v="kleben" class="on">Klebelasche</button>
+          <button data-v="steck">steckbar</button>
+        </div>
+      </div>
+      <div id="profilZahnWrap" style="display:none;">
+        <label style="margin-top:9px;">Anzahl Zähne <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nProfilZahn" min="1" max="12" step="1" value="3"></span></label>
+        <input type="range" id="profilZahn" min="1" max="12" value="3" step="1">
+        <label style="margin-top:9px;">Zahnlänge <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nProfilZahnL" min="0" max="40" step="0.5" value="0"><span class="unit">mm</span></span></label>
+        <input type="range" id="profilZahnL" min="0" max="40" value="0" step="0.5">
+      </div>
+      <div id="profilLascheWrap">
+        <label style="margin-top:9px;">Klebelasche <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nProfilLasche" min="2" max="20" step="0.5" value="5"><span class="unit">mm</span></span></label>
+        <input type="range" id="profilLasche" min="2" max="20" value="5" step="0.5">
+      </div>
+      <div id="profilHinweis" style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.45;"></div>
+    </div>
+  </div>
   <div class="sect" data-sect="loecher"><span class="stepno"></span><span class="sect-txt">Verbindung</span><span class="chev">▾</span></div>
   <div class="grp" id="grpLock">
     <label>Art wählen (mehrere möglich) <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
@@ -1539,7 +1613,7 @@ function toggleHelp(btn){
 // Programmversion. Sie steht in der Fusszeile, auf jedem Export und in der
 // Einstellungsdatei - bei einer Rueckmeldung ist damit sofort klar, welche
 // Fassung gemeint ist.
-const KNOTI_VERSION='331';
+const KNOTI_VERSION='334';
 let PX_PER_MM=4;
 let BODY_PX=4;      // eigener Zoom fuer die 3D-Koerperzeichnung
 const state={};
@@ -2830,7 +2904,10 @@ function schalenAbstand(){
   // Flaeche, die die Strebe beruehrt - zusammen also eine volle Verbinder-
   // staerke zusaetzlich. Nur so sind die beiden anliegenden Flaechen wirklich
   // genau ein Strebenmass voneinander entfernt.
-  const strebe = hakenAn() ? strebenBreite() : matArme();
+  // Seit v334: steckt ein Profil (L, Vierkant, rund) zwischen den Schalen,
+  // zaehlt dessen Hoehe.
+  const ph = (typeof profilDoppelHoehe==='function') ? profilDoppelHoehe() : 0;
+  const strebe = hakenAn() ? strebenBreite() : (ph>0 ? ph : matArme());
   return strebe + matThick();
 }
 // Musterversatz der AUSSENSCHALE beim KEGEL. Zwei parallele Kegelflaechen im
@@ -2878,6 +2955,221 @@ function zapfenStrebenVersatz(){
   const L=(typeof armLenMin==='function') ? armLenMin() : 0;
   const z=(typeof zapfenAbstandEff==='function') ? zapfenAbstandEff() : L;
   return (L>0 && isFinite(z)) ? Math.max(0, L-z) : 0;
+}
+// ---- Gefaltete Strebenprofile (seit v331) ----
+// Die Strebe wird im freien Mittelteil gefaltet; die Enden auf dem
+// Knotenarm bleiben flach. Fuer Loecher und Zapfen alle Profile, fuer Haken
+// L und U (seit v333). Nicht fuer Doppelschale, kombinierte Streben und
+// 3D-Knoten.
+function strebProfilMoeglich(){
+  if(typeof mode!=='undefined' && mode==='ball3d') return false;
+  const sub=(mode==='body' && document.querySelector('#bodyAdapterSeg .on')) ? document.querySelector('#bodyAdapterSeg .on').dataset.v : null;
+  if(sub==='ball3d') return false;
+  const js=document.querySelector('#joinSeg .on');
+  if(js && js.dataset.v==='direct') return false;
+  // Doppellage (seit v334): L, Vierkant und rund, die Strebe steckt als
+  // Profil zwischen den Schalen. Mit Haken dort weiterhin kein Profil.
+  if(profilDoppel() && hakenAn()) return false;
+  if(hakenAn() && strebModus()==='kombi') return false;
+  return true;
+}
+function profilDoppel(){ return (typeof bauartDoppel==='function') && bauartDoppel(); }
+// Hoehe des Profils zwischen den Schalen der Doppellage, sonst 0.
+function profilDoppelHoehe(){
+  if(!profilDoppel() || hakenAn()) return 0;
+  const art=strebProfil();
+  if(art!=='L' && art!=='O' && art!=='Q') return 0;
+  return profilHoehe(strebenBreite(), art);
+}
+function profilAuswahl(){
+  const b=document.querySelector('#profilSeg .on');
+  return b ? b.dataset.v : 'flach';
+}
+// Profil der flach aufliegenden Streben (Loecher, Zapfen).
+function strebProfil(){
+  if(!strebProfilMoeglich()) return 'flach';
+  const a=profilAuswahl();
+  if(profilDoppel() && (a==='U'||a==='dreieck')) return 'flach';
+  return a;
+}
+// Profil der Hakenstreben: nur L und U (seit v333). L: die Oberkante der
+// hochkant stehenden Strebe wird umgefaltet, der Knoten bleibt gleich.
+// U: zwei Hakenwaende mit einem Steg dazwischen (Querschnitt wie ein Pi),
+// jede Wand steckt in einem eigenen Schlitz.
+function hakenProfil(){
+  if(!hakenAn() || !strebProfilMoeglich()) return 'flach';
+  const a=profilAuswahl();
+  return (a==='L'||a==='U') ? a : 'flach';
+}
+// Stegbreite des Haken-U = Abstand der beiden Schlitze im Knoten
+// (Mitte zu Mitte). 0 = halbe Armbreite, mindestens Materialstaerke + 1 mm.
+function hakenSteg(){
+  if(hakenProfil()!=='U') return 0;
+  const v=(typeof sync==='function' && $('profilH')) ? sync('profilH','nProfilH',lastSrc) : 0;
+  if(v>0) return v;
+  const t=steckDicke();
+  return Math.max(t+1, Math.round(armBreiteAktuell()*0.5*10)/10);
+}
+// Abschraegung der Seitenteile in Grad (90 = rechtwinklig, seit v333).
+function profilWinkel(){
+  const v=(typeof sync==='function' && $('profilWinkel')) ? sync('profilWinkel','nProfilWinkel',lastSrc) : 45;
+  return (isNaN(v)) ? 45 : Math.max(15, Math.min(90, v));
+}
+// Verschluss geschlossener Profile: Klebelasche oder steckbar (seit v333).
+function profilVerschluss(){
+  const b=document.querySelector('#profilVerschlussSeg .on');
+  return b ? b.dataset.v : 'kleben';
+}
+function profilZahnAnzahl(){
+  const v=(typeof sync==='function' && $('profilZahn')) ? sync('profilZahn','nProfilZahn',lastSrc) : 3;
+  return (isNaN(v)||v<1) ? 1 : Math.round(v);
+}
+// Zahnlaenge: wie weit der Zahn ueber die Kante ragt. 0 = automatisch: bis
+// zum Schlitz, durch das Material und 3 mm dahinter zum Umlegen.
+function profilZahnLaenge(dS, tS){
+  const v=(typeof sync==='function' && $('profilZahnL')) ? sync('profilZahnL','nProfilZahnL',lastSrc) : 0;
+  if(!isNaN(v) && v>0.5) return v;
+  return Math.round(((dS||2)+(tS||0.5)+3)*10)/10;
+}
+// Abstand des Schlitzes zur Kante und Materialstaerke der Strebe.
+function profilSchlitzMasse(){
+  const tS=Math.max(0.3, (typeof matArme==='function') ? matArme() : 0.5);
+  return {tS, dS:Math.max(1.5, 2*tS)};
+}
+// Profilhoehe: 0 = automatisch (L/U halbe Strebenbreite, Dreieck gleichseitig,
+// rund: Durchmesser = Strebenbreite).
+function profilHoehe(breite, art){
+  const v=(typeof sync==='function' && $('profilH')) ? sync('profilH','nProfilH',lastSrc) : 0;
+  if(v>0) return v;
+  if(art==='O' || art==='Q') return Math.round(breite*10)/10;
+  return art==='dreieck' ? Math.round(breite*0.866*10)/10 : Math.round(breite*0.5*10)/10;
+}
+// Ab wo gefaltet wird, gemessen vom Strebenende. 0 = ganze Laenge (Standard).
+function profilAbstand(){
+  // Doppellage: das Profil liegt auf ganzer Laenge zwischen den Schalen.
+  if(profilDoppel()) return 0;
+  const v=(typeof sync==='function' && $('profilAb')) ? sync('profilAb','nProfilAb',lastSrc) : 0;
+  return (isNaN(v)||v<0) ? 0 : v;
+}
+function profilLasche(){
+  const v=(typeof sync==='function' && $('profilLasche')) ? sync('profilLasche','nProfilLasche',lastSrc) : 5;
+  return (isNaN(v)||v<2) ? 5 : v;
+}
+// Umriss-Zusaetze und Faltlinien eines Profils fuer eine Strebe der Laenge L
+// und Breite b. Gefaltet wird zwischen e und L-e. oben: Punkte von links
+// nach rechts (y<0), unten: von rechts nach links (y>b).
+// schlitze: Rechtecke [x, y, w, h] fuer den steckbaren Verschluss.
+function profilGeometrie(art, L, b, e, r){
+  const leer={oben:[], unten:[], falz:[], schlitze:[], kleben:[], lochY:[], top:0, bot:0};
+  if(!art || art==='flach' || !(L-2*e>8)) return leer;
+  const h=profilHoehe(b, art);
+  const a=e, z=L-e, out={oben:[], unten:[], falz:[], schlitze:[], kleben:[], lochY:[], top:0, bot:0};
+  // Abschraegung der Seitenteile, Winkel einstellbar (seit v333, vorher fest
+  // 45 Grad). 90 Grad = rechtwinklig, kleiner = flacher auslaufend.
+  // Doppellage: rechtwinklig, das Profil liegt bis ans Ende zwischen den
+  // Schalen und braucht dort Deckel und Loecher (seit v334).
+  const tanW=profilDoppel() ? Infinity : Math.tan(profilWinkel()*Math.PI/180);
+  // Ein angehaengter Streifen der Tiefe T an der Kante y0 (Richtung dir=-1
+  // nach oben, +1 nach unten). tiefen: Lage der Faltlinien im Streifen.
+  // kante: zusaetzliche Punkte an der Aussenkante (x, Ueberstand), links
+  // nach rechts - fuer die Steckzaehne.
+  const schraeg=T=>Math.min(tanW>1e3 ? 0 : T/tanW, (z-a)/2-0.5);
+  const streifen=(y0, dir, T, tiefen, kante)=>{
+    const c=schraeg(T);
+    const k=t=>(T>0 ? (c/T)*t : 0);
+    const ye=y0+dir*T, xl=a+c, xr=z-c;
+    const mitte=(kante||[]).map(q=>[q[0], ye+dir*q[1], q[2]||0]);
+    const pts = dir<0
+      ? [[a,y0],[xl,ye,r],...mitte,[xr,ye,r],[z,y0]]
+      : [[z,y0],[xr,ye,r],...mitte.slice().reverse(),[xl,ye,r],[a,y0]];
+    const f=tiefen.map(t=>[a+k(t), y0+dir*t, z-k(t), y0+dir*t]);
+    return {pts, f, xl, xr, ye};
+  };
+  // Steckverschluss wie bei der Kegelnaht (seit v334, ohne Widerhaken): die
+  // Kante wird in 2n+1 gleiche Abschnitte geteilt - Luecke, Zahn, Luecke ...
+  // Der gerade Zahn wird an der Kante umgefaltet, liegt innen an der
+  // Gegenseite an, wird durch den Schlitz gesteckt und dahinter umgelegt.
+  const steck = profilVerschluss()==='steck';
+  const {tS, dS}=profilSchlitzMasse();
+  const zaehne=(xl, xr)=>{
+    let n=profilZahnAnzahl();
+    while(n>1 && (xr-xl)/(2*n+1)<4) n--;
+    const w=(xr-xl)/(2*n+1), lg=profilZahnLaenge(dS, tS);
+    const rr=Math.min(r||0, w/3, lg/3);
+    const kante=[], xs=[];
+    for(let i=0;i<n;i++){
+      const x1=xl+w*(2*i+1), x2=x1+w; xs.push((x1+x2)/2);
+      kante.push([x1,0],[x1,lg,rr],[x2,lg,rr],[x2,0]);
+    }
+    return {kante, xs, len:w, tiefe:lg};
+  };
+  const schlitz=(xc, len, y)=>[xc-len/2-0.1, y-(tS+0.16)/2, len+0.2, tS+0.16];
+  // Loecher auf der Oberseite geschlossener Profile, damit Stift oder
+  // Schraube durchgesteckt werden kann: y-Lage und der Bereich, in dem die
+  // Oberseite voll vorhanden ist.
+  const lochOben=(y, tiefe)=>{ const c0=schraeg(tiefe);
+    out.lochY.push({y, x0:a+c0+1, x1:z-c0-1}); };
+  if(art==='L' || art==='U'){
+    const o=streifen(0,-1,h,[0]); out.oben=o.pts; out.falz.push(...o.f); out.top=h;
+    if(art==='U'){ const u=streifen(b,1,h,[0]); out.unten=u.pts; out.falz.push(...u.f); out.bot=h; }
+  } else if(art==='dreieck'){
+    // Gleichschenkliges Dreieck, Grundseite b (liegt auf) in der Mitte, je
+    // eine Seitenflaeche ober- und unterhalb (wie beim U), dazu der
+    // Verschluss an der oberen Seitenflaeche (seit v333).
+    const s=Math.hypot(b/2, h);
+    if(steck){
+      const c0=schraeg(s);
+      const zz=zaehne(a+c0, z-c0);
+      const o=streifen(0,-1,s,[0],zz.kante); out.oben=o.pts; out.falz.push(...o.f);
+      zz.xs.forEach(xc=>{ out.falz.push([xc-zz.len/2, -s, xc+zz.len/2, -s]);
+                          out.schlitze.push(schlitz(xc, zz.len, b+s-dS)); });
+      out.top=s+zz.tiefe;
+    } else {
+      const g=profilLasche(), T=s+g;
+      const o=streifen(0,-1,T,[0,s]); out.oben=o.pts; out.falz.push(...o.f); out.top=T;
+    }
+    const u=streifen(b,1,s,[0]); out.unten=u.pts; out.falz.push(...u.f); out.bot=s;
+  } else if(art==='Q'){
+    // Vierkant (seit v334): Grundseite b in der Mitte, oben Seitenwand h und
+    // Deckel b, unten die zweite Seitenwand h. Der Verschluss sitzt an der
+    // freien Kante des Deckels. Der Deckel bekommt dieselben Loecher.
+    const D=h+b;
+    if(steck){
+      const c0=schraeg(D);
+      const zz=zaehne(a+c0, z-c0);
+      const o=streifen(0,-1,D,[0,h],zz.kante); out.oben=o.pts; out.falz.push(...o.f);
+      zz.xs.forEach(xc=>{ out.falz.push([xc-zz.len/2, -D, xc+zz.len/2, -D]);
+                          out.schlitze.push(schlitz(xc, zz.len, b+h-dS)); });
+      out.top=D+zz.tiefe;
+    } else {
+      const g=profilLasche(), T=D+g;
+      const o=streifen(0,-1,T,[0,h,D]); out.oben=o.pts; out.falz.push(...o.f); out.top=T;
+    }
+    const u=streifen(b,1,h,[0]); out.unten=u.pts; out.falz.push(...u.f); out.bot=h;
+    lochOben(-h-b/2, h+b);
+  } else if(art==='O'){
+    // Rohr mit Durchmesser h: Umfang pi*h. Die Grundflaeche b ist ein Teil
+    // davon, der Rest kommt oben dazu, plus Verschluss.
+    const W=Math.max(2, Math.PI*h - b);
+    if(steck){
+      const c0=schraeg(W);
+      const zz=zaehne(a+c0, z-c0);
+      const o=streifen(0,-1,W,[],zz.kante); out.oben=o.pts;
+      zz.xs.forEach(xc=>{ out.falz.push([xc-zz.len/2, -W, xc+zz.len/2, -W]);
+                          out.schlitze.push(schlitz(xc, zz.len, b-dS)); });
+      out.top=W+zz.tiefe;
+    } else {
+      // Keine Faltlinien; eine gestrichelte Linie zeigt, wo die Klebelasche beginnt.
+      const g=profilLasche(), T=W+g;
+      const o=streifen(0,-1,T,[]); out.oben=o.pts; out.top=T;
+      const cc=schraeg(T), kk=(T>0?cc/T:0)*W;
+      out.kleben=[[a+kk, -W, z-kk, -W]];
+    }
+    // Gegenueberliegender Punkt des Rohrs: halber Umfang ab Strebenmitte.
+    const yO=-(Math.PI*h/2 - b/2);
+    if(yO < -1) lochOben(yO, -yO+1);
+  }
+  return out;
 }
 function matArme(){
   const v=(typeof sync==='function' && $('matArm')) ? sync('matArm','nMatArm',lastSrc) : 3;
@@ -3355,8 +3647,10 @@ function coneSectorGroup(cg, Ruse, dx, label, forExport, isOuter){
       const u=pol(1,a);                       // Richtung des Arms
       const nx=-u[1], ny=u[0];                // senkrecht dazu
       const pt=(rr,s)=>((u[0]*rr+nx*s).toFixed(2)+','+(u[1]*rr+ny*s).toFixed(2));
-      holes+=`<path d="M ${pt(rI,-halbW)} L ${pt(rA,-halbW)}`
-           + ` L ${pt(rA,halbW)} L ${pt(rI,halbW)} Z"/>`;
+      const swK=(typeof hakenSteg==='function') ? hakenSteg() : 0;
+      (swK>0 ? [-swK/2, swK/2] : [0]).forEach(q=>{
+        holes+=`<path d="M ${pt(rI,q-halbW)} L ${pt(rA,q-halbW)}`
+             + ` L ${pt(rA,q+halbW)} L ${pt(rI,q+halbW)} Z"/>`; });
     });});
   }
   // Falz- und Verbindungslinien ueber den TATSAECHLICHEN Konturbereich
@@ -4213,11 +4507,15 @@ function buildConnector(ang, rEnd){
       const LA=armLenAt(ai)-FO;
       const sl=hakenLaengeEff(LA);
       const vs=ueberlappendH ? 0 : hakenVersatz(sl)*sR;
+      // Haken-U (seit v333): je Stelle zwei parallele Schlitze im
+      // Stegabstand, fuer jede Wand einen.
+      const sw=(typeof hakenSteg==='function') ? hakenSteg() : 0;
+      const quer = sw>0 ? [-sw/2, sw/2] : [0];
       hakenPositionen(LA, n, ueberlappendH, armStartAt(ai)).forEach(d=>{
         const rM=rEnd+FO+d+vs;
         const rA=rM+sl/2, rI=rM-sl/2;
-        slots.push([ rot(-w, rI, a-90), rot( w, rI, a-90),
-                     rot( w, rA, a-90), rot(-w, rA, a-90) ]);
+        quer.forEach(q=>slots.push([ rot(q-w, rI, a-90), rot(q+w, rI, a-90),
+                     rot(q+w, rA, a-90), rot(q-w, rA, a-90) ]));
       });
     });
   }
@@ -4373,7 +4671,7 @@ let __qrURL=null, __qrMatrix=null, __qrTimer=null, __qrBusy=false, __qrPfadCache
 // Datei vom eigenen Rechner (file://), fuehrte der Link bisher auf genau diese
 // Datei - auf einem Handy oder einem anderen Rechner gibt es die nicht, der
 // gescannte QR-Code ging ins Leere. Dann gilt die oeffentliche Adresse.
-const KNOTI_OEFFENTLICH='https://knoti.at/index.html';
+const KNOTI_OEFFENTLICH='https://peterhausegger.github.io/KNOTI/index.html';
 function knotiBasisURL(){
   if(/^https?:$/.test(location.protocol)) return location.origin+location.pathname+location.search;
   return KNOTI_OEFFENTLICH;
@@ -7210,7 +7508,42 @@ function bodyCutlist(){
   return txt;
 }
 
+// Schnittliste mit Hinweis auf das Strebenprofil (seit v331).
 function currentCutlist(){
+  let t=currentCutlistBasis();
+  const hp=hakenProfil();
+  if(t && hp!=='flach'){
+    const EN=(typeof curLang!=='undefined'&&curLang==='en');
+    t += hp==='U'
+      ? (EN ? `\nHook rods: U profile, web ${hakenSteg()} mm. Fold both walls down along the blue lines; each wall goes into its own slot.\n`
+            : `\nHakenstreben: U-Profil, Steg ${hakenSteg()} mm. Beide Wände an den blauen Linien nach unten falten, jede Wand steckt in einem eigenen Schlitz.\n`)
+      : (EN ? `\nHook rods: L profile, fold the top edge along the blue line.\n`
+            : `\nHakenstreben: L-Profil, Oberkante an der blauen Linie umfalten.\n`);
+  }
+  const art=(hakenAn() && !zinkenAn()) ? 'flach' : strebProfil();
+  if(t && art!=='flach'){
+    const EN=(typeof curLang!=='undefined'&&curLang==='en');
+    const b=strebenBreite(), h=profilHoehe(b, art);
+    const name={L:'L',U:'U',dreieck:EN?'triangle':'Dreieck',Q:EN?'square':'Vierkant',O:EN?'round':'rund'}[art];
+    const ab=profilAbstand();
+    t+=`\n${EN?'Rod profile':'Strebenprofil'}: ${name}, ${art==='O'?(EN?'diameter':'Durchmesser'):(EN?'height':'Höhe')} ${h} mm`
+      + ((art==='dreieck'||art==='O'||art==='Q') ? (profilVerschluss()==='steck'
+          ? `, ${EN?'push-fit':'steckbar'} ${profilZahnAnzahl()}× ${profilZahnLaenge(profilSchlitzMasse().dS, profilSchlitzMasse().tS)} mm`
+          : `, ${EN?'glue tab':'Klebelasche'} ${profilLasche()} mm`) : '')
+      + (ab>0 ? `, ${EN?'starting':'ab'} ${ab} mm ${EN?'from the rod end':'vom Strebenende'}` : `, ${EN?'full length':'ganze Länge'}`) + `\n`;
+    const stk=(art==='dreieck'||art==='O'||art==='Q') && profilVerschluss()==='steck';
+    t+= (art==='O' && !stk)
+      ? (EN ? `Roll the rods into tubes and glue them along the dashed blue line.\n`
+            : `Streben zum Rohr rollen und an der gestrichelten blauen Linie verkleben.\n`)
+      : (EN ? `Fold the rods along the blue lines.\n` : `Streben an den blauen Linien falten.\n`);
+    if(stk) t+= EN ? `Fold the teeth inwards at their base, push them from the inside through the slots and fold them over behind.\n`
+                   : `Zähne am Ansatz nach innen falten, von innen durch die Schlitze stecken und dahinter umlegen.\n`;
+    if(profilDoppel()) t+= EN ? `Double layer: the profile lies between the shells over its full length; its height sets the shell spacing.\n`
+                              : `Doppellage: das Profil liegt auf ganzer Länge zwischen den Schalen, seine Höhe bestimmt den Schalenabstand.\n`;
+  }
+  return t;
+}
+function currentCutlistBasis(){
   // War bisher immer Deutsch (keine EN-Abfrage) - jetzt wie der Rest des
   // Tools zweisprachig, siehe Audit zu fehlenden englischen Texten.
   const EN=(typeof curLang!=='undefined'&&curLang==='en');
@@ -7859,17 +8192,24 @@ function buildStaebeSVG(forExport){
                Math.max((modusS==='kombi'?spaltKombi:spaltHaken)+0.8, hakenHoeheMM())+1.5)
     : 0;
   const hakDop = 1;   // die Nase haengt nach unten, das braucht Hoehe
-  let rowH=breite+6+hakT*hakDop;
+  // Profil (seit v331): Platz ober- und unterhalb der Strebe fuer die
+  // Faltflaechen.
+  const profilArt = strebProfil();
+  const profilPlatz = (bb)=>{ const q=profilGeometrie(profilArt, 1000, bb, 100, 0); return {top:q.top, bot:q.bot}; };
+  let pPl = profilPlatz(breite);
+  let rowH=breite+6+hakT*hakDop+pPl.top+pPl.bot;
   const padL=4+zapfenLg, padT=4+hakT, colGap=16+2*zapfenLg;
   // Hakenzacken einer Strebenkante. Liefert die Punktfolge fuer die Unterkante
   // (von rechts nach links) und - bei Doppelbauart - die Oberkante (links nach
   // rechts). Gemeinsam fuer reine Hakenstreben und kombinierte Streben.
-  const hakenZacken=(L, H, stellen, hl, nw, spalt, hd)=>{
+  const hakenZacken=(L, H, stellen, hl, nw, spalt, hd, obenAuch)=>{
     const fs = Math.max(0, Math.min(hd/2, hl/2-0.2, (hd-spalt)-0.2));
     const mitFase = fs>0.2;
-    const doppelH = (typeof bauartDoppel==='function') && bauartDoppel();
+    // obenAuch: Haken auch an der Oberkante (Doppelschale, oder die zweite
+    // Wand des U-Profils, seit v333).
+    const doppelH = obenAuch || ((typeof bauartDoppel==='function') && bauartDoppel());
     const nachAussen = (typeof hakenRichtung==='function') && hakenRichtung()==='aussen';
-    const oben=[], unten=[];
+    const oben=[], unten=[], falz=[];
     if(doppelH){
       stellen.forEach(x0=>{
         const s2 = ((x0 < L/2) ? -1 : +1) * (nachAussen ? 1 : -1);
@@ -7898,7 +8238,7 @@ function buildStaebeSVG(forExport){
         else unten.push([x, H], [x, H+hd], [x-hl, H+hd], [x-hl, H+spalt], [x-nw, H+spalt], [x-nw, H]);
       }
     });
-    return {oben, unten};
+    return {oben, unten, falz};
   };
   // Hakenstellen ab Strebenende; 'versatz' verschiebt sie zum Ende hin.
   const hakenStellen=(L, versatz)=>{
@@ -7913,8 +8253,17 @@ function buildStaebeSVG(forExport){
     });
     return st.sort((x,y)=>x-y);
   };
-  const drawHoles=(len, vHaken)=>{
+  const drawHoles=(len, vHaken, lochY)=>{
     const cy=breite/2; let out='';
+    // Loecher in der Oberseite geschlossener Profile (seit v334).
+    if(!vHaken && lochY && lochY.length && loecherAn() && !splintAn()){
+      lochY.forEach(L0=>offsets.forEach(off=>{
+        [off, len-off].forEach((x,i)=>{
+          if(((i===0 && x<len/2) || (i===1 && x>len/2)) && x>=L0.x0 && x<=L0.x1)
+            out+=`<circle cx="${x.toFixed(1)}" cy="${L0.y.toFixed(1)}" r="${holeR(holeD).toFixed(1)}" fill="none" stroke="#000000" stroke-width="0.4"/>`;
+        });
+      }));
+    }
     // Bei HAKEN steht die Strebe hochkant im Schlitz. Eine Bohrung quer durch
     // das hochkant stehende Brett ergibt dort keinen Sinn. Stattdessen eine
     // senkrechte Markierungslinie (magenta) durch dieselbe Stelle: sie liegt
@@ -7957,13 +8306,24 @@ function buildStaebeSVG(forExport){
   const vZapfen = variante==='zapfen' || vKombi;
   breite = vZapfen ? strebenBreiteZapfen() : breiteHaken;
   offsets = vZapfen ? offsetsZapfen : offsetsBasis;
-  rowH=breite+6+hakT*hakDop;
+  pPl = vKombi ? {top:0,bot:0}
+      : vHaken ? (()=>{ const hp=hakenProfil();
+          if(hp==='U') return {top:hakenSteg()+breite+hakT, bot:0};
+          if(hp==='L') return {top:profilGeometrie('L',1000,breite,100,0).top, bot:0};
+          return {top:0,bot:0}; })()
+      : profilPlatz(breite);
+  rowH=breite+6+hakT*hakDop+pPl.top+pPl.bot;
+  // Ab wo gefaltet wird: einstellbar, Standard 0 = ganze Laenge (seit v332).
+  const profilE = profilAbstand();
   if(ohneStreben0) groups=[];
   groups.forEach(g=>{
     const cy=breite/2;
     const stabLeft=colX;
     let y=padT+headH;
-    const typTxt = beideTypen ? ' '+typName[variante] : '';
+    const profNamen={L:'L', U:'U', dreieck:(EN_S?'triangle':'Dreieck'), Q:(EN_S?'square':'Vierkant'), O:(EN_S?'round':'rund')};
+    const typTxt = (beideTypen ? ' '+typName[variante] : '')
+      + ((!vHaken && !vKombi && profilArt!=='flach') ? ` · ${EN_S?'profile':'Profil'} ${profNamen[profilArt]}` : '')
+      + ((vHaken && hakenProfil()!=='flach') ? ` · ${EN_S?'profile':'Profil'} ${hakenProfil()}` : '');
     svg+=`<text x="${stabLeft.toFixed(1)}" y="${(padT+3.5).toFixed(1)}" font-size="3" font-weight="bold" fill="${C_INFO}">${g.label}${typTxt}: ${g.len.toFixed(1)} mm · ${g.items.length}×</text>`;
     // Loch-Positionen dieses Strebe (x entlang der Laenge) einmal bestimmen.
     const holeXs=[];
@@ -7972,6 +8332,12 @@ function buildStaebeSVG(forExport){
       if(xl < g.len/2) holeXs.push(xl);
       if(xr > g.len/2) holeXs.push(xr);
     });
+    // Schlitze des steckbaren Verschlusses in der Strebe selbst (rundes
+    // Profil) sind fuer die Beschriftung ebenfalls Hindernisse (seit v333).
+    if(!vHaken && !vKombi && profilArt==='O'){
+      profilGeometrie(profilArt, g.len, breite, profilE, 0).schlitze.forEach(q=>{
+        if(q[1] < breite) for(let s=0;s<=4;s++) holeXs.push(q[0]+q[2]*s/4); });
+    }
     holeXs.sort((a,b)=>a-b);
     const rHole=holeR(holeD);
     // Lochfreie Luecken entlang des Strebe (mit Sicherheitsabstand).
@@ -8029,15 +8395,34 @@ function buildStaebeSVG(forExport){
         // Streben (hakenStellen/hakenZacken oben). Bezug ist die Auflagelaenge,
         // gleiche Verteilung wie die Schlitze im Knoten.
         const stellen=hakenStellen(L, 0);
-        const zack=hakenZacken(L, H, stellen, hl, nw, spalt, hd);
+        const hp=hakenProfil();
+        const zack=hakenZacken(L, H, stellen, hl, nw, spalt, hd, hp==='U');
         const pts=[];
-        pts.push([0,0,r]);
-        zack.oben.forEach(q=>pts.push(q));
-        pts.push([L,0,r],[L,H,r]);
+        let profH={oben:[], falz:[]};
+        if(hp==='U'){
+          // Haken-U (seit v333): Wand 1 (0..H, Haken unten), Steg (0..-sw),
+          // Wand 2 (-sw..-sw-H, Haken oben). Gefaltet ergibt das ein Pi: beide
+          // Waende stecken in je einem Schlitz, der Steg liegt oben.
+          const sw=hakenSteg(), y2=-(sw+H);
+          pts.push([0,y2,r]);
+          zack.oben.forEach(q=>pts.push([q[0], q[1]+y2]));
+          pts.push([L,y2,r]);
+          profH.falz=[[0,0,L,0],[0,-sw,L,-sw]];
+        } else {
+          if(hp==='L') profH=profilGeometrie('L', L, H, profilE, r);
+          const e0=profilE<0.05 && profH.oben.length;
+          pts.push([0,0,e0?0:r]);
+          zack.oben.forEach(q=>pts.push(q));
+          profH.oben.forEach(q=>pts.push(q));
+          pts.push([L,0,e0?0:r]);
+        }
+        pts.push([L,H,r]);
         zack.unten.forEach(q=>pts.push(q));
         pts.push([0,H,r]);
         const d='M '+eckenBoegen(pts).map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(' L ')+' Z';
         stueck+=`<path d="${d}" fill="${forExport?'none':'#FAF9F6'}" stroke="#FF0000" stroke-width="0.4"/>`;
+        stueck+=(profH.falz||[]).map(f=>`<line x1="${f[0].toFixed(2)}" y1="${f[1].toFixed(2)}" x2="${f[2].toFixed(2)}" y2="${f[3].toFixed(2)}" stroke="#0000FF" stroke-width="0.4"/>`).join('');
+        stueck+=(zack.falz||[]).map(f=>`<line x1="${f[0].toFixed(2)}" y1="${f[1].toFixed(2)}" x2="${f[2].toFixed(2)}" y2="${f[3].toFixed(2)}" stroke="#FF00FF" stroke-width="0.4"/>`).join('');
       } else if(vZapfen){
         // Gegenstueck zum Verbinder: an JEDEM Strebenende ein Pfeil mit
         // Widerhaken, weiter innen ein Schlitz. Dadurch passt jedes Strebenende
@@ -8082,9 +8467,11 @@ function buildStaebeSVG(forExport){
           const hdK=Math.max(spaltKombi+0.8, hakenHoeheMM());
           zackK=hakenZacken(L, breite, hakenStellen(L, versatzZ), hlK, nwK, spaltKombi, hdK);
         }
+        const profZ = vKombi ? profilGeometrie('flach') : profilGeometrie(profilArt, L, breite, profilE, rp);
         const pts=[];
         pts.push([0,0,r]);
         zackK.oben.forEach(q=>pts.push(q));
+        profZ.oben.forEach(q=>pts.push(q));
         pts.push([L,0,r]);
         pts.push([L,cyM-hb]);
         if(trapez){
@@ -8100,6 +8487,7 @@ function buildStaebeSVG(forExport){
         pts.push([L, cyM+hb]);
         pts.push([L, breite, r]);
         zackK.unten.forEach(q=>pts.push(q));
+        profZ.unten.forEach(q=>pts.push(q));
         pts.push([0, breite, r]);
         pts.push([0, cyM+hb]);
         if(trapez){
@@ -8115,6 +8503,9 @@ function buildStaebeSVG(forExport){
         pts.push([0, cyM-hb]);
         const d='M '+eckenBoegen(pts).map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(' L ')+' Z';
         stueck+=`<path d="${d}" fill="${forExport?'none':'#FAF9F6'}" stroke="#FF0000" stroke-width="0.4"/>`;
+        stueck+=(profZ.kleben||[]).map(f=>`<line x1="${f[0].toFixed(2)}" y1="${f[1].toFixed(2)}" x2="${f[2].toFixed(2)}" y2="${f[3].toFixed(2)}" stroke="#0000FF" stroke-width="0.4" stroke-dasharray="1.5 1.5"/>`).join('');
+        stueck+=(profZ.schlitze||[]).map(q=>`<rect x="${q[0].toFixed(2)}" y="${q[1].toFixed(2)}" width="${q[2].toFixed(2)}" height="${q[3].toFixed(2)}" fill="none" stroke="#000000" stroke-width="0.4"/>`).join('');
+        stueck+=(zackK.falz||[]).concat(profZ.falz).map(f=>`<line x1="${f[0].toFixed(2)}" y1="${f[1].toFixed(2)}" x2="${f[2].toFixed(2)}" y2="${f[3].toFixed(2)}" stroke="#0000FF" stroke-width="0.4"/>`).join('');
         // Schlitze symmetrisch von beiden Enden, damit jede Einbaurichtung
         // passt. Position so waehlen, dass sie KEINE Bohrung anschneidet.
         const rH=holeR(holeD);
@@ -8134,9 +8525,25 @@ function buildStaebeSVG(forExport){
                + ` fill="none" stroke="#000000" stroke-width="0.4"/>`;
         });
       } else {
-        stueck+=`<rect x="0" y="0" width="${g.len.toFixed(1)}" height="${breite}" rx="${eckenRadius(breite).toFixed(2)}" fill="${forExport?'none':'#FAF9F6'}" stroke="#FF0000" stroke-width="0.4"/>`;
+        const rP=eckenRadius(breite);
+        const prof=profilGeometrie(profilArt, g.len, breite, profilE, rP);
+        if(prof.oben.length || prof.unten.length){
+          const L=g.len, e0=profilE<0.05;
+          const pts=[[0,0,(e0&&prof.oben.length)?0:rP]];
+          prof.oben.forEach(q=>pts.push(q));
+          pts.push([L,0,(e0&&prof.oben.length)?0:rP],[L,breite,(e0&&prof.unten.length)?0:rP]);
+          prof.unten.forEach(q=>pts.push(q));
+          pts.push([0,breite,(e0&&prof.unten.length)?0:rP]);
+          const d='M '+eckenBoegen(pts).map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(' L ')+' Z';
+          stueck+=`<path d="${d}" fill="${forExport?'none':'#FAF9F6'}" stroke="#FF0000" stroke-width="0.4"/>`;
+          stueck+=(prof.kleben||[]).map(f=>`<line x1="${f[0].toFixed(2)}" y1="${f[1].toFixed(2)}" x2="${f[2].toFixed(2)}" y2="${f[3].toFixed(2)}" stroke="#0000FF" stroke-width="0.4" stroke-dasharray="1.5 1.5"/>`).join('');
+          stueck+=(prof.schlitze||[]).map(q=>`<rect x="${q[0].toFixed(2)}" y="${q[1].toFixed(2)}" width="${q[2].toFixed(2)}" height="${q[3].toFixed(2)}" fill="none" stroke="#000000" stroke-width="0.4"/>`).join('');
+          stueck+=prof.falz.map(f=>`<line x1="${f[0].toFixed(2)}" y1="${f[1].toFixed(2)}" x2="${f[2].toFixed(2)}" y2="${f[3].toFixed(2)}" stroke="#0000FF" stroke-width="0.4"/>`).join('');
+        } else {
+          stueck+=`<rect x="0" y="0" width="${g.len.toFixed(1)}" height="${breite}" rx="${rP.toFixed(2)}" fill="${forExport?'none':'#FAF9F6'}" stroke="#FF0000" stroke-width="0.4"/>`;
+        }
       }
-      stueck+=drawHoles(g.len, vHaken);
+      stueck+=drawHoles(g.len, vHaken, (!vHaken && !vKombi) ? profilGeometrie(profilArt, g.len, breite, profilE, 0).lochY : null);
       const fs=Math.min(2.8, breite*0.6);
       // 1) LILA: Knotenbuchstaben moeglichst weit aussen, aber NICHT auf Loechern.
       if(it.from||it.to){
@@ -8158,11 +8565,11 @@ function buildStaebeSVG(forExport){
         // keine Luecke breit genug -> Text ueber die Strebe setzen
         stueck+=`<text x="${(g.len/2).toFixed(1)}" y="${(-0.8).toFixed(1)}" font-size="${(fs*0.9).toFixed(1)}" text-anchor="middle" fill="${C_INFO}">${infoTxt}</text>`;
       }
-      svg+=`<g transform="translate(${stabLeft.toFixed(1)},${y.toFixed(1)})">${stueck}</g>`;
+      svg+=`<g transform="translate(${stabLeft.toFixed(1)},${(y+pPl.top).toFixed(1)})">${stueck}</g>`;
       // Aussenmasse fuer das Autolayout: Zapfen ragen seitlich, Haken oben und
       // unten ueber die Strebe hinaus.
       const uebX=zapfenLg+1, uebY=hakT+2;
-      teile.push({svg:stueck, w:g.len+2*uebX, h:breite+2*uebY, ox:-uebX, oy:-uebY});
+      teile.push({svg:stueck, w:g.len+2*uebX, h:breite+2*uebY+pPl.top+pPl.bot, ox:-uebX, oy:-uebY-pPl.top});
       y+=rowH;
     });
     maxY=Math.max(maxY,y);
@@ -8367,12 +8774,17 @@ function buildStaebeSVG(forExport){
         try{ kopiert=document.execCommand('copy'); }catch(e){}
         f.remove();
       }
-      history.replaceState(null,'','#e='+txt);
+      // Die Adresszeile nur anpassen, wenn KNOTI online laeuft. Als Datei vom
+      // eigenen Rechner stand dort sonst weiter die lokale (alte) Adresse.
+      if(/^https?:$/.test(location.protocol)) history.replaceState(null,'','#e='+txt);
+      // Den Link sichtbar zeigen - so sieht man, welche Adresse geteilt wird.
+      const feld=document.getElementById('teilLinkFeld');
+      if(feld){ feld.value=url; feld.style.display='block'; feld.onfocus=()=>feld.select(); }
       presetHinweis(kopiert
-        ? (EN?'Link copied. Anyone who opens it gets exactly these settings.'
-             :'Link kopiert. Wer ihn öffnet, bekommt genau diese Einstellung.')
-        : (EN?'The link is in the address bar now, copy it from there.'
-             :'Der Link steht jetzt in der Adresszeile, von dort kopieren.'));
+        ? (EN?'Link copied (see below). Anyone who opens it gets exactly these settings.'
+             :'Link kopiert (siehe unten). Wer ihn öffnet, bekommt genau diese Einstellung.')
+        : (EN?'Copy the link from the field below.'
+             :'Den Link aus dem Feld darunter kopieren.'));
     }catch(e){
       presetHinweis(EN?'Link could not be created.':'Link konnte nicht erzeugt werden.');
     }
@@ -10195,7 +10607,8 @@ function updateLockOpt(){
     if(lab) lab.style.display = an?'':'none';
     if(e.type==='range') e.style.display = an?'':'none';
   });
-  zeig('hakenWrap',  lockAktiv('haken'));
+  zeig('hakenWrap',  hakenAn());
+
   zeig('nahtWrap',   lockAktiv('naht'));
   // Bei ueberlappenden Armen sitzen die Schlitze symmetrisch zur Kantenmitte;
   // eine Hakenrichtung gibt es dort nicht.
@@ -10214,7 +10627,7 @@ function updateLockOpt(){
     const layV=(document.querySelector('#coneLayerSeg .on')||{dataset:{}}).dataset.v;
     const bLayV=(document.querySelector('#bConeLayerSeg .on')||{dataset:{}}).dataset.v;
     const dopp = layV==='two' || bLayV==='two';
-    const brauchtVerb = lockAktiv('zinken')||lockAktiv('haken');
+    const brauchtVerb = lockAktiv('zinken')||hakenAn();
     const brauchtStreb = brauchtVerb || lockAktiv('naht') || !!dopp;
     // Zusaetzlich immer sichtbar, wenn ueberhaupt mit Streben gebaut wird:
     // die Materialstaerken sind die gemeinsame Bezugsgroesse fuer alle
@@ -10278,6 +10691,50 @@ function updateLockOpt(){
     if($('grpStrebBZ')) $('grpStrebBZ').style.display = (getr && $('grpStrebB') && $('grpStrebB').style.display!=='none') ? '' : 'none';
     if($('grpMatArmZ')) $('grpMatArmZ').style.display = (getr && $('grpMatArm') && $('grpMatArm').style.display!=='none') ? '' : 'none';
     labelSetzen('nStrebB', getr ? 'Breite Hakenstreben ' : 'Breite Streben ');
+    // Strebenprofil nur, wo es (noch) sinnvoll ist.
+    if($('grpProfil')) $('grpProfil').style.display = strebProfilMoeglich() ? '' : 'none';
+    { // Nur Hakenstreben (ohne Loecher/Zapfen): Dreieck und rund ausblenden.
+      // Doppellage: nur L, Vierkant und rund (seit v334).
+      const nurHaken = hakenAn() && !zinkenAn();
+      const dop = profilDoppel();
+      const weg = nurHaken ? ['dreieck','Q','O'] : dop ? ['U','dreieck'] : [];
+      ['U','dreieck','Q','O'].forEach(v=>{ const bt=document.querySelector(`#profilSeg button[data-v="${v}"]`);
+        if(bt){ const aus=weg.includes(v); bt.style.display = aus ? 'none' : '';
+          if(aus && bt.classList.contains('on')){ bt.classList.remove('on');
+            const fl=document.querySelector('#profilSeg button[data-v="flach"]'); if(fl) fl.classList.add('on'); } } });
+      if($('profilAbWrap')) $('profilAbWrap').style.display = dop ? 'none' : '';
+      if($('profilWinkelWrap')) $('profilWinkelWrap').style.display = dop ? 'none' : '';
+      const art=(document.querySelector('#profilSeg .on')||{dataset:{}}).dataset.v||'flach';
+      const zu=(art==='dreieck'||art==='O'||art==='Q'), st=profilVerschluss()==='steck';
+      const hU = hakenProfil()==='U' && nurHaken;
+      if($('profilOpts')) $('profilOpts').style.display = art!=='flach' ? 'block' : 'none';
+      if($('profilVerschlussWrap')) $('profilVerschlussWrap').style.display = zu ? '' : 'none';
+      if($('profilLascheWrap')) $('profilLascheWrap').style.display = (zu && !st) ? '' : 'none';
+      if($('profilZahnWrap')) $('profilZahnWrap').style.display = (zu && st) ? '' : 'none';
+      labelSetzen('nProfilH', hU ? 'Stegbreite ' : 'Profilhöhe ');
+      const hw=$('profilHinweis');
+      if(hw){
+        const EN=(typeof curLang!=='undefined'&&curLang==='en');
+        const t=matArme();
+        const aufl=(()=>{ try{ return (mode==='cone'&&lastCone)?Math.round(lastCone.Rinner-lastCone.rin):state.len; }catch(e){ return null; } })();
+        let hk='';
+        if(hakenProfil()==='U'){
+          const sw=hakenSteg(), aB=armBreiteAktuell(), td=steckDicke();
+          hk = EN ? ` Hook U: two slots per position, ${sw} mm apart.` : ` Haken-U: zwei Schlitze je Stelle, ${sw} mm auseinander.`;
+          if(sw/2+td/2 > aB/2-0.5) hk += EN ? ` Too wide for the arm (${aB} mm) - reduce the web width or widen the arm.`
+                                            : ` Zu breit für den Arm (${aB} mm) - Stegbreite verkleinern oder Arm verbreitern.`;
+        }
+        if(dop && profilDoppelHoehe()>0) hk += EN ? ` Double layer: the profile height (${profilDoppelHoehe()} mm) sets the shell spacing; the profile runs square to the full length.`
+                         : ` Doppellage: die Profilhöhe (${profilDoppelHoehe()} mm) bestimmt den Schalenabstand, das Profil läuft rechtwinklig über die ganze Länge.`;
+        if(hakenAn() && zinkenAn() && (art==='dreieck'||art==='O'||art==='Q'))
+          hk += EN ? ' Hook rods stay flat (only L and U).' : ' Hakenstreben bleiben flach (nur L und U).';
+        hw.textContent = (EN ? (hU?'Web width 0 = automatic.':'Profile height 0 = automatic.') : (hU?'Stegbreite 0 = automatisch.':'Profilhöhe 0 = automatisch.'))
+          + hk
+          + (aufl ? (EN ? ` Bearing on the arm: ${aufl} mm.` : ` Auflage auf dem Arm: ${aufl} mm.`) : '')
+          + (t>1 ? (EN ? ` Note: rod material thickness ${t} mm - folding works best below about 1 mm.`
+                       : ` Hinweis: Materialstärke Streben ${t} mm - falten geht am besten unter etwa 1 mm.`) : '');
+      }
+    }
     labelSetzen('nMatArm', getr ? 'Materialstärke Hakenstreben ' : 'Materialstärke Streben ');
     const mw=$('matWrap');
     if(mw) mw.style.display = ($('grpStrebB') && $('grpStrebB').style.display!=='none') ? '' : 'none';
@@ -10302,6 +10759,17 @@ function zapfenStrebenAnzeigen(){
     const v=matArme(); $('nMatArmZ').value=v; $('matArmZ').value=Math.max(+$('matArmZ').min, Math.min(+$('matArmZ').max, v));
   }
 }
+document.querySelectorAll('#profilSeg button, #profilVerschlussSeg button').forEach(b=>b.addEventListener('click',()=>{
+  b.parentNode.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  updateLockOpt(); render();
+}));
+[['profilH','nProfilH'],['profilLasche','nProfilLasche'],['profilAb','nProfilAb'],['profilWinkel','nProfilWinkel'],['profilZahn','nProfilZahn'],['profilZahnL','nProfilZahnL']].forEach(([sid,nid])=>{
+  const sl=$(sid), nf=$(nid); if(!sl||!nf) return;
+  sl.addEventListener('input',()=>{ nf.value=sl.value; lastSrc=sid; render(); });
+  nf.addEventListener('input',()=>{ const v=parseFloat(nf.value);
+    if(!isNaN(v)) sl.value=Math.max(+sl.min,Math.min(+sl.max,v)); lastSrc=nid; render(); });
+});
 document.querySelectorAll('#strebModusSeg button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('#strebModusSeg button').forEach(x=>x.classList.remove('on'));
   b.classList.add('on');
@@ -10869,7 +11337,9 @@ const I18N = {
   'Körper ':'Body ','Seiten ':'Sides (n-gon) ','Höhe ':'Height ',
   'Verjüngung ':'Taper ','Seitenflächen ':'Side faces ','Kappung oben ':'Top truncation ',
   'Länge L ':'Length L ','Breite B ':'Width B ','Höhe H ':'Height H ','Neigungswinkel ':'Tilt angle ',
-  'STL-Datei':'STL file','Datei (STL oder OBJ)':'File (STL or OBJ)','wie im Modell':'as in the model','Kanten ':'Edges ','Haken- und Zapfenstreben ':'Hook and tab rods ','getrennt':'separate','kombiniert':'combined',
+  'STL-Datei':'STL file','Datei (STL oder OBJ)':'File (STL or OBJ)','wie im Modell':'as in the model','Kanten ':'Edges ',  'rund':'round','Faltung ab Strebenende ':'Folding from rod end ','Strebenprofil ':'Rod profile ','flach':'flat','Dreieck':'Triangle','Profilhöhe ':'Profile height ','Klebelasche ':'Glue tab ',
+  'help_profil':'Only for thin, foldable materials such as paper, card or foil: the free middle part of the rod is folded into a profile, which makes it many times stiffer. The ends resting on the node arm stay flat - holes and pegs work as before. Fold lines are blue.\n\nL: one edge is folded up. U: both edges. Triangle: one side face above and one below the rod, closed with a glue tab or push-fit, the stiffest, also against twisting. Round: the rod is rolled into a tube, for materials that roll but do not fold. The profile height is then the diameter.\n\nSquare: closed rectangular tube, the lid gets the same holes as the rod.\n\nPush-fit: instead of the glue tab, straight teeth as on the cone seam. They are folded at their base, pushed from the inside through the slots on the opposite side and folded over behind. Tooth length 0 = automatic.\n\nDouble layer: L, square and round. The profile lies between the two shells over its full length; its height sets the shell spacing.\n\nWith hooks, L and U are available: L folds over the top edge of the upright rod, the node stays the same. U has two hooked walls with a web between them; the node gets two slots per position, web width apart.\n\nFolding from rod end: 0 = full length. To keep holes or pegs free, enter the bearing length on the arm. Chamfer: angle of the side faces at the ends, 90 degrees = square.',
+  'Abschrägung ':'Chamfer ','Vierkant':'Square','Verschluss':'Closure','Klebelasche':'Glue tab','steckbar':'push-fit','Anzahl Zähne ':'Number of teeth ','Stegbreite ':'Web width ',
   'Breite Zapfenstreben ':'Tab rod width ','Breite Hakenstreben ':'Hook rod width ',
   'Materialstärke Zapfenstreben ':'Material thickness tab rods ','Materialstärke Hakenstreben ':'Material thickness hook rods ',
   'help_strebmodus':'If tabs and hooks are both active there are two options.\n\nSeparate: two rod sets of their own, tab rods and hook rods. Width and material thickness can be set separately for each.\n\nCombined: one rod set. The tab rods also get hooks. The gap between hook and rod is then node thickness plus rod thickness, because node and rod sit in it together.',
@@ -11071,6 +11541,7 @@ function mehrGeaendert(id){
   const ovU=()=>{ const b=document.querySelector('.ovUnit .on'); return b && b.dataset.v!=='mm'; };
   if(id==='sternMehr') return seg('evenSeg','even')||seg('lenSeg','even')||seg('buildSeg','single')||seg('sternWinkelSeg','exakt');
   if(id==='lochMehr')  return seg('holeModeSeg','auto');
+  if(id==='strebMehr') return seg('profilSeg','flach')||feld('nProfilAb',0)||feld('nProfilWinkel',45)||seg('profilVerschlussSeg','kleben');
   if(id==='coneMehr')  return feld('nConeWaist',100)||!!window.__ovManuell||ovU()||seg('overlapSideSeg','left')
                           ||!!window.__coneStabWManuell||seg('lenSeg','even')||seg('coneLayerSeg','one')||seg('coneFoldSeg','yes')
                           ||feld('nConeFoldW',6)||feld('nConeWeld',6);
@@ -11114,6 +11585,10 @@ function kegelArmbreiteNachfuehren(){
   // Lochverteilung: KEINE eigene Box - sie steckt schon im Klappmenue
   // "Positionen auf dem Arm" und waere sonst ein Untermenue im Untermenue
   // (so in v317, war zu versteckt).
+  // Streben: gefaltetes Profil (seit v331) unter "Weitere Einstellungen".
+  { const gp=document.getElementById('grpProfil');
+    if(gp){ const box=mehrBox('strebMehr', [gp], gp.parentNode, gp.nextSibling);
+      if(box) box.dataset.sect='streben'; } }
   // Einzel-Kegel: Armbreite, Taillentiefe, Ueberlappung, Doppellage, Knickflaeche.
   const cc=document.getElementById('coneControls');
   if(cc) mehrBox('coneMehr', [grpVon('coneStabW'), grpVon('coneWaist'), grpVon('overlap'),
