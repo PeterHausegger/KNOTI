@@ -10,8 +10,8 @@
 </p>
 
 <p align="center">
-  <a href="https://peterhausegger.github.io/KNOTI/"><b>Open the tool / Werkzeug öffnen</b></a> ·
-  <a href="https://peterhausegger.github.io/KNOTI/galerie.html">Gallery / Galerie</a> ·
+  <a href="https://knoti.at/"><b>Open the tool / Werkzeug öffnen</b></a> ·
+  <a href="https://knoti.at/galerie.html">Gallery / Galerie</a> ·
   <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>
 </p>
 
@@ -31,7 +31,7 @@ KNOTI is made for teaching technology and design (Maker Education). Learners can
 
 ### Try it
 
-Open **https://peterhausegger.github.io/KNOTI/** in a current browser (Chrome, Edge, Firefox, Safari), also on tablets. Nothing to install, no account, no data is uploaded. The whole tool is one HTML file and also works offline: download `index.html` and open it locally.
+Open **https://knoti.at/** in a current browser (Chrome, Edge, Firefox, Safari), also on tablets. Nothing to install, no account, no data is uploaded. The whole tool is one HTML file and also works offline: download `index.html` and open it locally.
 
 ### Building in five steps
 
@@ -111,7 +111,7 @@ The **?** buttons next to the controls explain each setting.
 
 ### Background
 
-KNOTI is developed by Peter Hausegger in the context of a doctoral project on Maker Education in Austrian technology and design teaching, following a design-based research approach. Feedback from classrooms, workshops and teacher education flows directly into new versions. Photos of projects built with KNOTI are welcome in the [gallery](https://peterhausegger.github.io/KNOTI/galerie.html).
+KNOTI is developed by Peter Hausegger in the context of a doctoral project on Maker Education in Austrian technology and design teaching, following a design-based research approach. Feedback from classrooms, workshops and teacher education flows directly into new versions. Photos of projects built with KNOTI are welcome in the [gallery](https://knoti.at/galerie.html).
 
 ### License
 
@@ -133,7 +133,7 @@ KNOTI ist für den Unterricht in Technik und Design (Maker Education) gemacht. L
 
 ### Ausprobieren
 
-**https://peterhausegger.github.io/KNOTI/** in einem aktuellen Browser öffnen (Chrome, Edge, Firefox, Safari), auch auf dem Tablet. Keine Installation, kein Konto, es werden keine Daten hochgeladen. Das ganze Werkzeug ist eine einzige HTML-Datei und funktioniert auch offline: `index.html` herunterladen und lokal öffnen.
+**https://knoti.at/** in einem aktuellen Browser öffnen (Chrome, Edge, Firefox, Safari), auch auf dem Tablet. Keine Installation, kein Konto, es werden keine Daten hochgeladen. Das ganze Werkzeug ist eine einzige HTML-Datei und funktioniert auch offline: `index.html` herunterladen und lokal öffnen.
 
 ### In fünf Schritten bauen
 
@@ -213,7 +213,7 @@ Die **?**-Knöpfe neben den Reglern erklären jede Einstellung.
 
 ### Hintergrund
 
-KNOTI wird von Peter Hausegger im Rahmen eines Dissertationsprojekts zu Maker Education im österreichischen Technik-und-Design-Unterricht entwickelt (Design-Based Research). Rückmeldungen aus Unterricht, Workshops und Lehrer:innenbildung fließen direkt in neue Versionen ein. Fotos von Projekten, die mit KNOTI entstanden sind, sind in der [Galerie](https://peterhausegger.github.io/KNOTI/galerie.html) willkommen.
+KNOTI wird von Peter Hausegger im Rahmen eines Dissertationsprojekts zu Maker Education im österreichischen Technik-und-Design-Unterricht entwickelt (Design-Based Research). Rückmeldungen aus Unterricht, Workshops und Lehrer:innenbildung fließen direkt in neue Versionen ein. Fotos von Projekten, die mit KNOTI entstanden sind, sind in der [Galerie](https://knoti.at/galerie.html) willkommen.
 
 ### Lizenz
 

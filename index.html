@@ -1539,7 +1539,7 @@ function toggleHelp(btn){
 // Programmversion. Sie steht in der Fusszeile, auf jedem Export und in der
 // Einstellungsdatei - bei einer Rueckmeldung ist damit sofort klar, welche
 // Fassung gemeint ist.
-const KNOTI_VERSION='330';
+const KNOTI_VERSION='331';
 let PX_PER_MM=4;
 let BODY_PX=4;      // eigener Zoom fuer die 3D-Koerperzeichnung
 const state={};
@@ -4373,7 +4373,7 @@ let __qrURL=null, __qrMatrix=null, __qrTimer=null, __qrBusy=false, __qrPfadCache
 // Datei vom eigenen Rechner (file://), fuehrte der Link bisher auf genau diese
 // Datei - auf einem Handy oder einem anderen Rechner gibt es die nicht, der
 // gescannte QR-Code ging ins Leere. Dann gilt die oeffentliche Adresse.
-const KNOTI_OEFFENTLICH='https://peterhausegger.github.io/KNOTI/index.html';
+const KNOTI_OEFFENTLICH='https://knoti.at/index.html';
 function knotiBasisURL(){
   if(/^https?:$/.test(location.protocol)) return location.origin+location.pathname+location.search;
   return KNOTI_OEFFENTLICH;
