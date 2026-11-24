@@ -42,7 +42,12 @@
   /* Zahlenfeld bzw. Fragezeichen rechts halten, Text bleibt links am Schritt. */
   label > *:last-child{margin-left:auto;}
   /* Ablaufschritte in gleicher Groesse und Staerke wie die Abschnitte. */
-  label.steplab{font-size:14px; font-weight:600;}
+  label.steplab{font-size:14px; font-weight:600; display:flex; align-items:center; gap:6px;
+    margin:0 -9px 8px; padding:7px 9px; border-radius:5px; background:rgba(26,43,34,0.055);}
+  label.steplab .help-btn{margin-left:auto;}
+  label.steplab .stepno{display:inline-flex; align-items:center; justify-content:center;
+    min-width:19px; height:19px; padding:0 3px; border-radius:10px; box-sizing:border-box;
+    background:var(--ink); color:var(--paper); font-size:11px; margin-right:2px;}
   label b{color:var(--ink); font-variant-numeric:tabular-nums;}
   label .numfield{width:66px; text-align:right; font-size:13px; padding:5px 7px;
     border:1px solid var(--grid); border-radius:8px; background:var(--paper);
@@ -74,8 +79,13 @@
   /* Abschnitt "Form" mit farbigem Balken, damit die Farbe als System lesbar ist */
   /* Farbbalken liegt links AUSSERHALB der Textspalte, damit die Ueberschrift
      genau wie die anderen Punkte buendig steht. */
-  .sect[data-sect="arme"], .sect[data-sect="kegel"], .sect[data-sect="node3d"]{
-    border-left:4px solid var(--type); padding-left:9px; margin-left:-13px;}
+  /* Seit v339: hervorgehoben ist der Abschnitt, in dem man gerade etwas
+     einstellt (nicht mehr fest "Knotenform"). Farbe = aktueller Knotentyp. */
+  .sect, label.steplab{border-left:4px solid transparent; padding-left:5px;}
+  .sect.aktiv, label.steplab.aktiv{border-left-color:var(--type);
+    background:rgba(26,43,34,0.055);
+    background:color-mix(in srgb, var(--type) 11%, transparent);}
+  .sect.aktiv .stepno, label.steplab.aktiv .stepno{background:var(--type);}
   /* Die Farbe traegt der Balken; die Schrift bleibt neutral, sonst liest sich
      die Ueberschrift wie eine Warnung. */
   .sect[data-sect="arme"], .sect[data-sect="kegel"], .sect[data-sect="node3d"]{color:var(--ink);}
@@ -97,8 +107,9 @@
   body.ohneVerbindungsart .sect[data-sect="loecher"],
   body.ohneVerbindungsart #lochWrap, body.ohneVerbindungsart #matWrap,
   body.ohneVerbindungsart #zapfenWrap, body.ohneVerbindungsart #hakenWrap,
-  body.ohneVerbindungsart #nahtWrap, body.ohneVerbindungsart #grpLock,
-  body.ohneVerbindungsart #grpStab{display:none !important;}
+  body.ohneVerbindungsart #nahtWrap, body.ohneVerbindungsart #grpLock{display:none !important;}
+  /* Strebenlaenge beim einzelnen 3D-Knoten sichtbar (seit v335, fuer
+     Vorschau und Strebenexport); die Logik steckt in updateMovedGroupVis. */
   body.ohneLoecher #grpHoles, body.ohneLoecher #grpHd,
   body.ohneLoecher #grpHoleMode, body.ohneLoecher #holeSpacingWrap{display:none !important;}
   .seg.multi button.on::before{content:'\2713'; font-size:11px; margin-right:4px;}
@@ -187,9 +198,16 @@
   #svgHost.grabbing{cursor:grabbing;}
   .stepno{color:inherit;font-weight:600;margin-right:3px;}
   /* Aufklappbare Abschnitte in der Seitenleiste. Mehrere duerfen offen sein. */
-  .sect{display:flex; align-items:center; gap:5px; cursor:pointer; user-select:none;
-    margin:14px 0 8px; padding-top:9px; border-top:1px solid var(--grid);
+  /* Abschnittskoepfe als leichter Balken mit Nummer im Kreis (seit v338),
+     damit die lange Leiste klar gegliedert ist - ohne neue Farben. */
+  .sect{display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none;
+    margin:16px -9px 8px; padding:7px 9px; border-radius:5px;
+    background:rgba(26,43,34,0.055);
     font-size:14px; letter-spacing:0; color:var(--ink); font-weight:600;}
+  .sect .stepno{display:inline-flex; align-items:center; justify-content:center;
+    min-width:19px; height:19px; padding:0 3px; border-radius:10px; box-sizing:border-box;
+    background:var(--ink); color:var(--paper); font-size:11px; margin-right:2px;}
+  .sect .stepno:empty{display:none;}
   .sect:hover{color:var(--ink);}
   .sect .chev{margin-left:auto; font-size:10px; transition:transform .15s;}
   .sect.closed .chev{transform:rotate(-90deg);}
@@ -354,7 +372,7 @@
       <button data-v="rods" class="on">Knoten + Streben</button>
       <button data-v="direct">ohne Streben</button>
     </div>
-    <div id="kantenWarn" style="display:none;font-size:11px;color:#b8541b;
+    <div id="kantenWarn" class="i18n-text" data-i18n="warn_kanten" style="display:none;font-size:11px;color:#b8541b;
       background:rgba(184,84,27,0.08);border-radius:6px;padding:7px 9px;margin-bottom:8px;">
       Hinweis: Dieser Körper hat unterschiedlich lange Kanten. Die Arme werden
       deshalb je Kante unterschiedlich lang gezeichnet. Bei überlappenden Armen
@@ -804,6 +822,73 @@
       <button data-v="double">Doppel (innen+außen)</button>
     </div>
   </div>
+  <!-- Randfalz (seit v337): wird je nach Knotentyp in die passende Box
+       "Weitere Einstellungen" (Stern oder Kegel) verschoben. -->
+  <div class="grp" id="grpRandfalz">
+    <div id="knickArtWrap">
+      <label>Randfalz <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
+      <div class="seg" id="knickArtSeg">
+        <button data-v="linie" class="on">ohne</button>
+        <button data-v="gefaltet">gefaltet</button>
+        <button data-v="kurve">gekrümmt</button>
+      </div>
+      <div class="help-text" data-i18n="help_knickart">
+        Ohne: die Arme werden wie bisher an den blauen Knicklinien gerade
+        umgeknickt.
+
+        Gefaltet: an jeder Armseite kommt außen ein Streifen dazu, von der
+        Knicklinie bis zum Armende, dort gerade abgeschnitten, und wird an der
+        Armkante umgeklappt. Zwischen zwei Armen hängen die Streifen zusammen
+        und werden auf der Winkelhalbierenden gefaltet. Die Knicklinien
+        bleiben und berühren sich automatisch.
+
+        Gekrümmt: keine Knicklinien. Der Randfalz läuft auch um die gerundeten
+        Innenecken. Weil die Faltlinie dort gekrümmt ist, wölbt sich beim
+        Falten der ganze Stern - so neigen sich die Arme ohne harten Knick.
+        Parallel: der Streifen behält überall dieselbe Breite und ist am
+        Armende gerade abgeschnitten. Bis zum Rand: die Schnittkante läuft als
+        Kurve von Arm zu Arm, beginnt parallel zum Arm und geht in der Lücke
+        durch den Punkt im eingestellten Abstand. Gut baubar sind Neigungen
+        etwa bis 25 bis 30 Grad je Arm (Kuppeln, Dodekaeder, Ikosaeder); für
+        steilere Ecken "ohne" oder "gefaltet" nehmen.
+      </div>
+    </div>
+    <div id="randfalzArtWrap">
+      <label style="margin-top:9px;">Randfalz <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
+      <div class="seg" id="randfalzSeg">
+        <button data-v="aus" class="on">aus</button>
+        <button data-v="parallel">parallel</button>
+        <button data-v="rand">bis zum Rand</button>
+      </div>
+      <div class="seg" id="randfalzSternSeg" style="display:none;">
+        <button data-v="parallel">parallel</button>
+        <button data-v="rand" class="on">bis zum Rand</button>
+      </div>
+      <div class="help-text" data-i18n="help_randfalz">
+        Ein zusätzlicher Streifen entlang der Seitenkanten, der an der blauen
+        Linie umgeklappt wird. Die eingestellte Armbreite bleibt dabei
+        unverändert: die rote Schnittkante rückt nach außen, die bisherige
+        Kante wird zur Faltlinie.
+
+        Parallel: der Streifen läuft mit voller Breite bis zum Armende und ist
+        dort gerade abgeschnitten - die Arme werden zu U-Profilen, gut für
+        U-, Vierkant- und runde Streben.
+
+        Bis zum Rand: der Streifen läuft vor dem Armende aus, die Faltlinie
+        trifft dort auf die Schnittkante. Endabstand = wie weit vor dem
+        Armende.
+      </div>
+    </div>
+    <div id="randfalzOpts" style="display:none;">
+      <label style="margin-top:9px;">Randfalz-Breite <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nRandfalzW" min="0.5" max="30" step="0.5" value="4"><span class="unit">mm</span></span></label>
+      <input type="range" id="randfalzW" min="0.5" max="20" value="4" step="0.5">
+      <div id="randfalzEWrap">
+        <label style="margin-top:9px;">Endabstand <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nRandfalzE" min="0" max="100" step="0.5" value="5"><span class="unit">mm</span></span></label>
+        <input type="range" id="randfalzE" min="0" max="60" value="5" step="0.5">
+      </div>
+      <div id="randfalzHinweis" style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.45;"></div>
+    </div>
+  </div>
   <div id="doubleControls" style="display:none;">
     <div class="grp">
       <label>Zeichnen</label>
@@ -811,6 +896,10 @@
         <button data-v="both" class="on">beide</button>
         <button data-v="inner">nur innen</button>
         <button data-v="outer">nur außen</button>
+      </div>
+      <div class="schalenAbstandWrap" style="margin-top:8px;display:none;">
+        <label>Abstand der Schalen <span style="display:flex;align-items:center;gap:6px;"><input class="numfield schalenAbstandFeld" type="number" min="0.2" max="80" step="0.1" value="1"><span class="unit">mm</span></span></label>
+        <div class="schalenAbstandInfo" style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.45;"></div>
       </div>
     </div>
     <div class="grp" id="grpTilt">
@@ -834,6 +923,67 @@
     <label>Anzahl Arme <input class="numfield" type="number" id="nBallArms" min="1" max="24" step="1" value="4"></label>
     <input type="range" id="ballArms" min="1" max="12" value="4" step="1">
   </div>
+  <div class="grp">
+    <label>Kragendicke <span><input class="numfield" type="number" id="nBallCollar" min="0.8" max="20" step="0.1" value="3"><span class="unit">mm</span></span></label>
+    <input type="range" id="ballCollar" min="0.8" max="12" value="3" step="0.1">
+  </div>
+  <div class="grp">
+    <label>Armlänge <span><input class="numfield" type="number" id="nBallArmLen" min="4" max="80" step="0.1" value="14"><span class="unit">mm</span></span></label>
+    <input type="range" id="ballArmLen" min="4" max="60" value="14" step="0.1">
+  </div>
+  <div class="grp" id="grpBallEven">
+    <label>Winkelverteilung</label>
+    <div class="seg" id="ballEvenSeg">
+      <button data-v="even" class="on">gleichmäßig</button>
+      <button data-v="custom">in der Ebene</button>
+      <button data-v="custom3d">im Raum</button>
+    </div>
+  </div>
+  <div class="grp" id="ballPresetWrap" style="display:none;">
+    <label>Vorlage</label>
+    <select id="ballPresetSel">
+      <option value="">(eigene Winkel)</option>
+      <optgroup label="Ecken – Arme in eine Richtung">
+        <option value="tetraE">Tetraeder-Ecke · 3 Arme · 60°</option>
+        <option value="cubeE">Würfelecke · 3 Arme · 90°</option>
+        <option value="dodecaE">Dodekaeder-Ecke · 3 Arme · 108°</option>
+        <option value="octaE">Oktaeder-Ecke · 4 Arme · 60/90°</option>
+        <option value="icoE">Ikosaeder-Ecke · 5 Arme · 60/108°</option>
+      </optgroup>
+      <optgroup label="Achsen – Arme nach allen Seiten">
+        <option value="tetraA">Tetraeder-Achsen · 4 Arme · 109,5°</option>
+        <option value="octaA">Oktaeder-Achsen · 6 Arme · 90°</option>
+      </optgroup>
+      <optgroup label="Kombiniert">
+        <option value="tri1">Dreieck + Achse · 4 Arme</option>
+        <option value="quad1">Quadrat + Achse · 5 Arme</option>
+      </optgroup>
+    </select>
+  </div>
+  <div class="grp" id="ballCustomWrap">
+    <label>Winkel in der Ebene (Grad, kommagetrennt)</label>
+    <input type="text" id="ballCustomAngles" value="0,90,180,270" style="width:100%;padding:6px;border:1px solid var(--grid);border-radius:2px;font-size:13px;">
+    <div class="i18n-text" data-i18n="hint_ebene" style="font-size:10px;color:var(--muted);margin-top:4px;">Alle Arme liegen in einer Ebene.</div>
+  </div>
+  <div class="grp" id="ballCustom3dWrap" style="display:none;">
+    <label>3D-Winkel pro Arm <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
+    <textarea id="ballCustom3dAngles" rows="4" style="width:100%;padding:6px;border:1px solid var(--grid);border-radius:2px;font-size:13px;font-family:monospace;">0 0
+90 0
+180 0
+270 0</textarea>
+    <div class="help-text" data-i18n="help_ball3dangles">
+      Ein Arm pro Zeile, jeweils zwei Zahlen: Azimut und Neigung in Grad.
+      Azimut ist der Winkel in der Waagrechten (0 bis 360), Neigung ist der
+      Winkel nach oben aus der Ebene heraus (0 = waagrecht, 90 = senkrecht
+      nach oben, negativ nach unten). So lassen sich echte räumliche Knoten
+      bauen, etwa drei Arme flach und einer senkrecht nach oben.
+    </div>
+  </div>
+  </div>
+  <div class="sect" data-sect="streben"><span class="stepno"></span><span class="sect-txt">Streben</span><span class="chev">▾</span></div>
+  <!-- 3D-Knoten: Strebenart, Profil, Masse und Steck-/Bohrtiefe (seit v335
+       hier im Abschnitt Streben statt unter Knotenform). -->
+  <div id="ball3dRodControls" style="display:none;">
   <div class="grp" id="grpBallKonstruktion">
     <label>Konstruktion <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
     <div class="seg" id="ballKonstruktionSeg">
@@ -880,14 +1030,6 @@
     </div>
   </div>
   <div class="grp">
-    <label>Kragendicke <span><input class="numfield" type="number" id="nBallCollar" min="0.8" max="20" step="0.1" value="3"><span class="unit">mm</span></span></label>
-    <input type="range" id="ballCollar" min="0.8" max="12" value="3" step="0.1">
-  </div>
-  <div class="grp">
-    <label>Armlänge <span><input class="numfield" type="number" id="nBallArmLen" min="4" max="80" step="0.1" value="14"><span class="unit">mm</span></span></label>
-    <input type="range" id="ballArmLen" min="4" max="60" value="14" step="0.1">
-  </div>
-  <div class="grp">
     <label id="lblBallDepth">Bohrtiefe <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nBallDepth" min="2" max="60" step="0.1" value="10"><span class="unit">mm</span><span class="help-btn" onclick="toggleHelp(this)">?</span></span></label>
     <input type="range" id="ballDepth" min="2" max="50" value="10" step="0.1">
     <button id="ballDepthTouch" class="ghost" style="margin-top:6px;font-size:11px;padding:4px 8px;">Streben berühren sich</button>
@@ -896,56 +1038,7 @@
       kleiner oder gleich der Armlänge sein, damit ein Boden bleibt.
     </div>
   </div>
-  <div class="grp" id="grpBallEven">
-    <label>Winkelverteilung</label>
-    <div class="seg" id="ballEvenSeg">
-      <button data-v="even" class="on">gleichmäßig</button>
-      <button data-v="custom">in der Ebene</button>
-      <button data-v="custom3d">im Raum</button>
-    </div>
   </div>
-  <div class="grp" id="ballPresetWrap" style="display:none;">
-    <label>Vorlage</label>
-    <select id="ballPresetSel">
-      <option value="">(eigene Winkel)</option>
-      <optgroup label="Ecken – Arme in eine Richtung">
-        <option value="tetraE">Tetraeder-Ecke · 3 Arme · 60°</option>
-        <option value="cubeE">Würfelecke · 3 Arme · 90°</option>
-        <option value="dodecaE">Dodekaeder-Ecke · 3 Arme · 108°</option>
-        <option value="octaE">Oktaeder-Ecke · 4 Arme · 60/90°</option>
-        <option value="icoE">Ikosaeder-Ecke · 5 Arme · 60/108°</option>
-      </optgroup>
-      <optgroup label="Achsen – Arme nach allen Seiten">
-        <option value="tetraA">Tetraeder-Achsen · 4 Arme · 109,5°</option>
-        <option value="octaA">Oktaeder-Achsen · 6 Arme · 90°</option>
-      </optgroup>
-      <optgroup label="Kombiniert">
-        <option value="tri1">Dreieck + Achse · 4 Arme</option>
-        <option value="quad1">Quadrat + Achse · 5 Arme</option>
-      </optgroup>
-    </select>
-  </div>
-  <div class="grp" id="ballCustomWrap">
-    <label>Winkel in der Ebene (Grad, kommagetrennt)</label>
-    <input type="text" id="ballCustomAngles" value="0,90,180,270" style="width:100%;padding:6px;border:1px solid var(--grid);border-radius:2px;font-size:13px;">
-    <div style="font-size:10px;color:var(--muted);margin-top:4px;">Alle Arme liegen in einer Ebene.</div>
-  </div>
-  <div class="grp" id="ballCustom3dWrap" style="display:none;">
-    <label>3D-Winkel pro Arm <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
-    <textarea id="ballCustom3dAngles" rows="4" style="width:100%;padding:6px;border:1px solid var(--grid);border-radius:2px;font-size:13px;font-family:monospace;">0 0
-90 0
-180 0
-270 0</textarea>
-    <div class="help-text" data-i18n="help_ball3dangles">
-      Ein Arm pro Zeile, jeweils zwei Zahlen: Azimut und Neigung in Grad.
-      Azimut ist der Winkel in der Waagrechten (0 bis 360), Neigung ist der
-      Winkel nach oben aus der Ebene heraus (0 = waagrecht, 90 = senkrecht
-      nach oben, negativ nach unten). So lassen sich echte räumliche Knoten
-      bauen, etwa drei Arme flach und einer senkrecht nach oben.
-    </div>
-  </div>
-  </div>
-  <div class="sect" data-sect="streben"><span class="stepno"></span><span class="sect-txt">Streben</span><span class="chev">▾</span></div>
   <div class="grp" id="grpStrebModus" style="display:none;">
     <label>Haken- und Zapfenstreben <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
     <div class="seg" id="strebModusSeg">
@@ -985,6 +1078,23 @@
       </div>
     </div>
   </div>
+  <div class="grp" id="grpStabLen">
+    <label>Strebenlängen <span class="help-btn" onclick="toggleHelp(this)" style="float:right;">?</span></label>
+    <div class="seg" id="stabLenSeg">
+      <button data-v="even" class="on">alle gleich</button>
+      <button data-v="custom">je Arm</button>
+    </div>
+    <div class="help-text" data-i18n="help_stablen">
+      Alle gleich: jede Strebe hat die Strebenlänge von oben. Je Arm: eine
+      Länge je Arm, kommagetrennt, in derselben Reihenfolge wie die Arme
+      (S1, S2, ...). Fehlende Werte nehmen die Strebenlänge von oben. Sind die
+      Armlängen je Arm verschieden, bekommt jede Strebe die Löcher bzw.
+      Schlitze passend zu IHREM Arm.
+    </div>
+    <div id="stabLensWrap" style="display:none;margin-top:8px;">
+      <input type="text" id="stabLens" value="" placeholder="200,200,200">
+    </div>
+  </div>
   <div class="grp" id="grpStab">
     <label>Strebenlänge <span><input class="numfield" type="number" id="nStab" min="20" max="2000" step="0.1" value="200"><span class="unit">mm</span></span></label>
     <input type="range" id="stab" min="20" max="600" value="200" step="0.1">
@@ -1022,6 +1132,14 @@
       Doppellage: L, Vierkant und rund. Das Profil liegt auf ganzer Länge
       zwischen den beiden Schalen, seine Höhe bestimmt den Schalenabstand.
 
+      3D-Knoten: flach heißt fertiger Stab bzw. fertiges Rohr. Dreieck,
+      Vierkant und rund werden aus einem Blatt gefaltet bzw. gerollt. Die
+      Maße ergeben sich aus dem Durchmesser: bei Löchern passt das Profil
+      außen in die Bohrung, bei Zapfen innen über den Zapfen. Die
+      Materialstärke des Blatts ist eingerechnet. Zähne und Schlitze bleiben
+      aus dem Teil heraus, der im Knoten steckt. Beim eckigen Profil gibt es
+      nur Vierkant (Breite × Höhe).
+
       Bei Haken gibt es L und U: L faltet die Oberkante der hochkant stehenden
       Strebe um, der Knoten bleibt gleich. U hat zwei Wände mit Haken und einen
       Steg dazwischen, der Knoten bekommt je Stelle zwei Schlitze im
@@ -1032,8 +1150,14 @@
       Abschrägung: Winkel der Seitenteile an den Enden, 90 Grad = rechtwinklig.
     </div>
     <div id="profilOpts" style="display:none;margin-top:8px;">
+      <div id="profilHWrap">
       <label>Profilhöhe <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nProfilH" min="0" max="60" step="0.5" value="0"><span class="unit">mm</span></span></label>
       <input type="range" id="profilH" min="0" max="40" value="0" step="0.5">
+      </div>
+      <div id="profilFaltTWrap" style="display:none;">
+        <label>Materialstärke Blatt <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nProfilFaltT" min="0.05" max="3" step="0.05" value="0.3"><span class="unit">mm</span></span></label>
+        <input type="range" id="profilFaltT" min="0.05" max="2" value="0.3" step="0.05">
+      </div>
       <div id="profilAbWrap">
       <label style="margin-top:9px;">Faltung ab Strebenende <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nProfilAb" min="0" max="200" step="0.5" value="0"><span class="unit">mm</span></span></label>
       <input type="range" id="profilAb" min="0" max="60" value="0" step="0.5">
@@ -1076,7 +1200,7 @@
     </div>
     
     
-    <div id="lockWarn" style="display:none;font-size:11px;color:#b8541b;margin-top:5px;">
+    <div id="lockWarn" class="i18n-text" data-i18n="warn_lock" style="display:none;font-size:11px;color:#b8541b;margin-top:5px;">
       Nicht möglich: Die Überlappung ist breiter als der Arm. Überlappung
       verkleinern oder Armbreite erhöhen.
     </div>
@@ -1097,7 +1221,7 @@
         der beide Schlitzarten braucht. Unter Streben wählst du dann, ob es
         zwei getrennte Strebensätze gibt oder Zapfenstreben mit Haken.
       </div>
-    <div id="zapfenWarn" style="display:none;font-size:11px;color:#b8541b;
+    <div id="zapfenWarn" class="i18n-text" data-i18n="warn_zapfen" style="display:none;font-size:11px;color:#b8541b;
       background:rgba(184,84,27,0.08);border-radius:6px;padding:7px 9px;margin-bottom:8px;">
       Achtung: Ein Zapfenschlitz überschneidet sich mit einer Bohrung. Die
       Schlitzlage ist durch Armlänge und Knicklinie festgelegt und wird nicht
@@ -1134,7 +1258,7 @@
 <div class="grp" id="lochWrap">
     <div class="subsect" data-sub="loch">Locheinstellungen<span class="chev">▾</span></div>
     <div class="subbox" id="lochBox">
-    <div id="lochHinweis" style="display:none;font-size:11px;color:#6b6f63;
+    <div id="lochHinweis" class="i18n-text" data-i18n="hint_lochueberlapp" style="display:none;font-size:11px;color:#6b6f63;
       background:rgba(0,0,0,0.03);border-radius:6px;padding:7px 9px;margin-bottom:8px;">
       Bei überlappenden Armen liegen zwei Arme übereinander. Die Löcher müssen
       dort deckungsgleich sein, deshalb gilt ein fester Abstand statt der
@@ -1282,23 +1406,27 @@
     </div>
   </div>
       <div id="bConeFalzBlock" style="display:none;">
-      <div class="sect" data-sect="falz"><span class="stepno"></span><span class="sect-txt">Doppellage & Knickflächen</span><span class="chev">▾</span></div>
+      <div class="sect" data-sect="falz"><span class="stepno"></span><span class="sect-txt">Doppellage & Innenring</span><span class="chev">▾</span></div>
       <div class="grp" id="bConeLayerGrp">
         <label>Doppellage</label>
         <div class="seg" id="bConeLayerSeg">
           <button data-v="one" class="on">eine Lage</button>
           <button data-v="two">innen+außen</button>
         </div>
+        <div class="schalenAbstandWrap" style="margin-top:8px;display:none;">
+        <label>Abstand der Schalen <span style="display:flex;align-items:center;gap:6px;"><input class="numfield schalenAbstandFeld" type="number" min="0.2" max="80" step="0.1" value="1"><span class="unit">mm</span></span></label>
+        <div class="schalenAbstandInfo" style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.45;"></div>
+      </div>
       </div>
       <div class="grp" id="bConeFoldWrap">
-        <label>Knickfläche</label>
+        <label>Innenring</label>
         <div class="seg" id="bConeFoldSeg">
           <button data-v="yes" class="on">mit</button>
           <button data-v="no">ohne</button>
           <button data-v="weld">+ Falz</button>
         </div>
         <div id="bConeFoldWWrap" style="margin-top:8px;">
-          <label>Breite Knickfläche <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nBConeFoldW" min="0.5" max="40" step="0.1" value="6"><span class="unit">mm</span></span></label>
+          <label>Breite Innenring <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nBConeFoldW" min="0.5" max="40" step="0.1" value="6"><span class="unit">mm</span></span></label>
           <input type="range" id="bConeFoldW" min="0.5" max="40" value="6" step="0.1">
         </div>
       </div>
@@ -1308,16 +1436,20 @@
       </div>
       </div>
   <div id="coneFalzBlock" style="display:none;">
-      <div class="sect" data-sect="falz"><span class="stepno"></span><span class="sect-txt">Doppellage & Knickflächen</span><span class="chev">▾</span></div>
+      <div class="sect" data-sect="falz"><span class="stepno"></span><span class="sect-txt">Doppellage & Innenring</span><span class="chev">▾</span></div>
     <div class="grp" id="coneLayerGrp">
       <label>Doppellage</label>
       <div class="seg" id="coneLayerSeg">
         <button data-v="one" class="on">eine Lage</button>
         <button data-v="two">innen+außen</button>
       </div>
+      <div class="schalenAbstandWrap" style="margin-top:8px;display:none;">
+        <label>Abstand der Schalen <span style="display:flex;align-items:center;gap:6px;"><input class="numfield schalenAbstandFeld" type="number" min="0.2" max="80" step="0.1" value="1"><span class="unit">mm</span></span></label>
+        <div class="schalenAbstandInfo" style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.45;"></div>
+      </div>
     </div>
     <div class="grp" id="coneFoldWrap">
-      <label>Knickfläche</label>
+      <label>Innenring</label>
       <div class="seg" id="coneFoldSeg">
         <button data-v="yes" class="on">mit</button>
         <button data-v="no">ohne</button>
@@ -1325,12 +1457,15 @@
       </div>
     </div>
     <div class="grp" id="coneFoldWidthWrap">
-      <label>Knickflächenbreite <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nConeFoldW" min="1" max="30" step="0.1" value="6"><span class="unit">mm</span><span class="help-btn" onclick="toggleHelp(this)">?</span></span></label>
+      <label>Breite Innenring <span style="display:flex;align-items:center;gap:6px;"><input class="numfield" type="number" id="nConeFoldW" min="1" max="30" step="0.1" value="6"><span class="unit">mm</span><span class="help-btn" onclick="toggleHelp(this)">?</span></span></label>
       <input type="range" id="coneFoldW" min="1" max="30" value="6" step="0.1">
       <div class="help-text" data-i18n="help_foldwidth">
-        Breite der Knickfläche an der Kegelspitze. Der erste Kreis ist die grüne
-        Knicklinie, ein zweiter Kreis kommt im Abstand dieser Breite dazu. Die
-        Fläche dazwischen wird zur Spitze hin umgelegt.
+        Innenring: der Ring an der Kegelspitze zwischen dem Mittelloch (rot)
+        und der blauen Kreislinie. Er wird an der blauen Linie umgelegt und
+        gibt der Spitze einen festen Rand. Die Breite ist der Abstand vom
+        Mittelloch bis zur blauen Linie. Der Außenradius (Armlänge) bleibt
+        gleich - mit wachsender Breite rücken die Löcher deshalb nach außen,
+        und die Auflage der Streben wird kürzer.
       </div>
     </div>
     <div class="grp" id="coneWeldWrap" style="display:none;">
@@ -1491,9 +1626,9 @@
     <div class="viewbar viewbar-right" id="view3dBar" style="display:none;">
       <span class="viewbar-label" data-i18n-label>Blickwinkel</span>
       <div class="seg" id="view3dBtns">
-        <button class="viewbtn" data-view="front" title="Front view">Front</button>
-        <button class="viewbtn" data-view="top" title="Top view">Top</button>
-        <button class="viewbtn" data-view="iso" title="Isometric view">Iso</button>
+        <button class="viewbtn" data-view="front" title="Vorderansicht">Front</button>
+        <button class="viewbtn" data-view="top" title="Draufsicht">Top</button>
+        <button class="viewbtn" data-view="iso" title="Isometrische Ansicht">Iso</button>
       </div>
     </div>
     <button id="menuBtn" title="Menü ein-/ausblenden" aria-label="Menü">☰</button>
@@ -1545,7 +1680,7 @@
       <span style="display:flex;align-items:center;gap:6px;margin-top:3px;"><input class="numfield" type="number" id="stlFoldWidth" min="0.4" max="8" step="0.1" value="2"><span class="unit">mm</span></span>
     </label>
     </div>
-    <div class="help-text" id="stlBallHint" style="display:none;font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5;">
+    <div class="help-text" id="stlBallHint" data-i18n="help_stlball" style="display:none;font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5;">
       Fein macht die Oberfläche glatter und die eingeprägten Buchstaben lesbar,
       dauert beim Erzeugen aber länger. Die Vorschau bleibt immer schnell.
     </div>
@@ -1613,7 +1748,7 @@ function toggleHelp(btn){
 // Programmversion. Sie steht in der Fusszeile, auf jedem Export und in der
 // Einstellungsdatei - bei einer Rueckmeldung ist damit sofort klar, welche
 // Fassung gemeint ist.
-const KNOTI_VERSION='334';
+const KNOTI_VERSION='343';
 let PX_PER_MM=4;
 let BODY_PX=4;      // eigener Zoom fuer die 3D-Koerperzeichnung
 const state={};
@@ -2961,12 +3096,17 @@ function zapfenStrebenVersatz(){
 // Knotenarm bleiben flach. Fuer Loecher und Zapfen alle Profile, fuer Haken
 // L und U (seit v333). Nicht fuer Doppelschale, kombinierte Streben und
 // 3D-Knoten.
+function istBallJetzt(){
+  if(typeof mode!=='undefined' && mode==='ball3d') return true;
+  const sub=(typeof mode!=='undefined' && mode==='body' && document.querySelector('#bodyAdapterSeg .on')) ? document.querySelector('#bodyAdapterSeg .on').dataset.v : null;
+  return sub==='ball3d';
+}
 function strebProfilMoeglich(){
-  if(typeof mode!=='undefined' && mode==='ball3d') return false;
-  const sub=(mode==='body' && document.querySelector('#bodyAdapterSeg .on')) ? document.querySelector('#bodyAdapterSeg .on').dataset.v : null;
-  if(sub==='ball3d') return false;
   const js=document.querySelector('#joinSeg .on');
   if(js && js.dataset.v==='direct') return false;
+  // 3D-Knoten (seit v336): Streben aus einem Blatt gefaltet, passend zu
+  // Bohrung bzw. Zapfen.
+  if(istBallJetzt()) return true;
   // Doppellage (seit v334): L, Vierkant und rund, die Strebe steckt als
   // Profil zwischen den Schalen. Mit Haken dort weiterhin kein Profil.
   if(profilDoppel() && hakenAn()) return false;
@@ -2987,7 +3127,7 @@ function profilAuswahl(){
 }
 // Profil der flach aufliegenden Streben (Loecher, Zapfen).
 function strebProfil(){
-  if(!strebProfilMoeglich()) return 'flach';
+  if(!strebProfilMoeglich() || istBallJetzt()) return 'flach';
   const a=profilAuswahl();
   if(profilDoppel() && (a==='U'||a==='dreieck')) return 'flach';
   return a;
@@ -2997,7 +3137,7 @@ function strebProfil(){
 // U: zwei Hakenwaende mit einem Steg dazwischen (Querschnitt wie ein Pi),
 // jede Wand steckt in einem eigenen Schlitz.
 function hakenProfil(){
-  if(!hakenAn() || !strebProfilMoeglich()) return 'flach';
+  if(!hakenAn() || !strebProfilMoeglich() || istBallJetzt()) return 'flach';
   const a=profilAuswahl();
   return (a==='L'||a==='U') ? a : 'flach';
 }
@@ -3016,6 +3156,145 @@ function profilWinkel(){
   return (isNaN(v)) ? 45 : Math.max(15, Math.min(90, v));
 }
 // Verschluss geschlossener Profile: Klebelasche oder steckbar (seit v333).
+// ---- Gefaltete Streben beim 3D-Knoten (seit v336) ----
+// flach = wie bisher ein fertiger Stab bzw. ein fertiges Rohr. Dreieck,
+// Vierkant und rund werden aus einem Blatt gefaltet bzw. gerollt. Die Masse
+// folgen aus Bohrung bzw. Zapfen: bei Loechern passt das Profil AUSSEN in die
+// Bohrung (Umkreis), bei Zapfen INNEN ueber den Zapfen (Inkreis). Gerechnet
+// wird mit der Mittelflaeche des Blatts, die Materialstaerke ist also drin.
+function ballFaltProfil(){
+  if(!istBallJetzt() || !strebProfilMoeglich()) return 'flach';
+  const a=profilAuswahl();
+  const eckig=(typeof ballProfil==='function') && ballProfil()==='quadrat';
+  const ok = eckig ? ['Q'] : ['dreieck','Q','O'];
+  return ok.indexOf(a)>=0 ? a : 'flach';
+}
+function profilFaltDicke(){
+  const v=(typeof sync==='function' && $('profilFaltT')) ? sync('profilFaltT','nProfilFaltT',lastSrc) : 0.3;
+  return (isNaN(v)||v<0.05) ? 0.3 : v;
+}
+// Querschnitt: Breiten der Flaechen (Mittellinie) im Abwicklungsstreifen.
+function ballFaltQuerschnitt(){
+  const art=ballFaltProfil(); if(art==='flach') return null;
+  const o=ballOpts(), t=profilFaltDicke(), rohr=o.konstruktion==='zapfen';
+  if(o.profil==='quadrat'){
+    const d=rohr ? t : -t;
+    const w=Math.max(1, (o.rodW||o.rodDia)+d), h=Math.max(1, (o.rodH||o.rodDia)+d);
+    return {art, rund:false, flaechen:[w,h,w,h], mass:`${w.toFixed(1)}×${h.toFixed(1)} mm`, seite:Math.min(w,h)};
+  }
+  const D=o.rodDia;
+  if(art==='O'){
+    const dm=Math.max(1, rohr ? D+t : D-t);
+    return {art, rund:true, flaechen:[Math.PI*dm], mass:`Ø ${dm.toFixed(1)} mm`, seite:Math.PI*dm};
+  }
+  const n = art==='dreieck' ? 3 : 4;
+  let s;
+  if(rohr){ s=2*(D/2+t/2)*Math.tan(Math.PI/n); }
+  else { const Rm=Math.max(0.5, D/2-(t/2)/Math.cos(Math.PI/n)); s=2*Rm*Math.sin(Math.PI/n); }
+  return {art, rund:false, flaechen:Array(n).fill(s), mass:`${s.toFixed(1)} mm`, seite:s};
+}
+// Eine gefaltete Strebe als Abwicklung: Streifen der Laenge L, Flaechen
+// untereinander, Verschluss an der unteren Kante. Liefert {g, h, unten}.
+function ballFaltNetz(L, text, forExport){
+  const q=ballFaltQuerschnitt(); if(!q) return null;
+  const o=ballOpts(), t=profilFaltDicke();
+  const steck=profilVerschluss()==='steck';
+  const dS=Math.max(1.5, 2*t);
+  // Bereich, der in der Bohrung bzw. ueber dem Zapfen steckt: dort duerfen
+  // weder Zahn noch Schlitz sitzen (und beim runden Rohr ueber dem Zapfen
+  // auch keine Klebelasche innen).
+  const ende=Math.min(L/2-2, Math.max(0, o.depth)+1);
+  const xa=ende, xb=L-ende;
+  let Y=0; const falz=[];
+  q.flaechen.forEach((f,i)=>{ Y+=f; if(i<q.flaechen.length-1) falz.push([0,Y,L,Y]); });
+  const pts=[[0,0],[L,0],[L,Y]];
+  const schlitze=[], kleben=[];
+  let unten=0;
+  if(steck && xb-xa>8){
+    let n=profilZahnAnzahl();
+    while(n>1 && (xb-xa)/(2*n+1)<4) n--;
+    const w=(xb-xa)/(2*n+1), lg=profilZahnLaenge(dS, t);
+    for(let i=n-1;i>=0;i--){
+      const x1=xa+w*(2*i+1), x2=x1+w;
+      pts.push([x2,Y],[x2,Y+lg],[x1,Y+lg],[x1,Y]);
+      falz.push([x1,Y,x2,Y]);
+      schlitze.push([x1-0.1, dS-(t+0.16)/2, w+0.2, t+0.16]);
+    }
+    unten=lg;
+  } else {
+    // Klebelasche, bei Vielecken hoechstens bis kurz vor die naechste Kante.
+    let g=profilLasche();
+    if(!q.rund) g=Math.min(g, Math.max(2, q.seite-1));
+    const nurMitte = q.rund && o.konstruktion==='zapfen';
+    const a0 = nurMitte ? xa : 0, b0 = nurMitte ? xb : L;
+    const cc=Math.min(g, (b0-a0)/4);
+    pts.push([b0,Y],[b0-cc,Y+g],[a0+cc,Y+g],[a0,Y]);
+    if(q.rund) kleben.push([a0,Y,b0,Y]); else falz.push([a0,Y,b0,Y]);
+    unten=g;
+  }
+  pts.push([0,Y]);
+  const d='M '+pts.map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(' L ')+' Z';
+  let g=`<path d="${d}" fill="${forExport?'none':'#FAF9F6'}" stroke="#FF0000" stroke-width="0.4"/>`;
+  g+=falz.map(f=>`<line x1="${f[0].toFixed(2)}" y1="${f[1].toFixed(2)}" x2="${f[2].toFixed(2)}" y2="${f[3].toFixed(2)}" stroke="#0000FF" stroke-width="0.4"/>`).join('');
+  g+=kleben.map(f=>`<line x1="${f[0].toFixed(2)}" y1="${f[1].toFixed(2)}" x2="${f[2].toFixed(2)}" y2="${f[3].toFixed(2)}" stroke="#0000FF" stroke-width="0.4" stroke-dasharray="1.5 1.5"/>`).join('');
+  g+=schlitze.map(r=>`<rect x="${r[0].toFixed(2)}" y="${r[1].toFixed(2)}" width="${r[2].toFixed(2)}" height="${r[3].toFixed(2)}" fill="none" stroke="#000000" stroke-width="0.4"/>`).join('');
+  if(text){
+    // Beschriftung in die breiteste Flaeche (nicht in die mit den Schlitzen).
+    let y0=0, best=0, by=0;
+    q.flaechen.forEach((f,i)=>{ if(i>0||q.flaechen.length===1){ if(f>best){ best=f; by=y0+f/2; } } y0+=f; });
+    const fs=Math.max(1.2, Math.min(3, best*0.55));
+    g+=`<text x="${(L/2).toFixed(1)}" y="${(by+fs*0.35).toFixed(2)}" font-size="${fs.toFixed(2)}" text-anchor="middle" fill="#00a3a3">${text}</text>`;
+  }
+  return {g, h:Y+unten};
+}
+// Zuschnittblatt der gefalteten Streben. alle=false: je Laenge eine (Vorschau).
+function ballFaltBlattSVG(forExport, alle){
+  const EN=(typeof curLang!=='undefined'&&curLang==='en');
+  let items=[];
+  if(mode==='body' && lastBody && lastBody.edges){
+    const ids=lastBody.ids||lastBody.labels;
+    const gr={};
+    lastBody.edges.forEach(([a,b])=>{
+      const s=strebenLaenge(a,b,true); const L=s?s.len:STREBE_MIN;
+      const k=L.toFixed(1); (gr[k]=gr[k]||[]).push(`${ids[a]}–${ids[b]}`);
+    });
+    Object.keys(gr).sort((x,y)=>+x-+y).forEach(k=>{
+      if(alle) gr[k].forEach((nm,i)=>items.push({len:+k, text:`${nm} · ${k} mm`}));
+      else items.push({len:+k, text:`${k} mm · ${gr[k].length}×`});
+    });
+  } else {
+    const L=ballStrebenLaenge();
+    items=[{len:L, text:`${L.toFixed(1)} mm`}];
+  }
+  const pad=4, gap=4; let y=pad, Lmax=0, g='';
+  items.forEach(it=>{
+    const n=ballFaltNetz(it.len, it.text, forExport); if(!n) return;
+    g+=`<g transform="translate(${pad},${y.toFixed(2)})">${n.g}</g>`;
+    y+=n.h+gap; Lmax=Math.max(Lmax, it.len);
+  });
+  const W=Lmax+2*pad, H=y+pad-gap;
+  const size = forExport ? `width="${W.toFixed(1)}mm" height="${H.toFixed(1)}mm"` : `width="${(W*PX_PER_MM).toFixed(0)}"`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W.toFixed(1)} ${H.toFixed(1)}" ${size}>${g}</svg>`;
+}
+// Hinweis unter den Profilknoepfen beim 3D-Knoten.
+function ballFaltHinweis(){
+  const hw=$('profilHinweis'); if(!hw || !istBallJetzt()) return;
+  const EN=(typeof curLang!=='undefined'&&curLang==='en');
+  const q=ballFaltQuerschnitt(); if(!q){ hw.textContent=''; return; }
+  const o=ballOpts(), rohr=o.konstruktion==='zapfen';
+  const name={dreieck:EN?'Triangle':'Dreieck', Q:EN?'Square':'Vierkant', O:EN?'Round':'Rund'}[q.art];
+  const wo = rohr ? (EN?`fits over the peg Ø ${o.rodDia.toFixed(1)} mm`:`passt über den Zapfen Ø ${o.rodDia.toFixed(1)} mm`)
+                  : (EN?`fits into the hole Ø ${o.rodDia.toFixed(1)} mm`:`passt in die Bohrung Ø ${o.rodDia.toFixed(1)} mm`);
+  const wo2 = o.profil==='quadrat' ? (rohr ? (EN?'fits over the peg':'passt über den Zapfen') : (EN?'fits into the hole':'passt in die Bohrung')) : wo;
+  const mass = q.rund ? (EN?`centre line ${q.mass}`:`Mittellinie ${q.mass}`) : (q.flaechen.length===4 && o.profil==='quadrat'
+      ? (EN?`faces ${q.mass} (centre line)`:`Seiten ${q.mass} (Mittellinie)`)
+      : (EN?`side ${q.mass} (centre line)`:`Seite ${q.mass} (Mittellinie)`));
+  const steck=profilVerschluss()==='steck';
+  const zus = steck
+    ? (EN ? 'Teeth and slits stay out of the part that goes into the node.' : 'Zähne und Schlitze bleiben aus dem Teil heraus, der im Knoten steckt.')
+    : (q.rund && rohr ? (EN ? 'The glue tab only runs between the pegs.' : 'Die Klebelasche läuft nur zwischen den Zapfen.') : '');
+  hw.textContent = `${name}: ${mass}, ${wo2}. ` + zus;
+}
 function profilVerschluss(){
   const b=document.querySelector('#profilVerschlussSeg .on');
   return b ? b.dataset.v : 'kleben';
@@ -3171,6 +3450,295 @@ function profilGeometrie(art, L, b, e, r){
   }
   return out;
 }
+// ---- Randfalz und gekruemmte Flaeche (seit v337) ----
+function randfalzEinst(stern){
+  const b=document.querySelector(stern ? '#randfalzSternSeg .on' : '#randfalzSeg .on');
+  const art=b ? b.dataset.v : 'aus';
+  const w=(typeof sync==='function' && $('randfalzW')) ? sync('randfalzW','nRandfalzW',lastSrc) : 4;
+  const e=(typeof sync==='function' && $('randfalzE')) ? sync('randfalzE','nRandfalzE',lastSrc) : 5;
+  return {art, w:(isNaN(w)||w<0.5)?4:w, e:(isNaN(e)||e<0)?0:e};
+}
+function sternRandfalzArt(){
+  if(typeof currentTypeKey==='function' && currentTypeKey()!=='star') return 'linie';
+  const b=document.querySelector('#knickArtSeg .on');
+  return b ? b.dataset.v : 'linie';
+}
+function sternGekruemmt(){ return sternRandfalzArt()==='kurve'; }
+// Stern (seit v338): 'gefaltet' (Streifen an den Armseiten, Knicklinien
+// bleiben) oder gekruemmt mit 'parallel' bzw. 'rand'.
+function randfalzStern(){
+  const a=sternRandfalzArt();
+  if(a==='linie') return null;
+  const r=randfalzEinst(true);
+  if(a==='gefaltet') r.art='gefaltet'; else if(r.art==='aus') r.art='rand';
+  return r;
+}
+// Halbebene p.(u_i-u_j) >= 0: naeher an Arm i als an Arm j (Winkelhalbierende).
+function polyHalbebene(poly, n, off){
+  const out=[]; const o=off||0; const f=p=>p[0]*n[0]+p[1]*n[1]-o;
+  for(let i=0;i<poly.length;i++){
+    const a=poly[i], b=poly[(i+1)%poly.length], fa=f(a), fb=f(b);
+    if(fa>=0) out.push(a);
+    if((fa>=0)!==(fb>=0)){ const t=fa/(fa-fb); out.push([a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t]); }
+  }
+  return out;
+}
+function streckeHalbebene(s, n, off){
+  const o=off||0; const f=p=>p[0]*n[0]+p[1]*n[1]-o;
+  let [a,b]=s; const fa=f(a), fb=f(b);
+  if(fa<0 && fb<0) return null;
+  if(fa<0){ const t=fa/(fa-fb); a=[a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t]; }
+  else if(fb<0){ const t=fa/(fa-fb); b=[a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t]; }
+  return [a,b];
+}
+// Gefalteter Randfalz: je Armseite ein Streifen von der Knicklinie bis zum
+// Armende, an den Winkelhalbierenden zu den Nachbararmen beschnitten.
+// Liefert {polys, falz} (falz: Strecken fuer Armkante und Mittellinie).
+function sternFalzStreifen(ang, rEnd, w){
+  // Seit v342: je Arm EIN breites Rechteck (Arm plus beide Streifen) ab der
+  // Knicklinie, NICHT beschnitten. Wo sich die Rechtecke zweier Arme
+  // ueberlappen, fuellt die Vereinigung die Luecke; dort wird auf der
+  // Winkelhalbierenden gefaltet (Faltlinie statt Schnitt).
+  const hw=state.wid/2, polys=[];
+  const snap=P=>P.map(q=>[Math.round(q[0]*1e4)/1e4, Math.round(q[1]*1e4)/1e4]);
+  ang.forEach((a,i)=>{
+    const tip=rEnd+armLenAt(i);
+    let poly=[rot(-(hw+w),rEnd,a-90), rot(hw+w,rEnd,a-90), rot(hw+w,tip,a-90), rot(-(hw+w),tip,a-90)];
+    let A=0; for(let k=0;k<poly.length;k++){ const q=poly[k], r=poly[(k+1)%poly.length]; A+=q[0]*r[1]-r[0]*q[1]; }
+    if(A<0) poly=poly.slice().reverse();
+    // Eine Faltlinie je Armseite: an der Armkante, von der Knicklinie bis
+    // zum Armende.
+    const falz=[-1,1].map(s=>[rot(s*hw,rEnd,a-90), rot(s*hw,tip,a-90)]);
+    polys.push({poly:snap(poly), falz});
+  });
+  return {polys};
+}
+// Faltlinien auf den Winkelhalbierenden: von der Innenecke (dort beruehren
+// sich die Knicklinien) bis zur Schnittkante.
+function sternFalzWinkel(ang, ring){
+  const hw=state.wid/2, out=[];
+  const s=[...ang].sort((a,b)=>a-b);
+  const n=s.length; if(n<2) return out;
+  for(let k=0;k<n;k++){
+    const a1=s[k], a2=s[(k+1)%n]; let d=((a2-a1)%360+360)%360; if(d<0.01||d>=179.99) continue;
+    const mid=a1+d/2;
+    const u=rot(0,1,mid-90);
+    const F=[u[0]*hw/Math.sin(d/2*Math.PI/180), u[1]*hw/Math.sin(d/2*Math.PI/180)];
+    // erster Schnitt des Strahls F + t*u mit dem Umriss
+    let best=Infinity;
+    for(let i=0;i<ring.length-1;i++){
+      const p=ring[i], q=ring[i+1];
+      const ex=q[0]-p[0], ey=q[1]-p[1];
+      const den=u[0]*ey-u[1]*ex; if(Math.abs(den)<1e-12) continue;
+      const t=((p[0]-F[0])*ey-(p[1]-F[1])*ex)/den;
+      const v=((p[0]-F[0])*u[1]-(p[1]-F[1])*u[0])/den;
+      if(t>0.05 && v>=-1e-9 && v<=1+1e-9 && t<best) best=t;
+    }
+    if(isFinite(best)) out.push([F, [F[0]+u[0]*best, F[1]+u[1]*best]]);
+  }
+  return out;
+}
+function randfalzKegel(){
+  if(typeof currentTypeKey==='function' && currentTypeKey()!=='cone') return null;
+  const r=randfalzEinst(); return r.art==='aus' ? null : r;
+}
+// Polylinie so verdichten, dass kein Abschnitt laenger als maxL ist.
+function polyVerdichten(P, maxL, geschlossen){
+  const out=[]; const n=P.length; const m=geschlossen?n:n-1;
+  for(let i=0;i<m;i++){
+    const a=P[i], b=P[(i+1)%n]; const L=Math.hypot(b[0]-a[0],b[1]-a[1]);
+    const k=Math.max(1, Math.ceil(L/maxL));
+    for(let j=0;j<k;j++) out.push([a[0]+(b[0]-a[0])*j/k, a[1]+(b[1]-a[1])*j/k]);
+  }
+  if(!geschlossen) out.push(P[n-1].slice(0,2));
+  return out;
+}
+// Schleifen einer offenen Polylinie entfernen (entstehen, wenn nach innen in
+// eine enge Rundung versetzt wird).
+function polySchleifenWeg(Q){
+  const X=(p,q,r,s)=>{ const d=(q[0]-p[0])*(s[1]-r[1])-(q[1]-p[1])*(s[0]-r[0]); if(Math.abs(d)<1e-12) return null;
+    const t=((r[0]-p[0])*(s[1]-r[1])-(r[1]-p[1])*(s[0]-r[0]))/d, u=((r[0]-p[0])*(q[1]-p[1])-(r[1]-p[1])*(q[0]-p[0]))/d;
+    return (t>1e-9&&t<1-1e-9&&u>1e-9&&u<1-1e-9) ? [p[0]+(q[0]-p[0])*t, p[1]+(q[1]-p[1])*t] : null; };
+  let A=Q.slice(), guard=0, weiter=true;
+  while(weiter && guard++<200){
+    weiter=false;
+    outer: for(let i=0;i<A.length-1;i++){
+      for(let j=A.length-2;j>i+1;j--){
+        const x=X(A[i],A[i+1],A[j],A[j+1]);
+        if(x){ A=A.slice(0,i+1).concat([x], A.slice(j+1)); weiter=true; break outer; }
+      }
+    }
+  }
+  return A;
+}
+// Offene Polylinie P um die Breiten W[i] nach aussen versetzen. sgn waehlt
+// die Seite (Normale (dy,-dx) mal sgn).
+function polyVersetzen(P, W, sgn){
+  const n=P.length, N=[];
+  for(let i=0;i<n-1;i++){ const dx=P[i+1][0]-P[i][0], dy=P[i+1][1]-P[i][1], L=Math.hypot(dx,dy)||1; N.push([sgn*dy/L, -sgn*dx/L]); }
+  return P.map((p,i)=>{
+    const a=N[Math.max(0,i-1)], b=N[Math.min(N.length-1,i)];
+    let v=[a[0]+b[0], a[1]+b[1]]; const l=Math.hypot(v[0],v[1])||1; v=[v[0]/l, v[1]/l];
+    const k=1/Math.max(0.5, v[0]*b[0]+v[1]*b[1]);
+    return [p[0]+v[0]*W[i]*k, p[1]+v[1]*W[i]*k];
+  });
+}
+// Randfalz auf einen Abschnitt (offene Polylinie P, schon auf den gefalzten
+// Bereich beschraenkt). Liefert {rot: neue Schnittkante, falz: Faltlinie}.
+function randfalzAbschnitt(P, rf, sgn){
+  if(P.length<2) return null;
+  const s=[0]; for(let i=1;i<P.length;i++) s.push(s[i-1]+Math.hypot(P[i][0]-P[i-1][0],P[i][1]-P[i-1][1]));
+  const S=s[s.length-1]; if(S<1) return null;
+  // Auslauf weich und lang genug, sonst wirkt die Kante wellig.
+  const R=Math.min(S/3, Math.max(6, 3*rf.w));
+  const glatt=x=>{ x=Math.max(0,Math.min(1,x)); return x*x*(3-2*x); };
+  const W=s.map(si=> rf.art==='parallel' ? rf.w : rf.w*glatt(Math.min(si, S-si)/R));
+  const Q=polySchleifenWeg(polyVersetzen(P, W, sgn));
+  const rot = rf.art==='parallel' ? [P[0]].concat(Q, [P[P.length-1]]) : Q;
+  return {rot, falz:P};
+}
+// Fast gerade Punktfolgen zusammenfassen (geschlossener Ring).
+function polyEinfach(R, tol){
+  let P=R.map(p=>[p[0],p[1]]);
+  if(P.length>1 && Math.hypot(P[0][0]-P[P.length-1][0],P[0][1]-P[P.length-1][1])<1e-9) P=P.slice(0,-1);
+  if(P.length<4) return R;
+  const out=[];
+  for(let i=0;i<P.length;i++){
+    const a=out.length?out[out.length-1]:P[P.length-1], b=P[i], c=P[(i+1)%P.length];
+    const dx=c[0]-a[0], dy=c[1]-a[1], L=Math.hypot(dx,dy);
+    const d = L>1e-9 ? Math.abs((b[0]-a[0])*dy-(b[1]-a[1])*dx)/L : 0;
+    const zw = ((b[0]-a[0])*dx+(b[1]-a[1])*dy) > 0 && ((c[0]-b[0])*dx+(c[1]-b[1])*dy) > 0;
+    if(!(d<tol && zw)) out.push(b);
+  }
+  out.push(out[0]);
+  return out;
+}
+// Falzlinie als Strecken (fuer stab, DXF und STL-Rinnen).
+function polyAlsStrecken(P){ const o=[]; for(let i=0;i<P.length-1;i++) o.push([P[i],P[i+1]]); return o; }
+// Gekruemmter Randfalz "bis zum Rand" (seit v338): die neue Schnittkante ist
+// EINE Kurve von Arm zu Arm. Sie beginnt im Endabstand vor dem Armende
+// parallel zur Armkante, laeuft durch den Punkt, der um die Falzbreite neben
+// der tiefsten Stelle der Innenrundung liegt, und zurueck zum Nachbararm.
+function sternKurveZumRand(lauf, li, rf, sgn, achsen){
+  if(lauf.length<6) return null;
+  const iA=li[0].arm, iB=li[li.length-1].arm; if(iA===iB) return randfalzAbschnitt(lauf, rf, sgn);
+  let a0=0; while(a0<lauf.length-1 && !(li[a0].arm===iA && li[a0].along<=li[a0].tip-rf.e)) a0++;
+  let b0=lauf.length-1; while(b0>a0 && !(li[b0].arm===iB && li[b0].along<=li[b0].tip-rf.e)) b0--;
+  if(b0-a0<4) return null;
+  const uA=achsen[iA].u, uB=achsen[iB].u;
+  let bx=uA[0]+uB[0], by=uA[1]+uB[1]; const bl=Math.hypot(bx,by);
+  if(bl<0.2) return randfalzAbschnitt(lauf.slice(a0,b0+1), rf, sgn);
+  bx/=bl; by/=bl;
+  // tiefste Stelle der Innenrundung: naechster Punkt zur Winkelhalbierenden
+  let im=a0, md=1e9;
+  for(let i=a0;i<=b0;i++){ const p=lauf[i]; const d=Math.abs(p[0]*by-p[1]*bx); if(p[0]*bx+p[1]*by>0 && d<md){ md=d; im=i; } }
+  const A=lauf[a0], B=lauf[b0];
+  const M=[lauf[im][0]+bx*rf.w, lauf[im][1]+by*rf.w];
+  const proj=p=>p[0]*bx+p[1]*by;
+  const ub=(uA[0]+uB[0])*bx+(uA[1]+uB[1])*by;
+  let t=8*((proj(A)+proj(B))/2 - proj(M))/(3*ub);
+  const tMax=0.95*Math.min(li[a0].along, li[b0].along);
+  t=Math.max(0.5, Math.min(t, tMax));
+  const C1=[A[0]-t*uA[0], A[1]-t*uA[1]], C2=[B[0]-t*uB[0], B[1]-t*uB[1]];
+  const N=Math.max(24, Math.ceil((Math.hypot(C1[0]-A[0],C1[1]-A[1])+Math.hypot(C2[0]-C1[0],C2[1]-C1[1])+Math.hypot(B[0]-C2[0],B[1]-C2[1]))/0.8));
+  const kurve=[];
+  for(let i=0;i<=N;i++){ const s=i/N, u=1-s;
+    kurve.push([u*u*u*A[0]+3*u*u*s*C1[0]+3*u*s*s*C2[0]+s*s*s*B[0], u*u*u*A[1]+3*u*u*s*C1[1]+3*u*s*s*C2[1]+s*s*s*B[1]]); }
+  return {rot: lauf.slice(0,a0).concat(kurve, lauf.slice(b0+1)), falz: lauf.slice(a0,b0+1)};
+}
+// Stern: Randfalz an der Aussenkontur. ang = Armwinkel, rEnd = Knicklinie.
+function sternRandfalz(ring, ang, rEnd, rf, rRound){
+  let P=ring.map(p=>[p[0],p[1]]);
+  if(P.length>1 && P[0][0]===P[P.length-1][0] && P[0][1]===P[P.length-1][1]) P=P.slice(0,-1);
+  P=polyVerdichten(P, 0.8, true);
+  const n=P.length; if(n<6) return null;
+  let a2=0; for(let i=0;i<n;i++){ const a=P[i], b=P[(i+1)%n]; a2+=a[0]*b[1]-b[0]*a[1]; }
+  const sgn = a2>0 ? 1 : -1;
+  const achsen=ang.map((a,ai)=>{ const u=rot(0,1,a-90); return {u, tip:rEnd+armLenAt(ai)}; });
+  // Seit v338 ist die Kontur hier an den Armenden noch NICHT gerundet: die
+  // Eckpunkte der Armenden gehoeren zum Falzbereich, die Stirnkanten nicht.
+  const hw=state.wid/2;
+  const info=P.map(p=>{
+    let best=0, bd=-2; const l=Math.hypot(p[0],p[1])||1;
+    achsen.forEach((A,ai)=>{ const d=(p[0]*A.u[0]+p[1]*A.u[1])/l; if(d>bd){ bd=d; best=ai; } });
+    const A=achsen[best];
+    const along=p[0]*A.u[0]+p[1]*A.u[1], quer=Math.abs(p[0]*A.u[1]-p[1]*A.u[0]);
+    return {arm:best, along, quer, tip:A.tip};
+  });
+  const ok=info.map(q=> q.along < q.tip-1e-4 || (Math.abs(q.along-q.tip)<1e-3 && q.quer>=hw-1e-3));
+  if(ok.every(x=>x) || !ok.some(x=>x)) return null;
+  // Zusammenhaengende Bereiche (umlaufend) suchen.
+  let start=ok.findIndex((x,i)=>!x && ok[(i+1)%n]);
+  const neu=[], falz=[];
+  let i=(start+1)%n, cnt=0;
+  // Beginnend direkt nach einem nicht gefalzten Punkt einmal herumlaufen.
+  const reihe=[]; for(let k=0;k<n;k++) reihe.push((start+1+k)%n);
+  let k=0;
+  while(k<n){
+    const idx=reihe[k];
+    if(!ok[idx]){ neu.push(P[idx]); k++; continue; }
+    const lauf=[], li=[]; while(k<n && ok[reihe[k]]){ lauf.push(P[reihe[k]]); li.push(info[reihe[k]]); k++; }
+    const r = rf.art==='rand' ? sternKurveZumRand(lauf, li, rf, sgn, achsen) : randfalzAbschnitt(lauf, rf, sgn);
+    if(r){ r.rot.forEach(q=>neu.push(q)); falz.push(r.falz);
+      // Parallel (seit v340): in der Luecke zwischen zwei Armen treffen die
+      // Streifen beider Arme aufeinander. Dort braucht es eine Faltlinie auf
+      // der Winkelhalbierenden - von der Innenecke bis zur Spitze der
+      // Schnittkante -, sonst laesst sich der Streifen nicht umlegen.
+      if(rf.art==='parallel'){
+        const iA=li[0].arm, iB=li[li.length-1].arm;
+        if(iA!==iB){
+          let bx=achsen[iA].u[0]+achsen[iB].u[0], by=achsen[iA].u[1]+achsen[iB].u[1]; const bl=Math.hypot(bx,by);
+          if(bl>0.2){ bx/=bl; by/=bl;
+            const nah=(L,min)=>{ let best=null, bd=1e9; L.forEach(q=>{ const pr=q[0]*bx+q[1]*by, d=Math.abs(q[0]*by-q[1]*bx);
+              if(pr>min && d<bd){ bd=d; best=q; } }); return best; };
+            const F=nah(lauf, 0);
+            const X=F ? nah(r.rot, F[0]*bx+F[1]*by+0.05) : null;
+            if(F && X && Math.hypot(X[0]-F[0],X[1]-F[1])>0.5){
+              // genau auf die Winkelhalbierende legen
+              const pf=F[0]*bx+F[1]*by, px=X[0]*bx+X[1]*by;
+              falz.push([[bx*pf,by*pf],[bx*px,by*px]]);
+            }
+          }
+        }
+      }
+    } else lauf.forEach(q=>neu.push(q));
+  }
+  return {ring:neu, falz};
+}
+// Strebenlaengen je Arm im Einzelmodus (seit v343). null = alle gleich.
+function strebenLaengenJeArm(n){
+  const b=document.querySelector('#stabLenSeg .on');
+  if(!b || b.dataset.v!=='custom') return null;
+  const roh=(($('stabLens')||{}).value||'').split(',').map(s=>parseFloat(s.trim()));
+  const out=[]; for(let i=0;i<n;i++){ const v=roh[i]; out.push((isFinite(v)&&v>=5) ? v : state.stab); }
+  return out;
+}
+// Abstand der Schalen bei der Doppellage direkt dort anzeigen und aendern
+// (seit v343; vorher nur ueber die Materialstaerke im Abschnitt Verbindung).
+function schalenAbstandAnzeigen(){
+  const EN=(typeof curLang!=='undefined'&&curLang==='en');
+  const dop = (typeof bauartDoppel==='function') && bauartDoppel();
+  document.querySelectorAll('.schalenAbstandWrap').forEach(w=>{ w.style.display = dop ? '' : 'none'; });
+  if(!dop) return;
+  const d=schalenAbstand(), t=matThick();
+  const ph=(typeof profilDoppelHoehe==='function') ? profilDoppelHoehe() : 0;
+  const quelle = hakenAn() ? (EN?`rod width ${strebenBreite()} mm (upright)`:`Breite Streben ${strebenBreite()} mm (hochkant)`)
+    : ph>0 ? (EN?`profile height ${ph} mm`:`Profilhöhe ${ph} mm`)
+    : (EN?`rod material thickness ${matArme()} mm`:`Materialstärke Streben ${matArme()} mm`);
+  document.querySelectorAll('.schalenAbstandFeld').forEach(f=>{ if(document.activeElement!==f) f.value=(Math.round(d*10)/10); });
+  document.querySelectorAll('.schalenAbstandInfo').forEach(i=>{
+    i.textContent = EN ? `= ${quelle} + node material thickness ${t} mm. Changing the value adjusts the ${hakenAn()?'rod width':(ph>0?'profile height':'rod material thickness')}.`
+                       : `= ${quelle} + Materialstärke Knoten ${t} mm. Eine Änderung passt die ${hakenAn()?'Strebenbreite':(ph>0?'Profilhöhe':'Materialstärke Streben')} an.`; });
+}
+function schalenAbstandSetzen(wert){
+  const v=Math.round((wert - matThick())*10)/10; if(!(v>0.05)) return;
+  const setze=(sid,nid)=>{ const nf=$(nid), sl=$(sid); if(!nf) return; nf.value=v;
+    if(sl) sl.value=Math.max(+sl.min, Math.min(+sl.max, v)); lastSrc=nid; };
+  if(hakenAn()){ window.__strebBManuell=true; setze('strebB','nStrebB'); }
+  else if(typeof profilDoppelHoehe==='function' && profilDoppelHoehe()>0) setze('profilH','nProfilH');
+  else setze('matArm','nMatArm');
+  render();
+}
 function matArme(){
   const v=(typeof sync==='function' && $('matArm')) ? sync('matArm','nMatArm',lastSrc) : 3;
   return (isNaN(v)||v<=0) ? 3 : v;
@@ -3208,6 +3776,12 @@ function overlapVonMM(radius, wert){
 function overlapClamp(overlap, sector){
   const rest = 360 - sector;
   return Math.max(0, Math.min(overlap, Math.max(0, rest - 1)));
+}
+// Anzeige der Schalennamen innen/außen in der aktuellen Sprache (seit v335).
+function schalenName(t){
+  const EN=(typeof curLang!=='undefined'&&curLang==='en');
+  if(!EN) return t;
+  return t==='innen' ? 'inner' : t==='außen' ? 'outer' : t;
 }
 function coneSectorGroup(cg, Ruse, dx, label, forExport, isOuter){
   const {rin, sector, overlap, overLeft, overRight, startAng, endAng, stabAngles, holeD, holeFromEdge, hd, coneGap, foldFace, Rinner, weldFold, weldW, foldW, armHalf, waistPct, waistFillet}=cg;
@@ -3307,6 +3881,7 @@ function coneSectorGroup(cg, Ruse, dx, label, forExport, isOuter){
     return isFinite(v) ? rGreen + Math.max(2, v) : Ruse;
   };
   let path=`M ${P(RarmFor(0), firstA - oL - edgeL(firstA))}`;
+  const randFalzK=[];          // Randfalz-Linien (seit v337)
   for(let k=0;k<armAngs.length;k++){
     const a=armAngs[k];
     const Rk=RarmFor(k);
@@ -3374,7 +3949,57 @@ function coneSectorGroup(cg, Ruse, dx, label, forExport, isOuter){
       // bleibt dort kaum noch Material stehen - dafuer gibt es eine Warnung.
       if(wa && isFinite(wa.t) && typeof window!=='undefined')
         window.__taillenR = Math.min(window.__taillenR===undefined?Infinity:window.__taillenR, wa.t);
-      if(Math.abs(Rk-Rn) < 0.2 && wa){
+      const rfK=(typeof randfalzKegel==='function') ? randfalzKegel() : null;
+      if(rfK){
+        // Randfalz (seit v337): Taille als Punktfolge, nach aussen versetzt.
+        let T=[];
+        const p0=pol(Rk,aR), p1=pol(Rn,aNextL);
+        if(Math.abs(Rk-Rn) < 0.2 && wa){
+          let w0=Math.atan2(p0[1]-wa.cy,p0[0]-wa.cx), w1=Math.atan2(p1[1]-wa.cy,p1[0]-wa.cx);
+          let dw=w1-w0; while(dw>Math.PI) dw-=2*Math.PI; while(dw<-Math.PI) dw+=2*Math.PI;
+          const N=Math.max(24, Math.ceil(Math.abs(dw)*wa.rho/0.8));
+          for(let i=0;i<=N;i++){ const w=w0+dw*i/N; T.push([wa.cx+wa.rho*Math.cos(w), wa.cy+wa.rho*Math.sin(w)]); }
+        } else {
+          const rMitte = wa ? Math.max(rGreen+1, Math.min(Rk,Rn) - (Math.min(Rk,Rn)-rGreen)*(waistPct/100)*0.9) : Math.min(Rk,Rn);
+          const pc=pol(Math.max(rGreen+0.5, 2*rMitte-(Rk+Rn)/2), mid);
+          const N=60;
+          for(let i=0;i<=N;i++){ const t=i/N, u=1-t; T.push([u*u*p0[0]+2*u*t*pc[0]+t*t*p1[0], u*u*p0[1]+2*u*t*pc[1]+t*t*p1[1]]); }
+        }
+        T=polyVerdichten(T, 0.8, false);
+        // Aussen = vom Kegelmittelpunkt weg (in die Luecke zwischen den Armen).
+        const m=T[Math.floor(T.length/2)];
+        const dx0=T[Math.floor(T.length/2)+1][0]-m[0], dy0=T[Math.floor(T.length/2)+1][1]-m[1];
+        const sgn = (dy0*m[0]-dx0*m[1])>0 ? 1 : -1;
+        // Bis zum Rand: den Endabstand an beiden Armenden abziehen.
+        let a0=0, b0=T.length-1;
+        if(rfK.art==='rand'){
+          let s=0; while(a0<T.length-1 && s<rfK.e){ s+=Math.hypot(T[a0+1][0]-T[a0][0],T[a0+1][1]-T[a0][1]); a0++; }
+          s=0; while(b0>a0 && s<rfK.e){ s+=Math.hypot(T[b0][0]-T[b0-1][0],T[b0][1]-T[b0-1][1]); b0--; }
+        }
+        let r=null;
+        if(b0-a0>3 && rfK.art==='rand'){
+          // Bis zum Rand: die Schnittkante als EIN Bogen durch die beiden
+          // Austrittspunkte und den um die volle Breite versetzten
+          // Scheitel - ein sichelfoermiger Streifen ohne Wellen.
+          const L=T.slice(a0,b0+1), A=L[0], B=L[L.length-1], im=Math.floor(L.length/2);
+          const nx=sgn*(L[im+1][1]-L[im-1][1]), ny=-sgn*(L[im+1][0]-L[im-1][0]), nl=Math.hypot(nx,ny)||1;
+          const M=[L[im][0]+nx/nl*rfK.w, L[im][1]+ny/nl*rfK.w];
+          const kr=circleFrom3(A,M,B);
+          if(kr && kr.r<1e4){
+            const wa0=Math.atan2(A[1]-kr.cy,A[0]-kr.cx), wm=Math.atan2(M[1]-kr.cy,M[0]-kr.cx), wb=Math.atan2(B[1]-kr.cy,B[0]-kr.cx);
+            const norm=x=>{ while(x>Math.PI) x-=2*Math.PI; while(x<-Math.PI) x+=2*Math.PI; return x; };
+            let d1=norm(wm-wa0), d2=norm(wb-wm);
+            if(Math.sign(d1)!==Math.sign(d2)){ d2 = d2>0 ? d2-2*Math.PI : d2+2*Math.PI; }
+            const ges=d1+d2, N=Math.max(16, Math.ceil(Math.abs(ges)*kr.r/0.8));
+            const rotB=[]; for(let i=0;i<=N;i++){ const w=wa0+ges*i/N; rotB.push([kr.cx+kr.r*Math.cos(w), kr.cy+kr.r*Math.sin(w)]); }
+            r={rot:rotB, falz:L};
+          }
+        }
+        if(!r && b0-a0>3) r=randfalzAbschnitt(T.slice(a0,b0+1), rfK, sgn);
+        const neu = r ? T.slice(0,a0).concat(r.rot, T.slice(b0+1)) : T;
+        neu.forEach(q=>{ path+=` L ${f2(q[0])} ${f2(q[1])}`; });
+        if(r) randFalzK.push(r.falz);
+      } else if(Math.abs(Rk-Rn) < 0.2 && wa){
         path+=` A ${f2(wa.rho)} ${f2(wa.rho)} 0 0 0 ${P(Rn,aNextL)}`;
       } else {
         // Taillenradius wie beim gleichmaessigen Fall, aber als Bezierkurve
@@ -3793,14 +4418,14 @@ function coneSectorGroup(cg, Ruse, dx, label, forExport, isOuter){
     // Routine und behaelt dort sein schwarzes Mittelloch.
     centerHole=`<circle cx="0" cy="0" r="${holeR(holeD).toFixed(2)}" fill="none" stroke="#FF0000" stroke-width="0.4"/>`;
   }
-  const lbl=label?`<text x="0" y="${(-Ruse+5).toFixed(2)}" font-size="4" text-anchor="middle" fill="#8e44ad">${label}</text>`:'';
+  const lbl=label?`<text x="0" y="${(-Ruse+5).toFixed(2)}" font-size="4" text-anchor="middle" fill="#8e44ad">${schalenName(label)}</text>`:'';
   return `<g transform="translate(${dx},0)">
     <path d="${path}" fill="${forExport?'none':'#FAF9F6'}" stroke="#FF0000" stroke-width="0.4"/>
     <g fill="none" stroke="#000000" stroke-width="0.4">${holes}</g>
     <g fill="none" stroke="#FF00FF" stroke-width="0.5">${stab}</g>
     <g fill="none" stroke="#000000" stroke-width="0.4">${lockSlots}</g>
     <g fill="none" stroke="#000000" stroke-width="0.4">${weldTabs}</g>
-    ${foldLine}${weldLine}${centerHole}${lbl}</g>`;
+    ${foldLine}${weldLine}${centerHole}${lbl}${randFalzK.map(L=>`<path class="randfalz" d="M ${L.map(q=>f2(q[0])+' '+f2(q[1])).join(' L ')}" fill="none" stroke="#0000FF" stroke-width="0.5"/>`).join('')}</g>`;
 }
 
 function buildConeSVG(cg, forExport){
@@ -3849,6 +4474,10 @@ function computeREnd(ang){
   // Mitte. Frueher lief sin(180°) gegen 0 und rEnd ins Unendliche.
   const half=Math.min(minStep/2, 90)*Math.PI/180;
   const s=Math.sin(half);
+  // Gefalteter Randfalz (seit v342): die Knicklinien beruehren sich immer,
+  // unabhaengig vom Regler "Abstand Knicklinie" - auch je Knoten im Koerper.
+  if(minStep<180-0.01 && typeof sternRandfalzArt==='function' && sternRandfalzArt()==='gefaltet')
+    return (state.wid/2)/Math.tan(half);
   // Der Regler "Abstand Streben" gibt den Spalt zwischen benachbarten Armen an.
   // Abstand 0  -> rEnd 0 -> die blauen Knicklinien treffen sich im Mittelpunkt.
   // Groesserer Abstand schiebt die Knicklinien nach aussen, die Arme ruecken
@@ -4026,6 +4655,10 @@ function roundCorners(ring,radius,opt){
     const l1=Math.hypot(v1[0],v1[1]),l2=Math.hypot(v2[0],v2[1]);
     if(l1<1e-6||l2<1e-6){out.push([p1[0],p1[1]]);continue;}
     const isInner = p1[2]==='in';
+    if(opt && opt.konkavScharf){
+      const kz=(p1[0]-p0[0])*(p2[1]-p1[1]) - (p1[1]-p0[1])*(p2[0]-p1[0]);
+      if(area2>0 ? kz<0 : kz>0){ out.push([p1[0],p1[1]]); continue; }
+    }
     // spitzeMitte (Abstand Knicklinie 0): einspringende Ecken nahe der Mitte
     // bleiben scharf, weil dort gefaltet wird. Weiter aussen liegende
     // Innenecken zwischen breiten Armen werden normal gerundet.
@@ -4453,10 +5086,54 @@ function buildConnector(ang, rEnd){
   const rRound = Math.min(state.fil, state.wid*0.5, 6);
   const rings=[];
   const kh=kerfHalf();
-  union.forEach(poly=>poly.forEach(ring=>{
-    // Innenecken mit vollem Radius (bis zur Knicklinie), Armenden wie bisher
-    // hoechstens mit halber Armbreite.
-    let r=roundCorners(ring,rRound,{innerR: noRound?0:state.fil, rFold:rEnd, spitzeMitte:noRound});
+  // Gekruemmte Flaeche (seit v337): die Innenecken werden als grosse Taille
+  // bis an die Knicklinie gerundet, der Randfalz liegt darauf.
+  const rfS = (typeof randfalzStern==='function') ? randfalzStern() : null;
+  const falzS=[];
+  let falzStrecken=[];
+  // Gefalteter Randfalz (seit v338): Streifen an den Armseiten anfuegen.
+  if(rfS && rfS.art==='gefaltet' && typeof polygonClipping!=='undefined'){
+    const st=sternFalzStreifen(ang, rEnd, rfS.w);
+    // Alle Streifen auf einmal vereinigen; schlaegt das fehl, einzeln - und
+    // Faltlinien nur fuer Streifen, die wirklich dazugekommen sind.
+    const als=s=>[[s.poly.concat([s.poly[0]])]];
+    const snapU=mp=>mp.map(pl=>pl.map(r=>r.map(q=>[Math.round(q[0]*1e4)/1e4, Math.round(q[1]*1e4)/1e4])));
+    try{
+      union=polygonClipping.union(snapU(union), ...st.polys.map(als));
+      st.polys.forEach(s=>s.falz.forEach(f=>falzStrecken.push(f)));
+    }catch(e){
+      st.polys.forEach(s=>{ try{ union=polygonClipping.union(union, als(s)); s.falz.forEach(f=>falzStrecken.push(f)); }catch(e2){} });
+    }
+  }
+  const kurveS = rfS && rfS.art!=='gefaltet';
+  union.forEach(poly=>poly.forEach((ring,ri)=>{
+    let r;
+    if(kurveS && ri===0){
+      // Gekruemmt: zuerst nur die Innenecken runden (mindestens 1 mm), dann
+      // den Randfalz anlegen, zuletzt die Aussenecken runden - so bleibt das
+      // Armende ueber den Streifen hinweg gerade.
+      r=roundCorners(ring, 0, {innerR: noRound?0:Math.max(1, state.fil), rFold:rEnd, spitzeMitte:noRound});
+      const f=sternRandfalz(r, ang, rEnd, rfS, rRound);
+      if(f){ r=f.ring.concat([f.ring[0]]); f.falz.forEach(L=>falzS.push(L)); }
+      // Gerade Stuecke wieder zusammenfassen, damit die Aussenecken (Armenden,
+      // Streifenenden) mit dem vollen Eckenradius gerundet werden koennen.
+      // Einspringende Ecken (Spitze der Schnittkante in der Luecke) bleiben
+      // scharf, dort endet die Faltlinie.
+      r=roundCorners(polyEinfach(r, 0.004), rRound, {konkavScharf:true});
+    } else {
+      // Innenecken mit vollem Radius (bis zur Knicklinie), Armenden wie bisher
+      // hoechstens mit halber Armbreite. Beim gefalteten Randfalz bleiben die
+      // Innenecken scharf.
+      const gef = rfS && rfS.art==='gefaltet';
+      // Beim gefalteten Randfalz entsteht zwischen den Streifen zweier Arme
+      // eine kleine Luecke, wenn sich die Knicklinien nicht beruehren. Sie
+      // bleibt als scharfkantiger Freischnitt stehen (nicht gerundet).
+      // Kleine Luecken an den Innenecken gehoeren beim gefalteten Randfalz
+      // zum Material (die Streifen haengen zusammen) - nicht ausschneiden.
+      if(gef && ri>0) return;
+      r=roundCorners(ring,rRound,{innerR: (noRound||gef)?0:state.fil, rFold:rEnd, spitzeMitte:noRound, konkavScharf:gef});
+      if(gef && ri===0) sternFalzWinkel(ang, r).forEach(f=>falzStrecken.push(f));
+    }
     if(kh>0) r=offsetRing(r, kh);
     rings.push(r);
   }));
@@ -4554,7 +5231,11 @@ function buildConnector(ang, rEnd){
     if(ms) slots.push(ms);
   }
   const hw=state.wid/2;
-  const stab=ang.map(a=>[rot(-hw,rEnd,a-90),rot(hw,rEnd,a-90)]);
+  // Gekruemmte Flaeche: keine geraden Knicklinien, dafuer die Randfalz-
+  // Linien (als kurze Strecken - so zeichnen SVG, DXF und STL-Rinne sie mit).
+  const knick = ang.map(a=>[rot(-hw,rEnd,a-90),rot(hw,rEnd,a-90)]);
+  const stab = (rfS && rfS.art!=='gefaltet') ? [].concat(...falzS.map(polyAlsStrecken))
+             : knick.concat(falzStrecken);
   return {rEnd, rings, holes, slots, outer:rEnd+armLenMax(), stab};
 }
 
@@ -4635,7 +5316,7 @@ function connectorGroup(c, dx, label, forExport, radius){
   // Die Beschriftung sass frueher INNERHALB des Aussenradius und lag damit auf
   // dem nach oben zeigenden Arm. Sie steht jetzt knapp ueber der echten Kontur.
   const rLab=(radius!=null?radius:c.outer);
-  let lbl = label?`<text x="0" y="${(-rLab-1.5).toFixed(2)}" font-size="3.5" text-anchor="middle" fill="#8e44ad">${label}</text>`:'';
+  let lbl = label?`<text x="0" y="${(-rLab-1.5).toFixed(2)}" font-size="3.5" text-anchor="middle" fill="#8e44ad">${schalenName(label)}</text>`:'';
   return `<g transform="translate(${dx},0)">
     <path d="${cut}" fill="${forExport?'none':'#FAF9F6'}" stroke="#FF0000" stroke-width="0.4"/>
     <g fill="none" stroke="#000000" stroke-width="0.4">${holes}${centerHoleSVG()}</g>
@@ -4832,8 +5513,8 @@ function taillenWarnText(cg){
   if(isFinite(cg.rin) && rT < cg.rin-0.05){
     const fehlt=(cg.rin-rT);
     return EN
-      ? `Warning: the waist cuts ${fehlt.toFixed(1)} mm past the inner edge into the fold face. Reduce the waist depth or the centre hole.`
-      : `Achtung: Die Taille schneidet ${fehlt.toFixed(1)} mm über die Innenkante hinaus in die Knickfläche. Taillentiefe verringern oder Mittelloch verkleinern.`;
+      ? `Warning: the waist cuts ${fehlt.toFixed(1)} mm past the inner edge into the inner ring. Reduce the waist depth or the centre hole.`
+      : `Achtung: Die Taille schneidet ${fehlt.toFixed(1)} mm über die Innenkante hinaus in den Innenring. Taillentiefe verringern oder Mittelloch verkleinern.`;
   }
   // 2) Zwischen Taille und Mittelloch muss genug Material stehen bleiben.
   const lochD = cg.holeD || 0;
@@ -5389,6 +6070,15 @@ function ballExportRes(){ return stlQuality==='fein' ? 96 : 64; }
 // im Einzelmodus aus dem eigenen Regler.
 // ALLE vorkommenden Strebenlaengen, nach Laenge gruppiert. Frueher wurde nur
 // die erste Kante ausgewertet, dadurch fehlten alle abweichenden Laengen.
+// Wie weit die Strebe vom Knotenmittelpunkt entfernt endet. Loch: am Boden
+// der Bohrung (Armlaenge minus Bohrtiefe). Zapfen: das Rohr wird ueber den
+// Zapfen bis an den Kragen geschoben, endet also an der Armlaenge. Bis v334
+// galt immer die Lochrechnung, dadurch waren die Rohre um zwei Zapfenlaengen
+// zu lang (seit v335 korrigiert).
+function ballStrebenAbzug(o){
+  o=o||ballOpts();
+  return o.konstruktion==='zapfen' ? o.armLen : (o.armLen - o.depth);
+}
 function ballStrebenListe(){
   const o=ballOpts();
   if(mode==='body' && lastBody && lastBody.edges && lastBody.edges.length){
@@ -5396,7 +6086,7 @@ function ballStrebenListe(){
     lastBody.edges.forEach(e=>{
       const A=lastBody.verts[e[0]], B=lastBody.verts[e[1]];
       const kante=Math.hypot(A[0]-B[0],A[1]-B[1],A[2]-B[2]);
-      const L=Math.max(5, kante - 2*o.armLen + 2*o.depth);
+      const L=Math.max(5, kante - 2*ballStrebenAbzug(o));
       const k=L.toFixed(1);
       m[k]=(m[k]||0)+1;
     });
@@ -5488,9 +6178,10 @@ function renderBall3D(){
   const key='einzel|'+JSON.stringify([dirs, o]);
   let trisN=0;
   if(Knoti3D.verfuegbar()){
+    const stv=(()=>{ try{ return ballStrebenVorschau(); }catch(e){ return ''; } })();
     const bw=Math.max(260, Math.min(host.clientWidth-60, 820));
-    const bh=Math.max(260, Math.min(host.clientHeight-110, bw));
-    host.innerHTML=knotenKopf()+'<div id="gl3dSlot"></div>';
+    const bh=Math.max(260, Math.min(host.clientHeight-(stv?190:110), bw));
+    host.innerHTML=knotenKopf()+'<div id="gl3dSlot"></div>'+stv;
     Knoti3D.zeigen($('gl3dSlot'), {zellen:[{key, bauen:()=>buildBallAdapterSTL(dirs, {...o, res:56})}],
       spalten:1, zw:bw, zh:bh, farbe:GL_KNOTEN_FARBE, eigeneKamera:false, radZoom:true,
       nachBau:()=>{ try{ if(mode==='ball3d') ballInfoSetzen(Knoti3D.dreiecke(key)); }catch(e){} }});
@@ -5526,6 +6217,37 @@ function ballInfoSetzen(trisN){
 // WebGL-Fassung des Knotensatzes (seit v323): jeder Knotentyp in einer eigenen
 // Zelle, alle mit derselben, eigenen Kamera - der Satz dreht sich unabhaengig
 // vom Koerper und wird beim Drehen nicht neu berechnet.
+// Streben bzw. Rohre beim 3D-Knoten im Sichtfeld (seit v335): je Laenge ein
+// Stab mit Querschnitt und Stueckzahl, massstaeblich wie das Strebenblatt.
+function ballStrebenVorschau(){
+  const js=document.querySelector('#joinSeg .on');
+  if(js && js.dataset.v==='direct') return '';
+  try{ ballFaltHinweis(); }catch(e){}
+  if(ballFaltProfil()!=='flach'){
+    const EN0=(typeof curLang!=='undefined'&&curLang==='en');
+    return `<div class="sect-head"><span>${EN0?'Rods · cutting sheet':'Streben · Zuschnitt'}</span></div>`
+      + `<div class="sheet-fit">${ballFaltBlattSVG(false, false)}</div>`;
+  }
+  const o=ballOpts(), EN=(typeof curLang!=='undefined'&&curLang==='en');
+  const rohr=o.konstruktion==='zapfen', eckig=o.profil==='quadrat';
+  const H=eckig ? (o.rodH||o.rodDia) : o.rodDia;
+  const liste=ballStrebenListe();
+  const pad=4, zeile=H+9, head=6;
+  let g='', y=pad+head, Lmax=0;
+  liste.forEach((gr,i)=>{
+    Lmax=Math.max(Lmax, gr.len);
+    const quer = eckig ? `${(o.rodW||o.rodDia).toFixed(1)}×${H.toFixed(1)}` : `Ø${o.rodDia.toFixed(1)}`;
+    g+=`<rect x="${pad}" y="${y.toFixed(1)}" width="${gr.len.toFixed(1)}" height="${H.toFixed(1)}" rx="${eckig?0.4:(H/2).toFixed(2)}" fill="#FAF9F6" stroke="#1a2b22" stroke-width="0.4"/>`;
+    if(rohr) g+=`<line x1="${pad}" y1="${(y+H*0.2).toFixed(2)}" x2="${(pad+gr.len).toFixed(1)}" y2="${(y+H*0.2).toFixed(2)}" stroke="#1a2b22" stroke-width="0.2" stroke-dasharray="1 1"/>`
+               + `<line x1="${pad}" y1="${(y+H*0.8).toFixed(2)}" x2="${(pad+gr.len).toFixed(1)}" y2="${(y+H*0.8).toFixed(2)}" stroke="#1a2b22" stroke-width="0.2" stroke-dasharray="1 1"/>`;
+    g+=`<text x="${pad}" y="${(y-1.2).toFixed(1)}" font-size="3" fill="#00a3a3">${gr.len.toFixed(1)} mm · ${quer} · ${gr.count}×</text>`;
+    y+=zeile;
+  });
+  const W=Lmax+2*pad, Hv=y;
+  const titel = rohr ? (EN?'Tubes':'Rohre') : (EN?'Rods':'Streben');
+  return `<div class="sect-head"><span>${titel}</span></div><div class="sheet-fit">`
+    + `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W.toFixed(1)} ${Hv.toFixed(1)}" width="${(W*PX_PER_MM).toFixed(0)}">${g}</svg></div>`;
+}
 function knotenSatzGL(body){
   const o=ballOpts(), fo=flatOpts();
   const EN=(typeof curLang!=='undefined'&&curLang==='en');
@@ -5533,10 +6255,29 @@ function knotenSatzGL(body){
   body.nodes.forEach(nd=>{ counts[nd.label]=(counts[nd.label]||0)+1; if(!rep[nd.label]) rep[nd.label]=nd; });
   const grades=Object.keys(counts).sort();
   const nT=grades.length;
-  const resSet = nT>24 ? 24 : (nT>12 ? 30 : (nT>6 ? 36 : 44));
+  // Wenige Typen: so fein wie die Einzelansicht (seit v335, vorher 44 -
+  // der Knoten sah im Koerpermodus klumpig aus).
+  const resSet = nT>24 ? 24 : (nT>12 ? 30 : (nT>6 ? 40 : (nT>2 ? 48 : 56)));
   const MAXT=36;
+  // Nur fuer die Vorschau: den Knoten so drehen, dass seine Arme im Mittel
+  // zum Betrachter zeigen - dann sieht man in die Bohrungen statt auf die
+  // Rueckseite (seit v335). Export und Bauplan bleiben unveraendert.
+  const zumBetrachter=(dirs)=>{
+    const m=[0,0,0]; dirs.forEach(d=>{ m[0]+=d[0]; m[1]+=d[1]; m[2]+=d[2]; });
+    const lm=Math.hypot(m[0],m[1],m[2]); if(lm<0.35*dirs.length) return dirs;
+    const a=[m[0]/lm, m[1]/lm, m[2]/lm];
+    const s3=1/Math.sqrt(3), b=[s3*0.9, s3*1.25, s3*0.9]; const lb=Math.hypot(...b); b[0]/=lb; b[1]/=lb; b[2]/=lb;
+    const v=[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+    const cc=a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+    if(cc<-0.999) return dirs.map(d=>[-d[0], d[1], -d[2]]);
+    const k=1/(1+cc);
+    const R=[[cc+k*v[0]*v[0], -v[2]+k*v[0]*v[1], v[1]+k*v[0]*v[2]],
+             [v[2]+k*v[1]*v[0], cc+k*v[1]*v[1], -v[0]+k*v[1]*v[2]],
+             [-v[1]+k*v[2]*v[0], v[0]+k*v[2]*v[1], cc+k*v[2]*v[2]]];
+    return dirs.map(d=>[R[0][0]*d[0]+R[0][1]*d[1]+R[0][2]*d[2], R[1][0]*d[0]+R[1][1]*d[1]+R[1][2]*d[2], R[2][0]*d[0]+R[2][1]*d[1]+R[2][2]*d[2]]);
+  };
   const zellen=grades.slice(0,MAXT).map(lbl=>{
-    const nd=rep[lbl], dirs=nodeDirections(nd);
+    const nd=rep[lbl], dirs=zumBetrachter(nodeDirections(nd));
     const rund=dirs.map(d=>d.map(v=>Math.round(v*1e5)/1e5));
     return {key:'knoten|'+JSON.stringify([rund, o, fo, resSet, lbl]),
             bauen:()=>buildBallAdapterSTL(dirs, {...o, res:resSet, ...fo, label:lbl}),
@@ -5839,6 +6580,7 @@ function renderBody(){
         try{ html+=`<div class="sheet-fit">${bodyAdapterSheet(false)}</div>`; }catch(e){}
       }
     }
+    if(showVerb && adapterType3d){ try{ html+=ballStrebenVorschau(); }catch(e){} }
     $('svgHost').innerHTML=html;
     if(showVerb && adapterType3d && $('gl3dSlot')){ try{ knotenSatzGL(body); }catch(e){} }
     if(showVerb && !adapterType3d) strebenVorschau();
@@ -6717,6 +7459,7 @@ function render(){
   // Nach jedem Zeichnen die Hilfslinien nach hinten legen.
   try{ farbebenen(); }catch(e){}
   try{ if(typeof mehrBoxenAktualisieren==='function') mehrBoxenAktualisieren(); }catch(e){}
+  try{ schalenAbstandAnzeigen(); }catch(e){}
 }
 function renderIntern(){
   readState();
@@ -6833,7 +7576,7 @@ function einstellungLesen(){
     if(el.id && el.id!=='presetSel') st.listen[el.id]=el.value;
   });
   document.querySelectorAll('aside .seg').forEach(seg=>{
-    if(!seg.id) return;
+    if(!seg.id || seg.id==='langSeg') return;   // Sprache ist keine Einstellung
     // Mehrfachauswahl (Verbindung, Farben): ALLE aktiven Knoepfe merken.
     // Frueher nur den ersten - beim Zuruecksetzen blieben dadurch z. B.
     // Zapfen oder Haken eingeschaltet.
@@ -6851,6 +7594,7 @@ function einstellungSetzen(st){
   if(!st || (!st.felder && !st.segs)) return false;
   const segsSetzen=()=>{
     Object.entries(st.segs||{}).forEach(([id,v])=>{
+      if(id==='langSeg') return;      // die eigene Sprache bleibt (seit v335)
       const seg=document.getElementById(id); if(!seg) return;
       if(Array.isArray(v)){
         // Mehrfachauswahl genau so herstellen, wie sie gemerkt wurde.
@@ -7079,6 +7823,11 @@ function armLengthsForNode(nd, rEnd){
 }
 function bodyAdapterSheet(forExport){
   const body=lastBody; if(!body) return '';
+  // Steilste Armneigung (fuer den Hinweis zur gekruemmten Flaeche, seit v337).
+  try{ let fm=0; body.nodes.forEach(nd=>{ const sw=knotenSternWinkel(nd);
+      const v=(sw.falt&&sw.falt.length) ? Math.max(...sw.falt.map(Math.abs)) : Math.abs(nd.tilt||0);
+      if(isFinite(v)) fm=Math.max(fm,v); });
+    window.__faltMax=fm; }catch(e){}
   const adapterType = document.querySelector('#bodyAdapterSeg .on') ? document.querySelector('#bodyAdapterSeg .on').dataset.v : 'star';
 
   // --- FIX 1: Kegelecken-Variante exakt wie Einzeladapter-Kegelecke ---
@@ -7381,7 +8130,7 @@ function bodyAdapterSheet(forExport){
       const lp = rot(0, rLbl, a0-90);
       g+=`<text x="${lp[0].toFixed(2)}" y="${(lp[1]+1.4).toFixed(2)}" font-size="4" font-weight="bold" text-anchor="middle" fill="#8e44ad">${t.label}</text>`;
     }
-    if(t.sub) g+=`<text x="0" y="${(-t.outer+4).toFixed(2)}" font-size="2.6" text-anchor="middle" fill="#8e44ad">${t.sub}</text>`;
+    if(t.sub) g+=`<text x="0" y="${(-t.outer+4).toFixed(2)}" font-size="2.6" text-anchor="middle" fill="#8e44ad">${schalenName(t.sub)}</text>`;
     // Exakte Armwinkel: jeder Arm hat seinen eigenen Faltwinkel. Er steht
     // quer zum Arm direkt innen an der Knicklinie (bei sehr kleiner Mitte
     // aussen davor), in der Farbe der Zusatzinfos.
@@ -7439,18 +8188,31 @@ function bodyCutlist(){
   } else {
     txt+=`${EN?'Edge length (reference)':'Kantenlänge (Referenz)'} ${body.edgeLen} mm\n\n`;
   }
-  const rEndFor=nd=>knotenREnd(nd);
-  const lens=body.edges.map(([a,b])=>{
-    const dx=body.verts[a][0]-body.verts[b][0], dy=body.verts[a][1]-body.verts[b][1], dz=body.verts[a][2]-body.verts[b][2];
-    return Math.hypot(dx,dy,dz);
-  });
-  const groups={};
-  body.edges.forEach(([a,b],i)=>{
-    const rA=rEndFor(body.nodes[a]), rB=rEndFor(body.nodes[b]);
-    const cut=lens[i]-rA-rB;
-    const key=cut.toFixed(1);
-    (groups[key]=groups[key]||[]).push(`${(body.ids||body.labels)[a]}–${(body.ids||body.labels)[b]}`);
-  });
+  // Seit v335 aus strebenLaenge() - derselben Quelle wie das Strebenblatt.
+  // Vorher stand hier immer der Sternwert: beim Kegel, bei Zapfen und beim
+  // 3D-Knoten passte die Schnittliste nicht zu den Streben.
+  // Seit v343 steht zu jeder Strebenlaenge auch die Kantenlaenge (Mitte
+  // Knoten bis Mitte Knoten) - die gezeichnete Geometrie.
+  const kantenNach={};
+  const gruppenNach=(ohneZapfen)=>{
+    const gr={};
+    body.edges.forEach(([a,b])=>{
+      const s=strebenLaenge(a,b,ohneZapfen);
+      const key=(s?s.len:STREBE_MIN).toFixed(1);
+      (gr[key]=gr[key]||[]).push(`${(body.ids||body.labels)[a]}–${(body.ids||body.labels)[b]}`);
+      const A=body.verts[a], B=body.verts[b], K=Math.hypot(A[0]-B[0],A[1]-B[1],A[2]-B[2]);
+      const kk=(ohneZapfen?'h':'z')+key; const m=kantenNach[kk]||[Infinity,-Infinity];
+      kantenNach[kk]=[Math.min(m[0],K), Math.max(m[1],K)];
+    });
+    return gr;
+  };
+  const kanteTxt=(key,ohneZapfen)=>{ const m=kantenNach[(ohneZapfen?'h':'z')+key]; if(!m) return '';
+    const a=m[0].toFixed(1), b=m[1].toFixed(1);
+    return ` (${EN?'edge':'Kante'} ${a===b?a:a+'–'+b} mm)`; };
+  const getrenntL = typeof strebModus==='function' && strebModus()==='getrennt';
+  const ohneZ0 = getrenntL ? true : !(typeof zinkenAn==='function' && zinkenAn());
+  const groups=gruppenNach(ohneZ0);
+  const groupsZ=getrenntL ? gruppenNach(false) : null;
   const keys=Object.keys(groups).sort((x,y)=>+x-+y);
   // Bei "direkt gesteckt" gibt es keine Staebe -> stattdessen Verbindungsangaben.
   const directJoin = document.querySelector('#joinSeg .on')
@@ -7468,10 +8230,37 @@ function bodyCutlist(){
     }
     txt+=`  ${body.edges.length} ${EN?'edges at':'Kanten à'} ${body.edgeLen} mm\n`;
   } else {
-    txt+=`${EN?'RODS':'STREBEN'} (${body.edges.length} ${EN?'piece(s),':'Stück,'} ${keys.length} ${EN?'length(s)':'Länge'+(keys.length>1?'n':'')}):\n`;
+    const istBallL=(document.querySelector('#bodyAdapterSeg .on')||{dataset:{}}).dataset.v==='ball3d';
+    const kopfL = getrenntL ? (EN?'HOOK RODS':'HAKENSTREBEN')
+      : (istBallL && ballOpts().konstruktion==='zapfen') ? (EN?'TUBES':'ROHRE') : (EN?'RODS':'STREBEN');
+    txt+=`${kopfL} (${body.edges.length} ${EN?'piece(s),':'Stück,'} ${keys.length} ${EN?'length(s)':'Länge'+(keys.length>1?'n':'')}):\n`;
     keys.forEach(k=>{
-      txt+=`  ${k} mm × ${groups[k].length} ${EN?'piece(s)':'Stück'}: ${groups[k].join(', ')}\n`;
+      txt+=`  ${k} mm × ${groups[k].length} ${EN?'piece(s)':'Stück'}${kanteTxt(k,ohneZ0)}: ${groups[k].join(', ')}\n`;
     });
+    txt+= EN ? `  (Edge = centre of node to centre of node, as in the model. Rod = edge minus the part inside the two nodes.)\n`
+             : `  (Kante = Mitte Knoten bis Mitte Knoten, wie im Modell. Strebe = Kante minus der Teil, der in den beiden Knoten steckt.)\n`;
+    if(groupsZ){
+      const kz=Object.keys(groupsZ).sort((x,y)=>+x-+y);
+      txt+=`${EN?'TAB RODS':'ZAPFENSTREBEN'} (${body.edges.length} ${EN?'piece(s),':'Stück,'} ${kz.length} ${EN?'length(s)':'Länge'+(kz.length>1?'n':'')}):\n`;
+      kz.forEach(k=>{ txt+=`  ${k} mm × ${groupsZ[k].length} ${EN?'piece(s)':'Stück'}${kanteTxt(k,false)}: ${groupsZ[k].join(', ')}\n`; });
+    }
+    if(istBallL && ballFaltProfil()!=='flach'){
+      const q=ballFaltQuerschnitt();
+      const nm={dreieck:EN?'triangle':'Dreieck', Q:EN?'square':'Vierkant', O:EN?'round':'rund'}[q.art];
+      const vs = profilVerschluss()==='steck'
+        ? (EN?`push-fit, ${profilZahnAnzahl()} teeth`:`steckbar, ${profilZahnAnzahl()} Zähne`)
+        : (EN?`glue tab ${profilLasche()} mm`:`Klebelasche ${profilLasche()} mm`);
+      txt+= EN ? `  Folded from sheet (${profilFaltDicke()} mm): ${nm}, ${q.mass} on the centre line, ${vs}. Cutting sheet: export "Rods 2D (SVG)".\n`
+               : `  Aus Blatt gefaltet (${profilFaltDicke()} mm): ${nm}, ${q.mass} auf der Mittellinie, ${vs}. Zuschnitt: Export "Streben 2D (SVG)".\n`;
+    } else if(istBallL){
+      const o=ballOpts();
+      const prof = o.profil==='quadrat' ? `${(o.rodW||o.rodDia).toFixed(1)}×${(o.rodH||o.rodDia).toFixed(1)} mm` : `Ø ${o.rodDia.toFixed(1)} mm`;
+      txt+= o.konstruktion==='zapfen'
+        ? (EN ? `  Tubes with inner size ${prof}, pushed over the pegs up to the collar.\n`
+              : `  Rohre mit Innenmaß ${prof}, bis an den Kragen über die Zapfen geschoben.\n`)
+        : (EN ? `  Rods ${prof}, inserted ${o.depth.toFixed(1)} mm deep into each node.\n`
+              : `  Streben ${prof}, je ${o.depth.toFixed(1).replace('.',',')} mm tief in den Knoten gesteckt.\n`);
+    }
     // Haken + Zapfen gemeinsam: das Strebenblatt enthaelt dann zwei
     // vollstaendige Saetze, die Zapfen-Streben mit eigener Laenge.
     if(typeof strebModus==='function' && strebModus()==='getrennt'){
@@ -7603,8 +8392,9 @@ function typeIconSVG(typ, x, y, groesse){
 function strebenMassText(){
   const s=window.__strebenS;
   if(!s) return 'Auf A4 eingepasst.';
-  if(s>=0.999) return 'Streben maßstäblich 1:1.';
-  return 'Streben maßstäblich 1:'+(1/s).toFixed(1).replace('.',',')+'.';
+  const EN=(typeof curLang!=='undefined'&&curLang==='en');
+  if(s>=0.999) return EN ? 'Rods to scale 1:1.' : 'Streben maßstäblich 1:1.';
+  return EN ? 'Rods to scale 1:'+(1/s).toFixed(1)+'.' : 'Streben maßstäblich 1:'+(1/s).toFixed(1).replace('.',',')+'.';
 }
 function strebenMassstab(maxLen){
   const verfuegbar = 78;                 // mm in der rechten Spalte
@@ -7614,7 +8404,7 @@ function strebenMassstab(maxLen){
 }
 function buildBauplanSVG(forExport){
   const EN=(typeof curLang!=='undefined'&&curLang==='en');
-  const body=lastBody; if(!body) return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297"><text x="10" y="20" font-size="6">Kein Körper geladen</text></svg>`;
+  const body=lastBody; if(!body) return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297"><text x="10" y="20" font-size="6">${(typeof curLang!=='undefined'&&curLang==='en')?'No body loaded':'Kein Körper geladen'}</text></svg>`;
   const A4W=210, A4H=297, M=12;            // A4 + Rand in mm
   const title=$('bodySel').selectedOptions[0].text;
 
@@ -7626,11 +8416,12 @@ function buildBauplanSVG(forExport){
   armKeys.forEach((k,gi)=>{ nodeColor[k]=colorFor(gi); });
 
   // --- Streben gruppieren nach Länge, Farbe je Gruppe ---
-  const rEndFor=nd=>knotenREnd(nd);
   const stabGroups={};   // lenKey -> {count, edges:[[a,b]]}
+  const ohneZB=!(typeof zinkenAn==='function' && zinkenAn());
   body.edges.forEach(([a,b])=>{
-    const dx=body.verts[a][0]-body.verts[b][0],dy=body.verts[a][1]-body.verts[b][1],dz=body.verts[a][2]-body.verts[b][2];
-    const L=Math.hypot(dx,dy,dz)-rEndFor(body.nodes[a])-rEndFor(body.nodes[b]);
+    // Seit v335 dieselbe Laenge wie Strebenblatt und Schnittliste.
+    const s=strebenLaenge(a,b,ohneZB);
+    const L=s?s.len:STREBE_MIN;
     const key=L.toFixed(1);
     if(!stabGroups[key]) stabGroups[key]={count:0,color:null,edges:[]};
     stabGroups[key].count++; stabGroups[key].edges.push([a,b]);
@@ -7760,14 +8551,14 @@ function buildBauplanSVG(forExport){
   let stabTitle, stabItems;
   if(directJoin){
     const ovl = joinOverlapInfo && joinOverlapInfo.overlap>0.05;
-    stabTitle='Verbindung';
+    stabTitle=EN?'Connection':'Verbindung';
     const lines=[
-      'direkt gesteckt (keine Streben)',
-      `Kante ${body.edgeLen} mm · ${body.edges.length}×`,
-      `Armlänge ${state.len} mm`,
-      ovl ? `überlappend ${joinOverlapInfo.overlap.toFixed(1)} mm` : 'mittig stoßend',
+      EN?'plugged directly (no rods)':'direkt gesteckt (keine Streben)',
+      `${EN?'Edge':'Kante'} ${body.edgeLen} mm · ${body.edges.length}×`,
+      `${EN?'Arm length':'Armlänge'} ${state.len} mm`,
+      ovl ? `${EN?'overlapping':'überlappend'} ${joinOverlapInfo.overlap.toFixed(1)} mm` : (EN?'butting in the middle':'mittig stoßend'),
     ];
-    if(ovl) lines.push(`${joinOverlapInfo.pairs||0} Löcher deckungsgleich`);
+    if(ovl) lines.push(`${joinOverlapInfo.pairs||0} ${EN?'holes aligned':'Löcher deckungsgleich'}`);
     stabItems=lines.map(t=>({text:t, plain:true}));
   } else {
     stabTitle=`${EN?'Rods':'Streben'} (${body.edges.length}) · ${artenTxt}`;
@@ -7789,7 +8580,7 @@ function buildBauplanSVG(forExport){
               dy=body.verts[a][1]-body.verts[b][1],
               dz=body.verts[a][2]-body.verts[b][2];
         const kante=Math.hypot(dx,dy,dz);
-        const L=kante-2*o.armLen+2*o.depth;
+        const L=Math.max(5, kante-2*ballStrebenAbzug(o));   // seit v335 auch fuer Rohre richtig
         const key=L.toFixed(1);
         grp[key]=(grp[key]||0)+1;
       });
@@ -7800,9 +8591,17 @@ function buildBauplanSVG(forExport){
         text:`${k} mm · ${grp[k]}×`,
         barLen:(+k)*strebenMassstab(maxL)
       }));
-      stabItems.push({plain:true, text:`${EN?'Rod Ø':'Strebe Ø'} ${o.rodDia.toFixed(1)} mm`});
-      stabItems.push({plain:true, text:`${EN?'Insertion depth':'Stecktiefe'} ${o.depth.toFixed(1)} mm ${EN?'each side':'je Seite'}`});
-      stabItems.push({plain:true, text:`(${EN?'length':'Länge'} = ${EN?'edge':'Kante'} − 2×${o.armLen.toFixed(0)} + 2×${o.depth.toFixed(0)})`});
+      const rohr=o.konstruktion==='zapfen';
+      const quer = o.profil==='quadrat' ? `${(o.rodW||o.rodDia).toFixed(1)}×${(o.rodH||o.rodDia).toFixed(1)} mm` : `Ø ${o.rodDia.toFixed(1)} mm`;
+      if(rohr){
+        stabItems.push({plain:true, text:`${EN?'Tube, inner size':'Rohr, Innenmaß'} ${quer}`});
+        stabItems.push({plain:true, text:`${EN?'pushed over the peg up to the collar':'über den Zapfen bis an den Kragen'}`});
+        stabItems.push({plain:true, text:`(${EN?'length':'Länge'} = ${EN?'edge':'Kante'} − 2×${o.armLen.toFixed(0)})`});
+      } else {
+        stabItems.push({plain:true, text:`${EN?'Rod':'Strebe'} ${quer}`});
+        stabItems.push({plain:true, text:`${EN?'Insertion depth':'Stecktiefe'} ${o.depth.toFixed(1)} mm ${EN?'each side':'je Seite'}`});
+        stabItems.push({plain:true, text:`(${EN?'length':'Länge'} = ${EN?'edge':'Kante'} − 2×${o.armLen.toFixed(0)} + 2×${o.depth.toFixed(0)})`});
+      }
     } else {
       const maxLen=Math.max(...stabKeys.map(Number));
       stabItems=stabKeys.map((k,gi)=>{
@@ -8044,6 +8843,8 @@ function strebenEndRadius(nd){
   const seg=document.querySelector('#bodyAdapterSeg .on');
   const istKegel = seg && seg.dataset.v==='cone';
   if(istKegel && cg && isFinite(cg.rin)) return cg.rin;
+  // 3D-Knoten: Boden der Bohrung bzw. Ende des Kragens (seit v335).
+  if(seg && seg.dataset.v==='ball3d') return ballStrebenAbzug();
   // Dieselben Armwinkel wie beim Zuschnitt dieses Knotens - frueher wurden
   // hier gleichmaessige Winkel angenommen; an unregelmaessigen Knoten (Kuppel-
   // rand, Prisma) lag die Knicklinie dadurch anders als auf dem Teil.
@@ -8060,7 +8861,8 @@ function strebenLaenge(ia, ib, ohneZapfen){
   // auch die Strebe. Damit die Kantenlaenge stimmt, wird sie um das Doppelte
   // dieser Verschiebung angepasst - mit DEMSELBEN Abstand, den der Verbinder
   // benutzt (zapfenAbstandEff), sonst laufen Schlitz und Strebe auseinander.
-  if(!ohneZapfen && typeof zinkenAn==='function' && zinkenAn()){
+  const istBall=(document.querySelector('#bodyAdapterSeg .on')||{dataset:{}}).dataset.v==='ball3d';
+  if(!ohneZapfen && !istBall && typeof zinkenAn==='function' && zinkenAn()){
     const soll=(typeof armLenMin==='function') ? armLenMin() : 0;
     const ist=(typeof zapfenAbstandEff==='function') ? zapfenAbstandEff()
             : ((typeof zapfenAbstand==='function') ? zapfenAbstand() : soll);
@@ -8123,6 +8925,7 @@ function buildStaebeSVG(forExport){
   // um genau diesen Betrag zum Strebenende hin wandern (seit v326; vorher
   // lagen sie bei Zapfen um diesen Betrag daneben).
   const offsetsBasis = offsets.slice();
+  let aufG=null;               // Auflage der aktuellen Gruppe (je Arm), sonst null
   const versatzZ = zapfenStrebenVersatz();
   const offsetsZapfen = offsetsBasis.map(o=>o-versatzZ).filter(o=>o>0.5);
   // Farbebenen: Knotenbuchstaben (bleiben) vs Zusatzinfo (kann weggelassen werden)
@@ -8169,7 +8972,32 @@ function buildStaebeSVG(forExport){
     }));
   } else {
     const cnt = isCone ? (lastCone?lastCone.arms:1) : (lastGeom?lastGeom.ang.length:1);
-    groupsArr=[{len: state.stab, label:((typeof curLang!=='undefined'&&curLang==='en')?'Rod':'Strebe'), items:Array.from({length:cnt},()=>({from:'',to:''}))}];
+    const ENg=(typeof curLang!=='undefined'&&curLang==='en');
+    // Seit v343: unterschiedliche Strebenlaengen und/oder Armlaengen je Arm.
+    // Jede Strebe bekommt dann die Loecher passend zu IHREM Arm.
+    const lensS = strebenLaengenJeArm(cnt);
+    const armL = isCone ? ((CG && Array.isArray(CG.armLens) && CG.armLens.length) ? CG.armLens : null)
+                        : ((Array.isArray(state.lens) && state.lens.length) ? state.lens : null);
+    const armUngleich = armL && armL.some(x=>Math.abs(x-armL[0])>0.05);
+    if(lensS || armUngleich){
+      const nH=isCone ? (CG.holesPer||0) : nHoles;
+      const gr={};
+      for(let i=0;i<cnt;i++){
+        const len = lensS ? lensS[i] : state.stab;
+        const auf = armUngleich ? armL[i%armL.length] : auflage;
+        let offs;
+        if(!armUngleich) offs=offsetsBasis.slice();
+        else if(isCone) offs = Array.from({length:nH},(_,k)=>auf*(nH-k)/(nH+1)).sort((a,b)=>a-b);
+        else offs = (nH>0) ? holeDistances(auf, nH, armStartAt(i)) : [];
+        const key=len.toFixed(1)+'|'+auf.toFixed(1)+'|'+offs.map(o=>o.toFixed(2)).join(',');
+        if(!gr[key]) gr[key]={len, offsets:offs, auflage:auf, items:[]};
+        gr[key].items.push({from:'S'+(i+1), to:'S'+(i+1)});
+      }
+      groupsArr=Object.values(gr).sort((a,b)=>a.len-b.len||a.auflage-b.auflage).map(g=>({...g,
+        label:`${ENg?'Rod':'Strebe'} ${g.items.map(x=>x.from).join(', ')}`}));
+    } else {
+      groupsArr=[{len: state.stab, label:(ENg?'Rod':'Strebe'), items:Array.from({length:cnt},()=>({from:'',to:''}))}];
+    }
   }
   return groupsArr;
   };
@@ -8242,7 +9070,7 @@ function buildStaebeSVG(forExport){
   };
   // Hakenstellen ab Strebenende; 'versatz' verschiebt sie zum Ende hin.
   const hakenStellen=(L, versatz)=>{
-    const aufH = (isCone && CG) ? (CG.Rinner-CG.rin) : auflage;
+    const aufH = (aufG!=null) ? aufG : ((isCone && CG) ? (CG.Rinner-CG.rin) : auflage);
     const jsH2=document.querySelector('#joinSeg .on');
     const jmH2=document.querySelector('#joinModeSeg .on');
     const uebH2 = jsH2 && jsH2.dataset.v==='direct' && jmH2 && jmH2.dataset.v==='overlap';
@@ -8317,6 +9145,9 @@ function buildStaebeSVG(forExport){
   const profilE = profilAbstand();
   if(ohneStreben0) groups=[];
   groups.forEach(g=>{
+    // Eigene Loecher/Auflage je Gruppe (Armlaengen je Arm, seit v343).
+    if(g.offsets){ offsets = vZapfen ? g.offsets.map(o=>o-versatzZ).filter(o=>o>0.5) : g.offsets; aufG=g.auflage; }
+    else { offsets = vZapfen ? offsetsZapfen : offsetsBasis; aufG=null; }
     const cy=breite/2;
     const stabLeft=colX;
     let y=padT+headH;
@@ -8377,7 +9208,7 @@ function buildStaebeSVG(forExport){
         // Nasenlaenge = Schlitzlaenge, aber hoechstens so viel, dass sich
         // benachbarte Haken nicht ueberschneiden.
         // Exakt dieselbe Laenge wie der Schlitz im Verbinder.
-        const armRef = (isCone && lastCone) ? (lastCone.Rinner-lastCone.rin) : auflage;
+        const armRef = (aufG!=null) ? aufG : ((isCone && lastCone) ? (lastCone.Rinner-lastCone.rin) : auflage);
         const hl=hakenLaengeEff(armRef);
         // Steg und Ueberstand teilen die Nasenlaenge nach dem Regler auf.
         const nw=hl*(1-hakenNaseAnteil());
@@ -8461,7 +9292,7 @@ function buildStaebeSVG(forExport){
         // UND Strebe auf (Materialstaerke Knoten + Materialstaerke Streben).
         let zackK={oben:[], unten:[]};
         if(vKombi){
-          const armRefK = (isCone && lastCone) ? (lastCone.Rinner-lastCone.rin) : auflage;
+          const armRefK = (aufG!=null) ? aufG : ((isCone && lastCone) ? (lastCone.Rinner-lastCone.rin) : auflage);
           const hlK=hakenLaengeEff(armRefK);
           const nwK=hlK*(1-hakenNaseAnteil());
           const hdK=Math.max(spaltKombi+0.8, hakenHoeheMM());
@@ -8514,7 +9345,7 @@ function buildStaebeSVG(forExport){
         const frei=x=> bohrX.every(bx=>Math.abs(bx-x) > (t/2+rH+1.2));
         // Der Schlitz im Verbinder sitzt zapfenAbstand vom ARMENDE entfernt.
         // Vom Strebenende aus gemessen ist das die Auflage minus dieser Wert.
-        let dS=zapfenSchlitzPos(auflage, bohrX.filter(x=>x<L/2), t, rH);
+        let dS=zapfenSchlitzPos((aufG!=null)?aufG:auflage, bohrX.filter(x=>x<L/2), t, rH);
         // Der Schlitz wird immer gezeichnet; eine Ueberschneidung mit einer
         // Bohrung wird nur gemeldet, damit er nicht kommentarlos fehlt.
         [dS, L-dS].forEach(xs=>{
@@ -8837,6 +9668,7 @@ function buildStaebeSVG(forExport){
   });
   presetListe();
   const p=presetsLesen(), n=Object.keys(p).length;
+  // (Englisch setzt der Start-Handler, der die gemerkte Sprache anwendet.)
   presetHinweis(n ? `${n} gemerkt${p[PRESET_LETZT]?', „letzter Stand“ dabei':''}.`
                   : 'Noch nichts gemerkt.');
   { const v=document.getElementById('versionTxt'); if(v) v.textContent='v'+KNOTI_VERSION; }
@@ -9009,6 +9841,7 @@ function updateBodyAdapterVis(){
   // 3D-Adapter-Regler (Kragen, Bohrung, Armlaenge, Bohrtiefe) auch im Koerper
   // anbieten. Arme/Winkel entfallen, da sie aus der Koerpergeometrie kommen.
   if($('ball3dControls')) $('ball3dControls').style.display = ball?'block':'none';
+  if($('ball3dRodControls')) $('ball3dRodControls').style.display = ball?'block':'none';
   if(ball){
     // Im Koerpermodus kommen die Armzahl UND alle Winkel aus der Koerper-
     // geometrie. Deshalb saemtliche Winkel-Eingaben ausblenden.
@@ -9394,7 +10227,7 @@ function sectionsInit(){
     });
   });
   // Start: selten geaenderte Abschnitte zu, der Rest offen.
-  aside.dataset.collapsed='ausgabe';
+  aside.dataset.collapsed='ausgabe falz';
   aside.querySelectorAll('.sect').forEach(hd=>{
     hd.classList.toggle('closed', closedList().indexOf(hd.dataset.sect)>=0);
   });
@@ -9441,6 +10274,9 @@ function updateSectionHeads(){
   });
   // ... und die uebrigen fortlaufend weiternummerieren: davor stehen in beiden
   // Modi 2 Schritte (Was bauen, Verbindertyp inkl. Verbindung).
+  // Ist der hervorgehobene Abschnitt jetzt ausgeblendet, zurueck zur Knotenform.
+  { const akt=aside.querySelector('.sect.aktiv, label.steplab.aktiv');
+    if(typeof abschnittAktiv==='function' && (!akt || akt.style.display==='none')) setTimeout(()=>abschnittAktiv(akt),0); }
   let n = 3;
   sichtbar.forEach(hd=>{
     const sp=hd.querySelector('.stepno');
@@ -9485,7 +10321,7 @@ function updateMovedGroupVis(){
   const koerperKegel = (bodySub==='cone');
   // Stern-Regler: beim Kegel und beim 3D-Knoten gegenstandslos.
   ['grpCenter','grpStab'].forEach(id=>{
-    if($(id)) $(id).style.display = (coneNow||ballNow)?'none':'block';
+    if($(id)) $(id).style.display = (coneNow||(ballNow&&id==='grpCenter'))?'none':'block';
   });
   if($('grpHd')) $('grpHd').style.display = ballNow?'none':'block';
   // "Löcher pro Arm" gilt jetzt fuer Stern UND Kegel - dieselbe Groesse hiess
@@ -9508,8 +10344,15 @@ function updateMovedGroupVis(){
   // seinen Stand, wenn man zum Einzelverbinder zurueckwechselt.
   const jsS=document.querySelector('#joinSeg .on');
   const mitStreben = mode!=='body' || !(jsS && jsS.dataset.v==='direct');
+  const jsB=document.querySelector('#joinSeg .on');
+  const ballOhne = ballNow && jsB && jsB.dataset.v==='direct';
   if($('grpStab')) $('grpStab').style.display =
-    (mode==='body'||ballNow||!mitStreben) ? 'none' : 'block';
+    (mode==='body'||coneNow||ballOhne||!mitStreben) ? 'none' : 'block';
+  // Strebenlaengen je Arm (seit v343): nur Einzelknoten Stern/Kegel.
+  if($('grpStabLen')) $('grpStabLen').style.display =
+    ((mode==='single'||mode==='cone') && mitStreben) ? '' : 'none';
+  { const sb=document.querySelector('#stabLenSeg .on');
+    if($('stabLensWrap')) $('stabLensWrap').style.display = (sb && sb.dataset.v==='custom') ? '' : 'none'; }
   // Abschnittskoepfe erst NACH dieser Sichtbarkeit neu bewerten.
   if(typeof updateSectionHeads==='function') updateSectionHeads();
 }
@@ -9571,6 +10414,7 @@ function applyMode(){
   $('bodyControls').style.display = (mode==='body')?'block':'none';
   $('coneControls').style.display = (mode==='cone')?'block':'none';
   $('ball3dControls').style.display = (mode==='ball3d')?'block':'none';
+  if($('ball3dRodControls')) $('ball3dRodControls').style.display = (mode==='ball3d')?'block':'none';
   if(mode==='ball3d' && typeof updateBallAngleWrap==='function') updateBallAngleWrap();
   $('starControls').style.display = (mode==='cone'||mode==='ball3d')?'none':'block';
   // Armbreite, Eckenabrundung und Bauart werden nur von updateBodyAdapterVis()
@@ -9597,7 +10441,8 @@ function applyMode(){
   $('grpArms').style.display = (inBody||inBall)?'none':'block';
   if(!inBody && !inBall) $('grpGap').style.display='block';
   $('grpVerteilung').style.display = (inBody||inBall)?'none':'block';
-  $('grpStab').style.display = (inBody||inBall)?'none':'block';
+  { const jsC=document.querySelector('#joinSeg .on');
+    $('grpStab').style.display = (inBody || (inBall && jsC && jsC.dataset.v==='direct'))?'none':'block'; }
   if(inBody) $('customWrap').style.display='none';
   if($('grpTilt')) $('grpTilt').style.display = (inBody||inBall)?'none':'block';
   if($('grpKerf')) $('grpKerf').style.display = inBall?'none':'block';
@@ -9887,7 +10732,12 @@ function coneShellToGeometry(sectorSVG, dx){
   const tmp=document.createElement('div');
   tmp.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg">${sectorSVG}</svg>`;
   const g=tmp.querySelector('g');
-  const out={rings:[], holes:[], foldCircles:[]};
+  const out={rings:[], holes:[], foldCircles:[], foldLines:[]};
+  // Randfalz-Linien (seit v337) als gerade Stuecke fuer die Rinne.
+  g.querySelectorAll('path.randfalz').forEach(pf=>{
+    const z=(pf.getAttribute('d')||'').replace(/[ML]/g,' ').trim().split(/\s+/).map(Number);
+    for(let i=0;i+3<z.length;i+=2) out.foldLines.push({x1:z[i]-dx, y1:z[i+1], x2:z[i+2]-dx, y2:z[i+3]});
+  });
   // Aussenkontur = erster path mit rotem Stroke
   const conturePath=[...g.querySelectorAll('path')].find(p=>(p.getAttribute('stroke')||'').toUpperCase()==='#FF0000');
   if(conturePath){ out.rings.push(pathToPolygon(conturePath.getAttribute('d'), dx)); }
@@ -9931,6 +10781,7 @@ function currentAdapterGeometry(){
     const gi=coneShellToGeometry(innerSVG, 0);
     gi.rings.forEach(r=>out.rings.push(r));
     gi.holes.forEach(h=>out.holes.push(h));
+    (gi.foldLines||[]).forEach(f=>out.foldLines.push(f));
     // Rille nur, wenn eine Knickflaeche/Falz gewaehlt ist. Sie laeuft rund
     // entlang der pinken Faltlinie bei rGreen = R - zoneLen.
     if(cg.foldFace) out.foldCircles.push({cx:0,cy:0,r:R-zoneLen});
@@ -10693,17 +11544,25 @@ function updateLockOpt(){
     labelSetzen('nStrebB', getr ? 'Breite Hakenstreben ' : 'Breite Streben ');
     // Strebenprofil nur, wo es (noch) sinnvoll ist.
     if($('grpProfil')) $('grpProfil').style.display = strebProfilMoeglich() ? '' : 'none';
+    // Box "Weitere Einstellungen" der Streben gleich mitfuehren (seit v335),
+    // sonst bleibt sie leer stehen, wenn das Profil gerade wegfaellt.
+    if(typeof mehrBoxenAktualisieren==='function') mehrBoxenAktualisieren();
     { // Nur Hakenstreben (ohne Loecher/Zapfen): Dreieck und rund ausblenden.
       // Doppellage: nur L, Vierkant und rund (seit v334).
-      const nurHaken = hakenAn() && !zinkenAn();
-      const dop = profilDoppel();
-      const weg = nurHaken ? ['dreieck','Q','O'] : dop ? ['U','dreieck'] : [];
-      ['U','dreieck','Q','O'].forEach(v=>{ const bt=document.querySelector(`#profilSeg button[data-v="${v}"]`);
+      const ball = istBallJetzt();
+      const ballEckig = ball && (typeof ballProfil==='function') && ballProfil()==='quadrat';
+      const nurHaken = !ball && hakenAn() && !zinkenAn();
+      const dop = !ball && profilDoppel();
+      const weg = ball ? (ballEckig ? ['L','U','dreieck','O'] : ['L','U'])
+                : nurHaken ? ['dreieck','Q','O'] : dop ? ['U','dreieck'] : [];
+      ['L','U','dreieck','Q','O'].forEach(v=>{ const bt=document.querySelector(`#profilSeg button[data-v="${v}"]`);
         if(bt){ const aus=weg.includes(v); bt.style.display = aus ? 'none' : '';
           if(aus && bt.classList.contains('on')){ bt.classList.remove('on');
             const fl=document.querySelector('#profilSeg button[data-v="flach"]'); if(fl) fl.classList.add('on'); } } });
-      if($('profilAbWrap')) $('profilAbWrap').style.display = dop ? 'none' : '';
-      if($('profilWinkelWrap')) $('profilWinkelWrap').style.display = dop ? 'none' : '';
+      if($('profilAbWrap')) $('profilAbWrap').style.display = (dop||ball) ? 'none' : '';
+      if($('profilWinkelWrap')) $('profilWinkelWrap').style.display = (dop||ball) ? 'none' : '';
+      if($('profilHWrap')) $('profilHWrap').style.display = ball ? 'none' : '';
+      if($('profilFaltTWrap')) $('profilFaltTWrap').style.display = ball ? '' : 'none';
       const art=(document.querySelector('#profilSeg .on')||{dataset:{}}).dataset.v||'flach';
       const zu=(art==='dreieck'||art==='O'||art==='Q'), st=profilVerschluss()==='steck';
       const hU = hakenProfil()==='U' && nurHaken;
@@ -10728,6 +11587,7 @@ function updateLockOpt(){
                          : ` Doppellage: die Profilhöhe (${profilDoppelHoehe()} mm) bestimmt den Schalenabstand, das Profil läuft rechtwinklig über die ganze Länge.`;
         if(hakenAn() && zinkenAn() && (art==='dreieck'||art==='O'||art==='Q'))
           hk += EN ? ' Hook rods stay flat (only L and U).' : ' Hakenstreben bleiben flach (nur L und U).';
+        if(ball){ ballFaltHinweis(); } else
         hw.textContent = (EN ? (hU?'Web width 0 = automatic.':'Profile height 0 = automatic.') : (hU?'Stegbreite 0 = automatisch.':'Profilhöhe 0 = automatisch.'))
           + hk
           + (aufl ? (EN ? ` Bearing on the arm: ${aufl} mm.` : ` Auflage auf dem Arm: ${aufl} mm.`) : '')
@@ -10759,12 +11619,40 @@ function zapfenStrebenAnzeigen(){
     const v=matArme(); $('nMatArmZ').value=v; $('matArmZ').value=Math.max(+$('matArmZ').min, Math.min(+$('matArmZ').max, v));
   }
 }
+document.querySelectorAll('.schalenAbstandFeld').forEach(f=>{
+  f.addEventListener('change',()=>{ const v=parseFloat(f.value); if(isFinite(v)) schalenAbstandSetzen(v); });
+});
+document.querySelectorAll('#stabLenSeg button').forEach(b=>b.addEventListener('click',()=>{
+  b.parentNode.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  const t=$('stabLens');
+  if(t && b.dataset.v==='custom' && !t.value.trim()){
+    const n=(mode==='cone'&&lastCone)?lastCone.arms:(lastGeom?lastGeom.ang.length:3);
+    t.value=Array.from({length:n},()=>state.stab).join(',');
+  }
+  if(typeof updateMovedGroupVis==='function') updateMovedGroupVis();
+  render();
+}));
+if($('stabLens')) $('stabLens').addEventListener('input',()=>render());
+document.querySelectorAll('#knickArtSeg button, #randfalzSeg button, #randfalzSternSeg button').forEach(b=>b.addEventListener('click',()=>{
+  b.parentNode.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  if(typeof updateSectionHeads==='function') updateSectionHeads();
+  render();
+  try{ randfalzPlatzieren(); }catch(e){}
+}));
+[['randfalzW','nRandfalzW'],['randfalzE','nRandfalzE']].forEach(([sid,nid])=>{
+  const sl=$(sid), nf=$(nid); if(!sl||!nf) return;
+  sl.addEventListener('input',()=>{ nf.value=sl.value; lastSrc=sid; render(); });
+  nf.addEventListener('input',()=>{ const v=parseFloat(nf.value);
+    if(!isNaN(v)) sl.value=Math.max(+sl.min,Math.min(+sl.max,v)); lastSrc=nid; render(); });
+});
 document.querySelectorAll('#profilSeg button, #profilVerschlussSeg button').forEach(b=>b.addEventListener('click',()=>{
   b.parentNode.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
   b.classList.add('on');
   updateLockOpt(); render();
 }));
-[['profilH','nProfilH'],['profilLasche','nProfilLasche'],['profilAb','nProfilAb'],['profilWinkel','nProfilWinkel'],['profilZahn','nProfilZahn'],['profilZahnL','nProfilZahnL']].forEach(([sid,nid])=>{
+[['profilH','nProfilH'],['profilLasche','nProfilLasche'],['profilAb','nProfilAb'],['profilWinkel','nProfilWinkel'],['profilZahn','nProfilZahn'],['profilZahnL','nProfilZahnL'],['profilFaltT','nProfilFaltT']].forEach(([sid,nid])=>{
   const sl=$(sid), nf=$(nid); if(!sl||!nf) return;
   sl.addEventListener('input',()=>{ nf.value=sl.value; lastSrc=sid; render(); });
   nf.addEventListener('input',()=>{ const v=parseFloat(nf.value);
@@ -10869,12 +11757,18 @@ function updateBallRodBtns(){
   // Mit Streben: die Streben selbst. Ohne Streben: kurze Adapter, die zwei
   // Knoten direkt verbinden. SVG nur bei eckigem Profil, weil ein Rundstab
   // nicht flach geschnitten werden kann.
-  zeig('dlBallRodSvg', istBall && eckig && !ohneStreben);
+  const falt = (typeof ballFaltProfil==='function') && ballFaltProfil()!=='flach';
+  zeig('dlBallRodSvg', istBall && (eckig||falt) && !ohneStreben);
   zeig('dlBallRodStl', istBall && !ohneStreben && eckig);
   zeig('dlBallAdSvg',  istBall && eckig && ohneStreben && !zapfenModus);
   zeig('dlBallAdStl',  istBall && ohneStreben && !zapfenModus);
 }
 if($('dlBallRodSvg')) $('dlBallRodSvg').addEventListener('click',()=>{
+  if(ballFaltProfil()!=='flach'){
+    const svgF=qrAnhaengen(ballFaltBlattSVG(true, true));
+    dlBlobNow(new Blob([svgF],{type:'image/svg+xml'}), (curLang==='en'?'rods_folded':'streben_gefaltet')+'.svg');
+    return;
+  }
   const svg=qrAnhaengen(ballRodSVG(true));
   const li=ballStrebenListe();
   const name = li.length===1
@@ -10954,7 +11848,9 @@ document.querySelectorAll('#ballProfilSeg button').forEach(b=>b.addEventListener
   const eckig=b.dataset.v==='quadrat';
   if($('grpBallRund'))  $('grpBallRund').style.display  = eckig?'none':'block';
   if($('grpBallEckig')) $('grpBallEckig').style.display = eckig?'block':'none';
-  updateBallRodBtns(); render();
+  updateBallRodBtns();
+  if(typeof updateLockOpt==='function') updateLockOpt();
+  render();
 }));
 // Konstruktion: Loecher (bisher) oder Zapfen (neu, fuer Rohre/Formrohre).
 // Aendert nur die Bedeutung/Beschriftung der vorhandenen Masse - keine
@@ -10986,6 +11882,7 @@ document.querySelectorAll('#ballKonstruktionSeg button').forEach(b=>b.addEventLi
   b.classList.add('on');
   updateBallKonstruktionUI();
   if(typeof updateBallRodBtns==='function') updateBallRodBtns();
+  if(typeof updateLockOpt==='function') updateLockOpt();
   render();
   if(typeof updateFlatWarn==='function') updateFlatWarn();
 }));
@@ -11300,7 +12197,7 @@ const I18N = {
   'Materialstärke Knoten ':'Material thickness nodes ','Materialstärke Streben ':'Material thickness rods ',
   'Steckfalz':'Slot-in seam',
   'Art wählen (mehrere möglich) ':'Choose type (multiple possible) ','Form':'Shape',
-  'Doppellage & Knickflächen':'Double layer & fold faces',
+  'Doppellage & Knickflächen':'Double layer & fold faces','Doppellage & Innenring':'Double layer & inner ring','Innenring':'Inner ring','Breite Innenring ':'Inner ring width ',
   'help_flat':'Cuts the node at a plane so it gets a flat base. The plane is derived from the arm directions and sits on the free side between the arms. On export the node is rotated so this face points down, which improves bed adhesion. Arms sticking out horizontally remain overhangs; switch on support in your slicer for those.',
   'Flachdruck':'Flat print','Weitere Einstellungen':'More settings','3D-Druck':'3D printing','Drucktoleranz ':'Print tolerance ',
   help_balltol:'Compensation for the printer, similar to kerf on the laser. Holes are printed larger by this value, pegs smaller (in diameter; for a square profile on every side). Example: rod 6 mm, tolerance 0.2 mm gives a 6.2 mm hole and a 5.8 mm peg. Best adjusted with a test print for your printer and material.',
@@ -11338,8 +12235,11 @@ const I18N = {
   'Verjüngung ':'Taper ','Seitenflächen ':'Side faces ','Kappung oben ':'Top truncation ',
   'Länge L ':'Length L ','Breite B ':'Width B ','Höhe H ':'Height H ','Neigungswinkel ':'Tilt angle ',
   'STL-Datei':'STL file','Datei (STL oder OBJ)':'File (STL or OBJ)','wie im Modell':'as in the model','Kanten ':'Edges ',  'rund':'round','Faltung ab Strebenende ':'Folding from rod end ','Strebenprofil ':'Rod profile ','flach':'flat','Dreieck':'Triangle','Profilhöhe ':'Profile height ','Klebelasche ':'Glue tab ',
-  'help_profil':'Only for thin, foldable materials such as paper, card or foil: the free middle part of the rod is folded into a profile, which makes it many times stiffer. The ends resting on the node arm stay flat - holes and pegs work as before. Fold lines are blue.\n\nL: one edge is folded up. U: both edges. Triangle: one side face above and one below the rod, closed with a glue tab or push-fit, the stiffest, also against twisting. Round: the rod is rolled into a tube, for materials that roll but do not fold. The profile height is then the diameter.\n\nSquare: closed rectangular tube, the lid gets the same holes as the rod.\n\nPush-fit: instead of the glue tab, straight teeth as on the cone seam. They are folded at their base, pushed from the inside through the slots on the opposite side and folded over behind. Tooth length 0 = automatic.\n\nDouble layer: L, square and round. The profile lies between the two shells over its full length; its height sets the shell spacing.\n\nWith hooks, L and U are available: L folds over the top edge of the upright rod, the node stays the same. U has two hooked walls with a web between them; the node gets two slots per position, web width apart.\n\nFolding from rod end: 0 = full length. To keep holes or pegs free, enter the bearing length on the arm. Chamfer: angle of the side faces at the ends, 90 degrees = square.',
-  'Abschrägung ':'Chamfer ','Vierkant':'Square','Verschluss':'Closure','Klebelasche':'Glue tab','steckbar':'push-fit','Anzahl Zähne ':'Number of teeth ','Stegbreite ':'Web width ',
+  'help_profil':'Only for thin, foldable materials such as paper, card or foil: the free middle part of the rod is folded into a profile, which makes it many times stiffer. The ends resting on the node arm stay flat - holes and pegs work as before. Fold lines are blue.\n\nL: one edge is folded up. U: both edges. Triangle: one side face above and one below the rod, closed with a glue tab or push-fit, the stiffest, also against twisting. Round: the rod is rolled into a tube, for materials that roll but do not fold. The profile height is then the diameter.\n\nSquare: closed rectangular tube, the lid gets the same holes as the rod.\n\nPush-fit: instead of the glue tab, straight teeth as on the cone seam. They are folded at their base, pushed from the inside through the slots on the opposite side and folded over behind. Tooth length 0 = automatic.\n\nDouble layer: L, square and round. The profile lies between the two shells over its full length; its height sets the shell spacing.\n\n3D node: flat means a ready-made rod or tube. Triangle, square and round are folded or rolled from a sheet. The sizes follow from the diameter: with holes the profile fits into the hole from outside, with pegs it fits over the peg from inside. The sheet thickness is included. Teeth and slits stay out of the part that goes into the node. With the rectangular profile only square (width × height) is available.\n\nWith hooks, L and U are available: L folds over the top edge of the upright rod, the node stays the same. U has two hooked walls with a web between them; the node gets two slots per position, web width apart.\n\nFolding from rod end: 0 = full length. To keep holes or pegs free, enter the bearing length on the arm. Chamfer: angle of the side faces at the ends, 90 degrees = square.',
+  'Abschrägung ':'Chamfer ','Abstand der Schalen ':'Shell spacing ','Strebenlängen ':'Rod lengths ',
+  help_stablen:'All equal: every rod has the rod length above. Per arm: one length per arm, comma-separated, in the same order as the arms (S1, S2, ...). Missing values use the rod length above. If the arm lengths differ per arm, each rod gets the holes or slots matching ITS arm.','Knick ':'Bend ','Knicklinie':'Fold line','gekrümmte Fläche':'curved surface','gefaltet':'folded','gekrümmt':'curved','Randfalz ':'Edge flange ','parallel':'parallel','bis zum Rand':'to the edge','Randfalz-Breite ':'Flange width ','Endabstand ':'End distance ',
+  help_knickart:'None: the arms are bent straight at the blue fold lines as before.\n\nFolded: on each side of every arm a strip is added outside, from the fold line to the end of the arm, cut straight there, and folded over at the arm edge. Between two arms the strips stay connected and are folded along the angle bisector. The fold lines stay and touch automatically.\n\nCurved: no fold lines. The edge flange also runs around the rounded inner corners. Because the crease is curved there, the whole star bends when folding - so the arms tilt without a sharp fold. Parallel: the strip keeps the same width everywhere and is cut straight at the arm end. To the edge: the cut edge runs as a curve from arm to arm, starts parallel to the arm and passes through the point at the set distance in the gap. Tilts up to about 25 to 30 degrees per arm are easy to build (domes, dodecahedron, icosahedron); for steeper corners use "none" or "folded".',
+  help_randfalz:'An additional strip along the side edges that is folded over at the blue line. The set arm width stays unchanged: the red cut edge moves outwards, the previous edge becomes the fold line.\n\nParallel: the strip runs at full width to the end of the arm and is cut straight there - the arms become U-channels, good for U, square and round rods.\n\nTo the edge: the strip tapers out before the arm end, the fold line meets the cut edge there. End distance = how far before the arm end.','Materialstärke Blatt ':'Sheet thickness ','Vierkant':'Square','Verschluss':'Closure','Klebelasche':'Glue tab','steckbar':'push-fit','Anzahl Zähne ':'Number of teeth ','Stegbreite ':'Web width ',
   'Breite Zapfenstreben ':'Tab rod width ','Breite Hakenstreben ':'Hook rod width ',
   'Materialstärke Zapfenstreben ':'Material thickness tab rods ','Materialstärke Hakenstreben ':'Material thickness hook rods ',
   'help_strebmodus':'If tabs and hooks are both active there are two options.\n\nSeparate: two rod sets of their own, tab rods and hook rods. Width and material thickness can be set separately for each.\n\nCombined: one rod set. The tab rods also get hooks. The gap between hook and rod is then node thickness plus rod thickness, because node and rod sit in it together.',
@@ -11354,7 +12254,7 @@ const I18N = {
   'Lochdurchmesser ':'Hole diameter ','Überlappung ':'Overlap ','Doppellage':'Double layer',
   'Materialstärke Streben ':'Material thickness rods ','Knickfläche':'Fold face',
   'Knickflächenbreite ':'Fold face width ',
-  'help_foldwidth':'Width of the fold face at the cone tip. The first circle is the green fold line, a second circle is added at this distance. The area between is folded toward the tip.',
+  'help_foldwidth':'Inner ring: the ring at the cone tip between the centre hole (red) and the blue circle. It is folded over at the blue line and gives the tip a firm edge. The width is the distance from the centre hole to the blue line. The outer radius (arm length) stays the same - so with a wider ring the holes move outwards and the bearing length for the rods gets shorter.',
   'Falzbreite ':'Tab width ','Eckentyp':'Corner type','Winkelmodus':'Angle mode',
   'Anzahl Streben ':'Number of rods ','Winkeldefekt ':'Angle defect ',
   'Segmentwinkel (°, kommagetrennt)':'Segment angles (°, comma-separated)',
@@ -11452,6 +12352,35 @@ const I18N = {
   'Armbreite ':'Arm width ',
   'Strebenbreite ':'Rod width ','Taillentiefe ':'Waist depth ',
   'Schnittfugen-Korrektur (Kerf) ':'Kerf compensation ',
+  'Überlappung der Arme ':'Arm overlap ','Armlängen (mm, kommagetrennt) ':'Arm lengths (mm, comma-separated) ',
+  'Winkelverteilung':'Angle distribution','Haken- und Zapfenstreben ':'Hook and tab rods ',
+  'Breite Knickfläche ':'Fold face width ','Materialabtrag ':'Material removed ',
+  'getrennt':'separate','kombiniert':'combined','Bereich merken':'Save area','flache Seite':'flat side',
+  'Streben 2D (SVG)':'Rods 2D (SVG)','Streben 3D (STL)':'Rods 3D (STL)',
+  'Tetraeder-Ecke · 3 Arme · 60°':'Tetrahedron corner · 3 arms · 60°','Würfelecke · 3 Arme · 90°':'Cube corner · 3 arms · 90°',
+  'Dodekaeder-Ecke · 3 Arme · 108°':'Dodecahedron corner · 3 arms · 108°','Oktaeder-Ecke · 4 Arme · 60/90°':'Octahedron corner · 4 arms · 60/90°',
+  'Ikosaeder-Ecke · 5 Arme · 60/108°':'Icosahedron corner · 5 arms · 60/108°','Tetraeder-Achsen · 4 Arme · 109,5°':'Tetrahedron axes · 4 arms · 109.5°',
+  'Oktaeder-Achsen · 6 Arme · 90°':'Octahedron axes · 6 arms · 90°','Dreieck + Achse · 4 Arme':'Triangle + axis · 4 arms','Quadrat + Achse · 5 Arme':'Square + axis · 5 arms',
+  'Ecken – Arme in eine Richtung':'Corners – arms in one direction','Achsen – Arme nach allen Seiten':'Axes – arms in all directions','Kombiniert':'Combined',
+  'A4 quer (297×210)':'A4 landscape (297×210)','A4 hoch (210×297)':'A4 portrait (210×297)','A3 quer (420×297)':'A3 landscape (420×297)','A3 hoch (297×420)':'A3 portrait (297×420)','Laser-Bereich…':'Laser area…',
+  'Zurück (Strg+Z)':'Undo (Ctrl+Z)','Vor (Strg+Umschalt+Z)':'Redo (Ctrl+Shift+Z)','Alles auf Anfang zurücksetzen':'Reset everything',
+  'Ansicht nach oben':'Move view up','Ansicht nach unten':'Move view down','Ansicht zentrieren':'Centre view','Einpassen':'Fit to window',
+  'Menü ein-/ausblenden':'Show/hide menu','Kurzes Stück, das zwei Knoten ohne Strebe verbindet':'Short piece that joins two nodes without a rod',
+  'Vorderansicht':'Front view','Draufsicht':'Top view','Isometrische Ansicht':'Isometric view',
+  help_stlangle:'An STL consists only of triangles; real edges are not stored in it. The tool detects them by the bend between neighbouring triangles: if the angle is larger than this value, the line counts as an edge and becomes a rod. Small value: more lines are found, including the subdivision of curved surfaces. Large value: only pronounced edges remain, fine details disappear. 20° suits most models. If edges are missing, reduce the value. If too many lines appear on round surfaces, increase it.',
+  help_stlscale:'Real mm takes the dimensions from the file unchanged. Longest edge scales so that the longest rod found matches the set edge length exactly; all other rods become correspondingly shorter. Overall size scales to an outer dimension: you state how high, wide or deep the finished object should be, and the model adapts.',
+  help_armov:'How far two arms overlap. At 0 they butt in the middle, larger values push them over each other. The arm length follows from this and the edge length and can therefore no longer be set freely. Holes and slots are distributed automatically in the overlapping area.',
+  help_ovunit:'Degrees: the seam is shifted by an angle, so the tab becomes very wide on long arms. mm: the seam is shifted by a fixed amount, the tab has the same width everywhere.',
+  help_ballprofil:'Cross-section of the rods and thus of the holes/pegs. Round suits round rods and round tubes, square suits square battens and box sections. With square you enter width and height separately, so flat profiles are possible too.',
+  help_ballrot:'Rotates the profile about the arm axis. At 0° one side of the profile lies parallel to the plane between the neighbouring arms, the other perpendicular to it. With ±45° the profile stands on its corner; with ±90° it is the same as at 0°, because a rectangle is symmetric under 180°.',
+  help_farben:'Deselected layers are left out of the export. Useful if the laser should only get the cut lines or labels get in the way. The preview stays complete.',
+  help_flatlabel:'Embosses the node letter (A, B, C …) flat into the side lying on the print bed. The recess is as shallow as possible but deep enough to print cleanly and stay legible (costs hardly any material or print time). This way you find the right node again during assembly.',
+  help_stlball:'Fine makes the surface smoother and the embossed letters legible, but takes longer to generate. The preview always stays fast.',
+  warn_kanten:'Note: this body has edges of different lengths. The arms are therefore drawn with different lengths per edge. With overlapping arms a single length still applies - use butting in the middle or build with rods.',
+  warn_lock:'Not possible: the overlap is wider than the arm. Reduce the overlap or increase the arm width.',
+  warn_zapfen:'Caution: a tab slot overlaps a hole. The slot position is fixed by arm length and fold line and is no longer shifted. Change the number of holes, the hole spacing or the material thickness.',
+  hint_lochueberlapp:'With overlapping arms two arms lie on top of each other. The holes must line up there, so a fixed spacing applies instead of the automatic distribution. The arm length follows from edge length, overlap and hole position and can therefore not be set freely.',
+  hint_ebene:'All arms lie in one plane.',
 };
 const HELP_DE = {};
 let curLang='de';
@@ -11467,14 +12396,27 @@ function applyLang(lang){
       }
     }
   };
-  document.querySelectorAll('label, .viewbar-label, .sect-txt, .subsect, .zoomlab, .seg button, option, .legend div, .copyright, .kontaktTxt, #dlAdapter,#dlCut,#dlStaebe,#dlBauplan,#dlStl,#dlBallAdSvg,#dlBallAdStl,#dlBallRodSvg,#dlBallRodStl,#gapTouch,#ballDepthTouch,#btnPresetSave,#btnPresetDel,#btnPresetFile,#btnPresetLoad,#btnPresetLink,#btnMerkenAuf,.stl-i18n').forEach(translateNode);
+  document.querySelectorAll('label, .viewbar-label, .sect-txt, .subsect, .zoomlab, .seg button, option, .legend div, .copyright, .kontaktTxt, #dlAdapter,#dlCut,#dlStaebe,#dlBauplan,#dlStl,#dlBallAdSvg,#dlBallAdStl,#dlBallRodSvg,#dlBallRodStl,#gapTouch,#ballDepthTouch,#btnPresetSave,#btnPresetDel,#btnPresetFile,#btnPresetLoad,#btnPresetLink,#btnMerkenAuf,#fmtSave,.stl-i18n').forEach(translateNode);
   // "Zapfen" heisst beim 3D-Knoten "Pegs" (Steckzapfen), bei der flachen
   // Verbindung aber "Tabs" - derselbe deutsche Schluessel, darum hier gezielt.
   { const zb=document.querySelector('#lockSeg button[data-v="zinken"]');
     const tn=zb ? [...zb.childNodes].find(n=>n.nodeType===3 && n.nodeValue.trim()) : null;
     if(tn && lang==='en') tn.nodeValue='Tabs'; }
-  document.querySelectorAll('.help-text').forEach(h=>{
-    const k=h.getAttribute('data-i18n');
+  // Sprache fuer das naechste Mal merken - derselbe Schluessel wie die
+  // Projektgalerie, damit beide dieselbe Sprache zeigen (seit v335).
+  try{ localStorage.setItem('knoti_sprache', lang); }catch(e){}
+  document.documentElement.lang = lang;
+  // Tooltips (title) und Gruppenueberschriften in Auswahllisten.
+  document.querySelectorAll('[title]').forEach(e=>{
+    if(e.__titleDe===undefined) e.__titleDe=e.getAttribute('title');
+    const de=e.__titleDe; e.setAttribute('title', (lang==='en' && I18N[de]!==undefined) ? I18N[de] : de);
+  });
+  document.querySelectorAll('optgroup[label]').forEach(e=>{
+    if(e.__labelDe===undefined) e.__labelDe=e.getAttribute('label');
+    const de=e.__labelDe; e.setAttribute('label', (lang==='en' && I18N[de]!==undefined) ? I18N[de] : de);
+  });
+  document.querySelectorAll('.help-text, .i18n-text').forEach(h=>{
+    const k=h.getAttribute('data-i18n'); if(!k) return;
     if(!HELP_DE[k]) HELP_DE[k]=h.textContent.trim();
     h.textContent = (lang==='en' && I18N[k]) ? I18N[k] : HELP_DE[k];
   });
@@ -11490,9 +12432,24 @@ if(typeof updateSectionHeads==='function') updateSectionHeads();
   if(typeof updateFlatWarn==='function') updateFlatWarn();
   if(typeof updateStlInfo==='function') updateStlInfo();
   if(typeof presetListe==='function') presetListe();
+  // Standardhinweis der Merkliste in der neuen Sprache (seit v335).
+  { const el=document.getElementById('presetInfo');
+    if(el && /gemerkt|saved/.test(el.textContent) && !/[:]/.test(el.textContent)){
+      try{ const p=presetsLesen(), n=Object.keys(p).length;
+        presetHinweis(lang==='en'
+          ? (n ? `${n} saved${p[PRESET_LETZT]?', including “last state”':''}.` : 'Nothing saved yet.')
+          : (n ? `${n} gemerkt${p[PRESET_LETZT]?', „letzter Stand“ dabei':''}.` : 'Noch nichts gemerkt.'));
+      }catch(e){} } }
   if(typeof render==='function') render();
 }
 document.querySelectorAll('#langSeg button').forEach(btn=>btn.addEventListener('click',()=>applyLang(btn.dataset.lang)));
+// Gemerkte Sprache (oder die des Browsers) beim Start - wie die Galerie.
+function startSprache(){
+  let s=null;
+  try{ s=localStorage.getItem('knoti_sprache'); }catch(e){}
+  if(s!=='de' && s!=='en') s=((navigator.language||'de').toLowerCase().startsWith('en')) ? 'en' : 'de';
+  return s;
+}
 
 // Initial: Modus, Schrittnummern und Sichtbarkeiten setzen, dann zeichnen.
 (function(){ const bd=document.getElementById('typeBadge'),
@@ -11532,6 +12489,11 @@ function mehrTeilSichtbar(k){
   if(k.id==='customLenWrap') return b.contains('mitArmListe');
   if(k.id==='grpHoleMode') return !b.contains('ohneLoecher');
   if(k.id==='holeSpacingWrap') return !b.contains('ohneLoecher');
+  // Die Doppellage-Regler des Sterns behalten ihr "block", wenn man zum
+  // Kegel oder 3D-Knoten wechselt - sichtbar sind sie nur zusammen mit der
+  // Bauart (seit v335; vorher tauchte die Box dann zusaetzlich auf).
+  if(k.id==='doubleControls'){ const gb=document.getElementById('grpBuild');
+    return !!gb && gb.style.display!=='none' && grpModeVisible(gb); }
   return true;
 }
 // Was zaehlt als "geaendert"? Je Box die Abweichung vom Standard.
@@ -11539,22 +12501,69 @@ function mehrGeaendert(id){
   const seg=(s,v)=>{ const b=document.querySelector('#'+s+' .on'); return b && b.dataset.v!==v; };
   const feld=(f,v)=>{ const e=$(f); return e && e.value!=='' && Math.abs(+e.value - v)>1e-9; };
   const ovU=()=>{ const b=document.querySelector('.ovUnit .on'); return b && b.dataset.v!=='mm'; };
-  if(id==='sternMehr') return seg('evenSeg','even')||seg('lenSeg','even')||seg('buildSeg','single')||seg('sternWinkelSeg','exakt');
+  if(id==='sternMehr') return seg('evenSeg','even')||seg('lenSeg','even')||seg('buildSeg','single')||seg('sternWinkelSeg','exakt')||seg('knickArtSeg','linie')||seg('randfalzSternSeg','rand');
   if(id==='lochMehr')  return seg('holeModeSeg','auto');
-  if(id==='strebMehr') return seg('profilSeg','flach')||feld('nProfilAb',0)||feld('nProfilWinkel',45)||seg('profilVerschlussSeg','kleben');
+  if(id==='strebMehr') return seg('stabLenSeg','even')||seg('profilSeg','flach')||feld('nProfilAb',0)||feld('nProfilWinkel',45)||seg('profilVerschlussSeg','kleben');
   if(id==='coneMehr')  return feld('nConeWaist',100)||!!window.__ovManuell||ovU()||seg('overlapSideSeg','left')
                           ||!!window.__coneStabWManuell||seg('lenSeg','even')||seg('coneLayerSeg','one')||seg('coneFoldSeg','yes')
-                          ||feld('nConeFoldW',6)||feld('nConeWeld',6);
+                          ||feld('nConeFoldW',6)||feld('nConeWeld',6)||seg('randfalzSeg','aus');
   if(id==='bConeMehr') return feld('nBConeWaist',100)||!!window.__ovManuellBody||ovU()||seg('bOverlapSideSeg','left')
                           ||!!window.__coneStabWManuell||seg('bConeLayerSeg','one')||seg('bConeFoldSeg','yes')
-                          ||feld('nBConeFoldW',6)||feld('nBConeWeld',6);
+                          ||feld('nBConeFoldW',6)||feld('nBConeWeld',6)||seg('randfalzSeg','aus');
   return false;
 }
+// Randfalz-Gruppe in die Box des aktuellen Knotentyps setzen (seit v337).
+function randfalzPlatzieren(){
+  if(mode!=='body' && typeof window!=='undefined') window.__faltMax=NaN;
+  const g=document.getElementById('grpRandfalz'); if(!g) return;
+  const typ=(typeof currentTypeKey==='function') ? currentTypeKey() : 'star';
+  const ziel = typ==='star' ? 'sternMehrBox' : typ==='cone' ? (mode==='body'?'bConeMehrBox':'coneMehrBox') : null;
+  const box = ziel ? document.getElementById(ziel) : null;
+  if(box && g.parentNode!==box) box.appendChild(g);
+  g.style.display = box ? '' : 'none';
+  const stern = typ==='star';
+  const sArt = stern ? sternRandfalzArt() : 'linie';
+  const kurve = sArt==='kurve';
+  if($('knickArtWrap')) $('knickArtWrap').style.display = stern ? '' : 'none';
+  if($('randfalzArtWrap')) $('randfalzArtWrap').style.display = (!stern || kurve) ? '' : 'none';
+  // Beim Stern gibt es den Randfalz nur mit gekruemmter Flaeche, dort mit
+  // eigenem Umschalter ohne "aus".
+  if($('randfalzSeg')) $('randfalzSeg').style.display = stern ? 'none' : '';
+  if($('randfalzSternSeg')) $('randfalzSternSeg').style.display = stern ? '' : 'none';
+  const rf=randfalzEinst(stern);
+  const an = stern ? sArt!=='linie' : rf.art!=='aus';
+  if($('randfalzOpts')) $('randfalzOpts').style.display = an ? '' : 'none';
+  if($('randfalzEWrap')) $('randfalzEWrap').style.display = (rf.art==='rand' && (!stern || kurve)) ? '' : 'none';
+  const hw=$('randfalzHinweis');
+  if(hw){
+    const EN=(typeof curLang!=='undefined'&&curLang==='en');
+    let t='';
+    if(sArt==='gefaltet'){
+      t += EN ? `The fold lines touch automatically. The strips are folded at the arm edges; between two arms they are connected and folded along the angle bisector. `
+              : `Die Knicklinien berühren sich automatisch. Die Streifen werden an den Armkanten gefaltet; zwischen zwei Armen hängen sie zusammen und werden auf der Winkelhalbierenden gefaltet. `;
+    }
+    if(kurve){
+      const fmax = (typeof window!=='undefined' && isFinite(window.__faltMax)) ? window.__faltMax : null;
+      if(fmax!==null){
+        t += fmax>30.5
+          ? (EN ? `Steepest arm tilt here: ${fmax.toFixed(0)}° - probably too steep for a curved surface, the fold line is safer.`
+                : `Steilste Armneigung hier: ${fmax.toFixed(0)}° - für die gekrümmte Fläche vermutlich zu steil, die Knicklinie ist sicherer.`)
+          : (EN ? `Steepest arm tilt here: ${fmax.toFixed(0)}° - should be buildable with a curved surface.`
+                : `Steilste Armneigung hier: ${fmax.toFixed(0)}° - mit gekrümmter Fläche gut baubar.`);
+      }
+    }
+    hw.textContent=t;
+  }
+}
 function mehrBoxenAktualisieren(){
+  try{ randfalzPlatzieren(); }catch(e){}
   const EN=(typeof curLang!=='undefined'&&curLang==='en');
   MEHR_BOXEN.forEach(box=>{
     const inner=document.getElementById(box.id+'Box'); if(!inner) return;
-    const sicht=[...inner.children].some(mehrTeilSichtbar);
+    let sicht=[...inner.children].some(mehrTeilSichtbar);
+    // Sternbox nur beim Stern (im Koerpermodus haengt der Sternbereich sonst
+    // auch beim Kegel und 3D-Knoten sichtbar herum).
+    if(box.id==='sternMehr' && typeof currentTypeKey==='function' && currentTypeKey()!=='star') sicht=false;
     box.style.display = sicht ? '' : 'none';
     const m=box.querySelector('.mehrMarke');
     if(m) m.textContent = mehrGeaendert(box.id) ? (EN?' · changed':' · geändert') : '';
@@ -11587,7 +12596,7 @@ function kegelArmbreiteNachfuehren(){
   // (so in v317, war zu versteckt).
   // Streben: gefaltetes Profil (seit v331) unter "Weitere Einstellungen".
   { const gp=document.getElementById('grpProfil');
-    if(gp){ const box=mehrBox('strebMehr', [gp], gp.parentNode, gp.nextSibling);
+    if(gp){ const box=mehrBox('strebMehr', [document.getElementById('grpStabLen'), gp], gp.parentNode, gp.nextSibling);
       if(box) box.dataset.sect='streben'; } }
   // Einzel-Kegel: Armbreite, Taillentiefe, Ueberlappung, Doppellage, Knickflaeche.
   const cc=document.getElementById('coneControls');
@@ -11651,6 +12660,42 @@ function kegelArmbreiteNachfuehren(){
 })();
 applyMode();
 sectionsInit();
+// ---- Aktiver Abschnitt (seit v339) ----
+// Der Abschnitt, in dem zuletzt etwas eingestellt wurde, wird farbig
+// hervorgehoben. Zu Beginn ist es die Knotenform.
+function abschnittKopf(el){
+  const aside=document.querySelector('aside'); if(!aside||!el) return null;
+  if(el.classList && el.classList.contains('sect')) return el;
+  const lab=el.closest ? el.closest('.grp') : null;
+  if(lab){ const st=lab.querySelector('label.steplab'); if(st) return st; }
+  let n=el;
+  while(n && n!==aside){
+    if(n.dataset && n.dataset.sectidx!==undefined && !(n.classList && n.classList.contains('sect'))){
+      const hd=aside.querySelector('.sect[data-sectidx="'+n.dataset.sectidx+'"]');
+      if(hd) return hd;
+    }
+    n=n.parentElement;
+  }
+  return null;
+}
+function abschnittAktiv(hd){
+  const aside=document.querySelector('aside'); if(!aside) return;
+  const sichtbar=h=>h && h.offsetParent!==null && getComputedStyle(h).display!=='none';
+  if(!sichtbar(hd)){
+    // Fallback: die gerade sichtbare Knotenform
+    hd=[...aside.querySelectorAll('.sect[data-sect="arme"], .sect[data-sect="kegel"], .sect[data-sect="node3d"]')].find(sichtbar) || null;
+  }
+  aside.querySelectorAll('.sect.aktiv, label.steplab.aktiv').forEach(x=>{ if(x!==hd) x.classList.remove('aktiv'); });
+  if(hd) hd.classList.add('aktiv');
+}
+(function(){
+  const aside=document.querySelector('aside'); if(!aside) return;
+  const f=e=>{ const hd=abschnittKopf(e.target); if(hd) abschnittAktiv(hd); };
+  aside.addEventListener('input', f, true);
+  aside.addEventListener('click', f, true);
+  aside.addEventListener('change', f, true);
+  setTimeout(()=>abschnittAktiv(null), 0);
+})();
 // Der Flachdruck-Regler haengt an der gewaehlten Stufe. Beim Laden wurde er
 // nie eingeblendet, obwohl "flache Seite" von Anfang an aktiv ist.
 (function(){
@@ -11699,6 +12744,27 @@ render();
 })();
 </script>
 <script>
+// Gemerkte Sprache anwenden (seit v335). Vor dem geteilten Link, damit dessen
+// Hinweis schon in der richtigen Sprache erscheint.
+window.addEventListener('load', ()=>{
+  try{
+    const s=startSprache();
+    if(s==='en'){
+      applyLang('en');
+      const p=presetsLesen(), n=Object.keys(p).length;
+      presetHinweis(n ? `${n} saved${p[PRESET_LETZT]?', including “last state”':''}.` : 'Nothing saved yet.');
+    } else {
+      try{ localStorage.setItem('knoti_sprache','de'); }catch(e){}
+    }
+  }catch(e){}
+});
+// Zurueck aus der Galerie: kommt die Seite aus dem Browser-Zwischenspeicher,
+// laeuft "load" nicht erneut - dann die dort gewaehlte Sprache uebernehmen.
+window.addEventListener('pageshow', ev=>{
+  if(!ev.persisted) return;
+  try{ const s=localStorage.getItem('knoti_sprache');
+    if((s==='de'||s==='en') && s!==curLang) applyLang(s); }catch(e){}
+});
 // Wurde ein geteilter Einstellungs-Link geoeffnet? Dann Zustand daraus setzen.
 window.addEventListener('load', async ()=>{
   const h=location.hash||'';
